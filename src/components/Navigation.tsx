@@ -1,0 +1,45 @@
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Home, UtensilsCrossed, GlassWater, Dumbbell, TrendingUp, Settings, Calendar } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const navItems = [
+  { path: '/dashboard', icon: Home, label: 'Início' },
+  { path: '/recipes', icon: UtensilsCrossed, label: 'Receitas' },
+  { path: '/detox', icon: GlassWater, label: 'Detox' },
+  { path: '/exercises', icon: Dumbbell, label: 'Exercícios' },
+  { path: '/progress', icon: TrendingUp, label: 'Evolução' },
+  { path: '/calendar', icon: Calendar, label: 'Calendário' },
+  { path: '/settings', icon: Settings, label: 'Config' },
+];
+
+const Navigation = () => {
+  const location = useLocation();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-40">
+      <div className="flex justify-around items-center py-2 px-2 max-w-lg mx-auto">
+        {navItems.map(({ path, icon: Icon, label }) => {
+          const isActive = location.pathname === path;
+          return (
+            <NavLink
+              key={path}
+              to={path}
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-300",
+                isActive 
+                  ? "text-primary bg-primary/10" 
+                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+              )}
+            >
+              <Icon className={cn("w-5 h-5", isActive && "animate-scale-in")} />
+              <span className="text-[10px] font-medium">{label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
+export default Navigation;

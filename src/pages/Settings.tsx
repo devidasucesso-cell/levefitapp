@@ -1,0 +1,240 @@
+import React, { useState, useEffect } from 'react';
+import { useUser } from '@/contexts/UserContext';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import Navigation from '@/components/Navigation';
+import WaterReminder from '@/components/WaterReminder';
+import { useNavigate } from 'react-router-dom';
+
+const Settings = () => {
+  const { notificationSettings, updateNotificationSettings } = useUser();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder);
+  const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
+  const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder);
+  const [waterInterval, setWaterInterval] = useState(notificationSettings.waterInterval.toString());
+
+  const handleSave = () => {
+    updateNotificationSettings({
+      capsuleReminder,
+      capsuleTime,
+      waterReminder,
+      waterInterval: parseInt(waterInterval) || 60,
+    });
+
+    // Request notification permission
+    if ((capsuleReminder || waterReminder) && 'Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          toast({
+            title: "Configurações salvas!",
+            description: "Suas notificações foram ativadas com sucesso.",
+          });
+        } else {
+          toast({
+            title: "Configurações salvas!",
+            description: "Ative as notificações no navegador para receber lembretes.",
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "Configurações salvas!",
+        description: "Suas preferências foram atualizadas.",
+      });
+    }
+  };
+
+  // Schedule notifications
+  useEffect(() => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    if (capsuleReminder && capsuleTime) {
+      const [hours, minutes] = capsuleTime.split(':').map(Number);
+      const now = new Date();
+      const scheduledTime = new Date(now);
+      scheduledTime.setHours(hours, minutes, 0, 0);
+      
+      if (scheduledTime <= now) {
+        scheduledTime.setDate(scheduledTime.getDate() + 1);
+      }
+
+      const timeout = scheduledTime.getTime() - now.getTime();
+      
+      const timerId = setTimeout(() => {
+        new Notification('💊 Hora do LeveFit!', {
+          body: 'Não esqueça de tomar sua cápsula LeveFit hoje!',
+          icon: '/favicon.ico',
+        });
+      }, timeout);
+
+      return () => clearTimeout(timerId);
+    }
+  }, [capsuleReminder, capsuleTime]);
+
+  useEffect(() => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    if (waterReminder && waterInterval) {
+      const interval = parseInt(waterInterval) * 60 * 1000; // Convert to ms
+      
+      const intervalId = setInterval(() => {
+        new Notification('💧 Beba Água!', {
+          body: 'É hora de se hidratar! Beba um copo de água.',
+          icon: '/favicon.ico',
+        });
+      }, interval);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [waterReminder, waterInterval]);
+
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      {/* Header */}
+      <div className="gradient-primary p-6 pb-8 rounded-b-3xl">
+        <div className="flex items-center gap-3 mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate('/dashboard')}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold font-display text-primary-foreground">Configurações</h1>
+            <p className="text-primary-foreground/80 text-sm">Personalize seus lembretes</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 -mt-4 space-y-4">
+        {/* Capsule Reminder */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="p-4 bg-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                <Pill className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Lembrete LeveFit</h3>
+                <p className="text-sm text-muted-foreground">Receba notificação para tomar a cápsula</p>
+              </div>
+              <Switch
+                checked={capsuleReminder}
+                onCheckedChange={setCapsuleReminder}
+              />
+            </div>
+
+            {capsuleReminder && (
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-foreground">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Horário do lembrete
+                  </Label>
+                  <Input
+                    type="time"
+                    value={capsuleTime}
+                    onChange={(e) => setCapsuleTime(e.target.value)}
+                    className="bg-secondary border-0"
+                  />
+                </div>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
+        {/* Water Reminder */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="p-4 bg-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-info flex items-center justify-center">
+                <Droplets className="w-5 h-5 text-info-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Lembrete de Água</h3>
+                <p className="text-sm text-muted-foreground">Receba notificação para beber água</p>
+              </div>
+              <Switch
+                checked={waterReminder}
+                onCheckedChange={setWaterReminder}
+              />
+            </div>
+
+            {waterReminder && (
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-foreground">
+                    <Bell className="w-4 h-4 text-info" />
+                    Intervalo (minutos)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={waterInterval}
+                    onChange={(e) => setWaterInterval(e.target.value)}
+                    placeholder="60"
+                    min="15"
+                    max="180"
+                    className="bg-secondary border-0"
+                  />
+                  <p className="text-xs text-muted-foreground">Mínimo: 15 min | Máximo: 180 min</p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
+        {/* Save Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button 
+            onClick={handleSave}
+            className="w-full h-12 gradient-primary text-primary-foreground font-semibold shadow-glow"
+          >
+            <Save className="w-5 h-5 mr-2" />
+            Salvar Configurações
+          </Button>
+        </motion.div>
+
+        {/* Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="p-4 bg-secondary/50">
+            <p className="text-sm text-muted-foreground">
+              <strong>Nota:</strong> Para receber notificações, permita o acesso no seu navegador quando solicitado. As notificações funcionam apenas quando a página está aberta.
+            </p>
+          </Card>
+        </motion.div>
+      </div>
+
+      <WaterReminder />
+      <Navigation />
+    </div>
+  );
+};
+
+export default Settings;
