@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Leaf, User, Key, AlertCircle } from 'lucide-react';
+import { Leaf, User, Key, AlertCircle, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Login = () => {
@@ -98,6 +98,25 @@ const Login = () => {
               className="w-full h-12 gradient-primary text-primary-foreground font-semibold shadow-glow hover:opacity-90 transition-opacity"
             >
               Entrar
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
+
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/qr-login')}
+              className="w-full h-12 border-primary/20 hover:border-primary/40"
+            >
+              <QrCode className="w-5 h-5 mr-2 text-primary" />
+              Acessar via QR Code
             </Button>
           </form>
         </Card>

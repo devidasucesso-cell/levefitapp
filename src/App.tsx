@@ -13,6 +13,7 @@ import Progress from "./pages/Progress";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import QRLogin from "./pages/QRLogin";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/qr-login" element={<QRLogin />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/recipes" element={<ProtectedRoute><Recipes /></ProtectedRoute>} />
       <Route path="/detox" element={<ProtectedRoute><Detox /></ProtectedRoute>} />
