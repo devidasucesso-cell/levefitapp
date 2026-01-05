@@ -1,47 +1,131 @@
 import { DetoxDrink, IMCCategory } from '@/types';
 
-const createDetoxDrinks = (category: IMCCategory, prefix: string): DetoxDrink[] => {
-  const baseDrinks: Omit<DetoxDrink, 'id' | 'category'>[] = [
-    // MANHÃ
-    { name: 'Água com Limão e Gengibre', timeOfDay: 'morning', ingredients: ['500ml de água morna', 'Suco de 1 limão', '1cm de gengibre ralado'], instructions: ['Aqueça a água', 'Adicione limão e gengibre', 'Beba em jejum'], benefits: ['Acelera metabolismo', 'Desintoxica o fígado', 'Fortalece imunidade'] },
-    { name: 'Chá Verde com Hortelã', timeOfDay: 'morning', ingredients: ['1 xícara de água quente', '1 sachê de chá verde', 'Folhas de hortelã'], instructions: ['Ferva a água', 'Adicione o chá e hortelã', 'Deixe em infusão 5 min'], benefits: ['Antioxidante', 'Acelera queima de gordura', 'Melhora digestão'] },
-    { name: 'Suco Verde Energizante', timeOfDay: 'morning', ingredients: ['1 maçã verde', 'Couve', 'Gengibre', 'Limão', 'Água de coco'], instructions: ['Bata todos ingredientes', 'Coe se preferir', 'Consuma imediatamente'], benefits: ['Energia natural', 'Rico em fibras', 'Desintoxicante'] },
-    { name: 'Chá de Hibisco com Canela', timeOfDay: 'morning', ingredients: ['1 colher de hibisco seco', '1 pau de canela', '300ml de água'], instructions: ['Ferva a água', 'Adicione hibisco e canela', 'Deixe em infusão 10 min'], benefits: ['Diurético natural', 'Reduz retenção', 'Acelera metabolismo'] },
-    { name: 'Smoothie Detox de Abacaxi', timeOfDay: 'morning', ingredients: ['2 fatias de abacaxi', 'Couve', 'Gengibre', '200ml de água'], instructions: ['Bata tudo no liquidificador', 'Adicione gelo se quiser', 'Beba gelado'], benefits: ['Anti-inflamatório', 'Digestivo', 'Queima gordura'] },
-    { name: 'Água Aromatizada de Pepino', timeOfDay: 'morning', ingredients: ['1 litro de água', '1/2 pepino fatiado', 'Folhas de hortelã', 'Limão'], instructions: ['Adicione todos ingredientes à água', 'Deixe na geladeira por 2h', 'Beba ao longo do dia'], benefits: ['Hidratante', 'Refrescante', 'Elimina toxinas'] },
-    { name: 'Chá de Cavalinha', timeOfDay: 'morning', ingredients: ['1 colher de cavalinha seca', '300ml de água quente'], instructions: ['Ferva a água', 'Adicione a cavalinha', 'Deixe em infusão 10 min'], benefits: ['Diurético', 'Elimina inchaço', 'Rico em minerais'] },
-    
-    // TARDE
-    { name: 'Suco de Melancia com Gengibre', timeOfDay: 'afternoon', ingredients: ['3 fatias de melancia', 'Gengibre a gosto', 'Gelo'], instructions: ['Bata a melancia com gengibre', 'Adicione gelo', 'Sirva gelado'], benefits: ['Hidratante', 'Diurético', 'Refrescante'] },
-    { name: 'Chá de Carqueja', timeOfDay: 'afternoon', ingredients: ['1 colher de carqueja', '300ml de água'], instructions: ['Ferva a água', 'Adicione a carqueja', 'Deixe em infusão 10 min'], benefits: ['Digestivo', 'Desintoxica fígado', 'Reduz gordura'] },
-    { name: 'Limonada Suíça com Hortelã', timeOfDay: 'afternoon', ingredients: ['2 limões', '500ml de água', 'Folhas de hortelã', 'Gelo'], instructions: ['Bata limão com casca rapidamente', 'Coe e adicione hortelã', 'Sirva com gelo'], benefits: ['Refrescante', 'Rico em vitamina C', 'Digestivo'] },
-    { name: 'Suco de Couve com Maçã', timeOfDay: 'afternoon', ingredients: ['3 folhas de couve', '1 maçã', 'Suco de 1 limão', '200ml de água'], instructions: ['Bata todos ingredientes', 'Coe se preferir', 'Consuma fresco'], benefits: ['Desintoxicante', 'Rico em fibras', 'Energizante'] },
-    { name: 'Chá de Gengibre e Limão', timeOfDay: 'afternoon', ingredients: ['1 pedaço de gengibre', 'Suco de 1/2 limão', '300ml de água quente'], instructions: ['Ferva água com gengibre', 'Adicione limão após ferver', 'Beba morno'], benefits: ['Termogênico', 'Anti-inflamatório', 'Acelera digestão'] },
-    { name: 'Água de Coco com Limão', timeOfDay: 'afternoon', ingredients: ['300ml de água de coco', 'Suco de 1 limão', 'Gelo'], instructions: ['Misture água de coco com limão', 'Adicione gelo', 'Sirva gelado'], benefits: ['Hidratante natural', 'Rico em potássio', 'Refrescante'] },
-    { name: 'Suco de Beterraba Detox', timeOfDay: 'afternoon', ingredients: ['1/2 beterraba', '1 cenoura', '1 maçã', 'Gengibre'], instructions: ['Bata todos ingredientes', 'Adicione água se necessário', 'Consuma imediatamente'], benefits: ['Rico em ferro', 'Energizante', 'Desintoxicante'] },
-    
-    // NOITE
-    { name: 'Chá de Camomila com Mel', timeOfDay: 'night', ingredients: ['1 sachê de camomila', '300ml de água', '1 colher de mel'], instructions: ['Ferva a água', 'Adicione a camomila', 'Adoce com mel'], benefits: ['Relaxante', 'Melhora sono', 'Calmante natural'] },
-    { name: 'Chá de Erva Cidreira', timeOfDay: 'night', ingredients: ['Folhas de erva cidreira', '300ml de água quente'], instructions: ['Ferva a água', 'Adicione as folhas', 'Deixe em infusão 5 min'], benefits: ['Calmante', 'Digestivo', 'Reduz ansiedade'] },
-    { name: 'Golden Milk (Leite Dourado)', timeOfDay: 'night', ingredients: ['200ml de leite vegetal', '1 colher de cúrcuma', 'Pitada de pimenta', 'Mel'], instructions: ['Aqueça o leite', 'Adicione cúrcuma e pimenta', 'Adoce com mel'], benefits: ['Anti-inflamatório', 'Relaxante', 'Fortalece imunidade'] },
-    { name: 'Chá de Maracujá', timeOfDay: 'night', ingredients: ['Folhas de maracujá', '300ml de água'], instructions: ['Ferva a água', 'Adicione as folhas', 'Deixe em infusão 10 min'], benefits: ['Calmante natural', 'Reduz insônia', 'Relaxa músculos'] },
-    { name: 'Suco de Maracujá com Camomila', timeOfDay: 'night', ingredients: ['Polpa de 2 maracujás', 'Chá de camomila gelado', 'Mel a gosto'], instructions: ['Prepare o chá e deixe esfriar', 'Bata com polpa de maracujá', 'Adoce se necessário'], benefits: ['Calmante duplo', 'Relaxante', 'Facilita sono'] },
-    { name: 'Chá de Valeriana', timeOfDay: 'night', ingredients: ['1 colher de valeriana', '300ml de água'], instructions: ['Ferva a água', 'Adicione valeriana', 'Deixe em infusão 10 min'], benefits: ['Induz sono', 'Reduz ansiedade', 'Relaxante muscular'] },
-    { name: 'Leite Morno com Canela', timeOfDay: 'night', ingredients: ['200ml de leite desnatado', 'Canela em pó', 'Mel opcional'], instructions: ['Aqueça o leite', 'Adicione canela', 'Beba morno antes de dormir'], benefits: ['Relaxante', 'Aquece o corpo', 'Ajuda no sono'] },
-  ];
+// ============= BEBIDAS PARA ABAIXO DO PESO (Nutritivas e calóricas) =============
+const underweightDrinks: DetoxDrink[] = [
+  // MANHÃ - Vitaminas energéticas
+  { id: 'uw-d1', name: 'Vitamina de Abacate com Mel', category: 'underweight', timeOfDay: 'morning', ingredients: ['1/2 abacate maduro', '300ml de leite integral', '2 colheres de mel', '1 banana', 'Aveia'], instructions: ['Bata o abacate com leite', 'Adicione banana e aveia', 'Finalize com mel'], benefits: ['Alta caloria', 'Rico em gorduras boas', 'Energia duradoura'] },
+  { id: 'uw-d2', name: 'Smoothie de Banana e Pasta de Amendoim', category: 'underweight', timeOfDay: 'morning', ingredients: ['2 bananas', '2 colheres de pasta de amendoim', '300ml de leite', 'Mel', 'Cacau em pó'], instructions: ['Bata todos ingredientes', 'Adicione gelo se preferir', 'Sirva cremoso'], benefits: ['Rico em proteínas', 'Ganho de massa', 'Energia concentrada'] },
+  { id: 'uw-d3', name: 'Shake de Morango com Aveia', category: 'underweight', timeOfDay: 'morning', ingredients: ['10 morangos', '300ml de leite integral', '3 colheres de aveia', 'Mel', 'Iogurte'], instructions: ['Bata morangos com leite', 'Adicione aveia e iogurte', 'Adoce com mel'], benefits: ['Nutritivo', 'Rico em fibras', 'Calorias saudáveis'] },
+  { id: 'uw-d4', name: 'Vitamina de Mamão com Laranja', category: 'underweight', timeOfDay: 'morning', ingredients: ['2 fatias de mamão', 'Suco de 2 laranjas', 'Leite condensado', 'Aveia'], instructions: ['Bata mamão com suco', 'Adicione leite condensado', 'Finalize com aveia'], benefits: ['Digestivo', 'Rico em vitaminas', 'Calórico'] },
+  { id: 'uw-d5', name: 'Açaí Batido com Guaraná', category: 'underweight', timeOfDay: 'morning', ingredients: ['200g de açaí', '100ml de guaraná natural', 'Banana', 'Granola', 'Mel'], instructions: ['Bata açaí com guaraná', 'Adicione banana', 'Cubra com granola'], benefits: ['Energético', 'Ganho de peso', 'Força física'] },
+  { id: 'uw-d6', name: 'Leite com Chocolate e Banana', category: 'underweight', timeOfDay: 'morning', ingredients: ['300ml de leite integral', '2 colheres de achocolatado', '1 banana', 'Creme de leite'], instructions: ['Bata todos ingredientes', 'Sirva gelado ou morno', 'Adicione chantilly opcional'], benefits: ['Calórico', 'Saboroso', 'Fácil preparo'] },
+  { id: 'uw-d7', name: 'Smoothie de Coco e Manga', category: 'underweight', timeOfDay: 'morning', ingredients: ['200ml de leite de coco', '1 manga madura', 'Mel', 'Coco ralado', 'Aveia'], instructions: ['Bata manga com leite de coco', 'Adicione aveia', 'Finalize com coco ralado'], benefits: ['Tropical', 'Gorduras saudáveis', 'Energia'] },
+  
+  // TARDE - Sucos nutritivos
+  { id: 'uw-d8', name: 'Suco de Uva Integral com Mel', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['300ml de suco de uva integral', 'Mel', 'Gengibre ralado'], instructions: ['Misture o suco com mel', 'Adicione gengibre', 'Sirva gelado'], benefits: ['Antioxidante', 'Rico em açúcares naturais', 'Energia'] },
+  { id: 'uw-d9', name: 'Vitamina de Maçã com Castanhas', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['2 maçãs', '200ml de leite', 'Castanhas trituradas', 'Canela', 'Mel'], instructions: ['Bata maçãs com leite', 'Adicione castanhas', 'Finalize com canela'], benefits: ['Gorduras boas', 'Nutritivo', 'Saciedade'] },
+  { id: 'uw-d10', name: 'Suco de Beterraba com Laranja', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['1 beterraba pequena', 'Suco de 2 laranjas', 'Cenoura', 'Mel'], instructions: ['Bata beterraba com suco', 'Adicione cenoura', 'Adoce com mel'], benefits: ['Rico em ferro', 'Energético', 'Fortalece sangue'] },
+  { id: 'uw-d11', name: 'Milkshake de Chocolate', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['3 bolas de sorvete de chocolate', '200ml de leite', 'Chantilly', 'Calda de chocolate'], instructions: ['Bata sorvete com leite', 'Cubra com chantilly', 'Regue com calda'], benefits: ['Muito calórico', 'Ganho de peso', 'Delicioso'] },
+  { id: 'uw-d12', name: 'Smoothie de Tâmaras e Banana', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['5 tâmaras sem caroço', '2 bananas', '300ml de leite', 'Canela'], instructions: ['Bata tâmaras com banana', 'Adicione leite', 'Finalize com canela'], benefits: ['Açúcar natural', 'Energia rápida', 'Nutritivo'] },
+  { id: 'uw-d13', name: 'Suco de Manga com Leite', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['1 manga grande', '200ml de leite integral', 'Açúcar mascavo', 'Gelo'], instructions: ['Bata manga com leite', 'Adoce a gosto', 'Sirva gelado'], benefits: ['Vitamina A', 'Calórico', 'Refrescante'] },
+  { id: 'uw-d14', name: 'Vitamina de Abóbora com Especiarias', category: 'underweight', timeOfDay: 'afternoon', ingredients: ['200g de abóbora cozida', 'Leite', 'Canela', 'Noz moscada', 'Mel'], instructions: ['Bata abóbora com leite', 'Adicione especiarias', 'Sirva morno ou gelado'], benefits: ['Fibras', 'Vitaminas', 'Reconfortante'] },
+  
+  // NOITE - Bebidas nutritivas relaxantes
+  { id: 'uw-d15', name: 'Leite com Mel e Canela', category: 'underweight', timeOfDay: 'night', ingredients: ['300ml de leite integral morno', '2 colheres de mel', 'Canela em pau', 'Noz moscada'], instructions: ['Aqueça o leite com canela', 'Adicione mel', 'Sirva morno'], benefits: ['Relaxante', 'Calórico', 'Melhora sono'] },
+  { id: 'uw-d16', name: 'Chocolate Quente Cremoso', category: 'underweight', timeOfDay: 'night', ingredients: ['300ml de leite integral', '2 colheres de chocolate em pó', 'Creme de leite', 'Marshmallow'], instructions: ['Aqueça leite com chocolate', 'Adicione creme', 'Decore com marshmallow'], benefits: ['Reconfortante', 'Calórico', 'Relaxante'] },
+  { id: 'uw-d17', name: 'Vitamina de Banana Noturna', category: 'underweight', timeOfDay: 'night', ingredients: ['2 bananas maduras', '200ml de leite morno', 'Mel', 'Canela', 'Aveia'], instructions: ['Bata banana com leite morno', 'Adicione mel e aveia', 'Polvilhe canela'], benefits: ['Induz sono', 'Nutritivo', 'Reconfortante'] },
+  { id: 'uw-d18', name: 'Leite de Amêndoas com Tâmaras', category: 'underweight', timeOfDay: 'night', ingredients: ['300ml de leite de amêndoas', '3 tâmaras', 'Cardamomo', 'Mel'], instructions: ['Bata tâmaras com leite', 'Adicione cardamomo', 'Sirva morno'], benefits: ['Energia lenta', 'Relaxante', 'Nutritivo'] },
+  { id: 'uw-d19', name: 'Mingau Líquido de Aveia', category: 'underweight', timeOfDay: 'night', ingredients: ['3 colheres de aveia', '300ml de leite', 'Mel', 'Canela', 'Banana amassada'], instructions: ['Cozinhe aveia no leite', 'Deixe mais líquido', 'Adoce e sirva'], benefits: ['Saciante', 'Fibras', 'Sono reparador'] },
+  { id: 'uw-d20', name: 'Chá de Erva Doce com Mel', category: 'underweight', timeOfDay: 'night', ingredients: ['1 colher de erva doce', '300ml de água', '2 colheres de mel', 'Leite opcional'], instructions: ['Ferva água com erva doce', 'Coe e adicione mel', 'Misture leite se desejar'], benefits: ['Digestivo', 'Calmante', 'Levemente calórico'] },
+  { id: 'uw-d21', name: 'Golden Milk Energético', category: 'underweight', timeOfDay: 'night', ingredients: ['300ml de leite integral', 'Cúrcuma', 'Gengibre', 'Mel', 'Pimenta preta'], instructions: ['Aqueça leite com especiarias', 'Coe se necessário', 'Adoce com mel'], benefits: ['Anti-inflamatório', 'Imunidade', 'Nutritivo'] },
+];
 
-  return baseDrinks.map((drink, index) => ({
-    ...drink,
-    id: `${prefix}-${index + 1}`,
-    category,
-  }));
-};
+// ============= BEBIDAS PARA PESO NORMAL (Equilíbrio e manutenção) =============
+const normalDrinks: DetoxDrink[] = [
+  // MANHÃ - Bebidas equilibradas
+  { id: 'nm-d1', name: 'Água com Limão em Jejum', category: 'normal', timeOfDay: 'morning', ingredients: ['500ml de água morna', 'Suco de 1 limão', 'Pitada de sal rosa'], instructions: ['Aqueça a água levemente', 'Adicione limão e sal', 'Beba em jejum'], benefits: ['Alcaliniza o corpo', 'Hidrata', 'Ativa metabolismo'] },
+  { id: 'nm-d2', name: 'Smoothie Verde Balanceado', category: 'normal', timeOfDay: 'morning', ingredients: ['Couve', '1 banana', 'Maçã verde', 'Gengibre', 'Água de coco'], instructions: ['Bata todos ingredientes', 'Não coe', 'Beba fresco'], benefits: ['Nutrientes', 'Fibras', 'Energia natural'] },
+  { id: 'nm-d3', name: 'Chá Verde com Limão', category: 'normal', timeOfDay: 'morning', ingredients: ['1 sachê de chá verde', '300ml de água', 'Limão', 'Hortelã'], instructions: ['Prepare o chá', 'Adicione limão e hortelã', 'Beba morno ou gelado'], benefits: ['Antioxidante', 'Metabolismo', 'Foco mental'] },
+  { id: 'nm-d4', name: 'Suco de Laranja com Cenoura', category: 'normal', timeOfDay: 'morning', ingredients: ['Suco de 2 laranjas', '1 cenoura', 'Gengibre', 'Gelo'], instructions: ['Bata cenoura com suco', 'Adicione gengibre', 'Sirva com gelo'], benefits: ['Vitamina C', 'Betacaroteno', 'Imunidade'] },
+  { id: 'nm-d5', name: 'Água de Coco Natural', category: 'normal', timeOfDay: 'morning', ingredients: ['1 coco verde', 'Limão opcional', 'Hortelã'], instructions: ['Abra o coco', 'Adicione limão se quiser', 'Beba gelado'], benefits: ['Hidratação', 'Eletrólitos', 'Natural'] },
+  { id: 'nm-d6', name: 'Vitamina de Mamão com Laranja', category: 'normal', timeOfDay: 'morning', ingredients: ['2 fatias de mamão', 'Suco de 1 laranja', 'Aveia', 'Linhaça'], instructions: ['Bata mamão com laranja', 'Adicione aveia e linhaça', 'Sirva natural'], benefits: ['Digestivo', 'Fibras', 'Vitaminas'] },
+  { id: 'nm-d7', name: 'Chá de Hibisco Puro', category: 'normal', timeOfDay: 'morning', ingredients: ['1 colher de hibisco', '300ml de água', 'Canela em pau'], instructions: ['Ferva água', 'Adicione hibisco e canela', 'Deixe em infusão'], benefits: ['Diurético', 'Antioxidante', 'Pressão arterial'] },
+  
+  // TARDE - Sucos refrescantes
+  { id: 'nm-d8', name: 'Limonada com Hortelã', category: 'normal', timeOfDay: 'afternoon', ingredients: ['2 limões', '500ml de água', 'Hortelã fresca', 'Gelo', 'Mel opcional'], instructions: ['Esprema os limões', 'Misture com água e hortelã', 'Sirva gelado'], benefits: ['Refrescante', 'Vitamina C', 'Digestivo'] },
+  { id: 'nm-d9', name: 'Suco de Melancia Natural', category: 'normal', timeOfDay: 'afternoon', ingredients: ['3 fatias de melancia', 'Hortelã', 'Limão', 'Gelo'], instructions: ['Bata a melancia', 'Adicione hortelã e limão', 'Sirva bem gelado'], benefits: ['Hidratante', 'Diurético', 'Refrescante'] },
+  { id: 'nm-d10', name: 'Água Aromatizada de Frutas', category: 'normal', timeOfDay: 'afternoon', ingredients: ['1L de água', 'Morango', 'Limão', 'Pepino', 'Manjericão'], instructions: ['Corte as frutas', 'Deixe na água por 2h', 'Beba gelada'], benefits: ['Sem calorias', 'Hidratação', 'Saborosa'] },
+  { id: 'nm-d11', name: 'Suco de Abacaxi com Hortelã', category: 'normal', timeOfDay: 'afternoon', ingredients: ['3 fatias de abacaxi', 'Hortelã', 'Gengibre', 'Água gelada'], instructions: ['Bata abacaxi com água', 'Adicione hortelã e gengibre', 'Sirva gelado'], benefits: ['Digestivo', 'Anti-inflamatório', 'Refrescante'] },
+  { id: 'nm-d12', name: 'Chá Gelado de Maçã e Canela', category: 'normal', timeOfDay: 'afternoon', ingredients: ['1 maçã fatiada', 'Canela em pau', '500ml de água', 'Gelo'], instructions: ['Ferva água com maçã e canela', 'Deixe esfriar', 'Sirva com gelo'], benefits: ['Sem açúcar', 'Aromático', 'Refrescante'] },
+  { id: 'nm-d13', name: 'Suco de Maracujá Natural', category: 'normal', timeOfDay: 'afternoon', ingredients: ['Polpa de 3 maracujás', '400ml de água', 'Mel opcional', 'Gelo'], instructions: ['Bata polpa com água', 'Coe se preferir', 'Adoce levemente'], benefits: ['Calmante', 'Vitamina C', 'Natural'] },
+  { id: 'nm-d14', name: 'Detox de Pepino e Limão', category: 'normal', timeOfDay: 'afternoon', ingredients: ['1/2 pepino', '1 limão', 'Hortelã', '300ml de água', 'Gengibre'], instructions: ['Bata todos ingredientes', 'Coe', 'Sirva gelado'], benefits: ['Detox leve', 'Hidratante', 'Refrescante'] },
+  
+  // NOITE - Bebidas relaxantes
+  { id: 'nm-d15', name: 'Chá de Camomila', category: 'normal', timeOfDay: 'night', ingredients: ['1 sachê de camomila', '300ml de água quente', 'Mel opcional'], instructions: ['Ferva a água', 'Adicione camomila', 'Deixe 5 min em infusão'], benefits: ['Relaxante', 'Melhora sono', 'Digestivo'] },
+  { id: 'nm-d16', name: 'Chá de Erva Cidreira', category: 'normal', timeOfDay: 'night', ingredients: ['Folhas de erva cidreira', '300ml de água', 'Limão'], instructions: ['Ferva com as folhas', 'Coe e adicione limão', 'Beba morno'], benefits: ['Calmante', 'Ansiedade', 'Relaxante'] },
+  { id: 'nm-d17', name: 'Leite Vegetal com Canela', category: 'normal', timeOfDay: 'night', ingredients: ['300ml de leite de amêndoas', 'Canela', 'Mel', 'Noz moscada'], instructions: ['Aqueça o leite', 'Adicione especiarias', 'Sirva morno'], benefits: ['Leve', 'Relaxante', 'Low calorie'] },
+  { id: 'nm-d18', name: 'Chá de Maracujá', category: 'normal', timeOfDay: 'night', ingredients: ['Folhas de maracujá', '300ml de água', 'Mel'], instructions: ['Ferva a água', 'Adicione as folhas', 'Adoce levemente'], benefits: ['Induz sono', 'Ansiolítico', 'Natural'] },
+  { id: 'nm-d19', name: 'Água Morna com Mel e Limão', category: 'normal', timeOfDay: 'night', ingredients: ['300ml de água morna', '1 colher de mel', 'Suco de limão'], instructions: ['Aqueça a água', 'Misture mel e limão', 'Beba antes de dormir'], benefits: ['Imunidade', 'Relaxante', 'Digestivo'] },
+  { id: 'nm-d20', name: 'Chá de Lavanda', category: 'normal', timeOfDay: 'night', ingredients: ['1 colher de lavanda seca', '300ml de água', 'Mel'], instructions: ['Ferva a água', 'Adicione lavanda', 'Deixe em infusão 10 min'], benefits: ['Muito relaxante', 'Aromaterapia', 'Sono profundo'] },
+  { id: 'nm-d21', name: 'Infusão de Maçã e Camomila', category: 'normal', timeOfDay: 'night', ingredients: ['1/2 maçã fatiada', 'Camomila', '300ml de água', 'Canela'], instructions: ['Ferva água com maçã', 'Adicione camomila', 'Coe e sirva'], benefits: ['Suave', 'Relaxante', 'Digestivo'] },
+];
 
+// ============= BEBIDAS PARA SOBREPESO (Termogênicos e diuréticos) =============
+const overweightDrinks: DetoxDrink[] = [
+  // MANHÃ - Bebidas termogênicas
+  { id: 'ow-d1', name: 'Shot de Gengibre com Limão', category: 'overweight', timeOfDay: 'morning', ingredients: ['50ml de água', 'Gengibre ralado (2cm)', 'Suco de 1/2 limão', 'Pitada de pimenta caiena'], instructions: ['Bata gengibre com água', 'Adicione limão e pimenta', 'Tome de uma vez'], benefits: ['Acelera metabolismo', 'Termogênico', 'Queima gordura'] },
+  { id: 'ow-d2', name: 'Chá Verde Termogênico', category: 'overweight', timeOfDay: 'morning', ingredients: ['2 sachês de chá verde', 'Gengibre', 'Limão', '400ml de água'], instructions: ['Ferva água com gengibre', 'Adicione chá verde', 'Finalize com limão'], benefits: ['Acelera queima', 'Energia', 'Antioxidante'] },
+  { id: 'ow-d3', name: 'Água com Vinagre de Maçã', category: 'overweight', timeOfDay: 'morning', ingredients: ['300ml de água', '1 colher de vinagre de maçã', 'Limão', 'Canela'], instructions: ['Misture água com vinagre', 'Adicione limão e canela', 'Beba em jejum'], benefits: ['Controla glicemia', 'Digestivo', 'Queima gordura'] },
+  { id: 'ow-d4', name: 'Suco Verde Emagrecedor', category: 'overweight', timeOfDay: 'morning', ingredients: ['Couve', 'Pepino', 'Salsão', 'Limão', 'Gengibre', 'Água'], instructions: ['Bata todos ingredientes', 'Coe bem', 'Beba imediatamente'], benefits: ['Zero caloria', 'Detox', 'Emagrecedor'] },
+  { id: 'ow-d5', name: 'Chá de Hibisco com Canela', category: 'overweight', timeOfDay: 'morning', ingredients: ['2 colheres de hibisco', 'Canela em pau', '500ml de água', 'Gengibre'], instructions: ['Ferva água com canela e gengibre', 'Adicione hibisco', 'Deixe em infusão'], benefits: ['Diurético forte', 'Reduz gordura', 'Elimina líquidos'] },
+  { id: 'ow-d6', name: 'Água de Limão com Pepino', category: 'overweight', timeOfDay: 'morning', ingredients: ['1L de água', '1 limão fatiado', '1/2 pepino', 'Hortelã', 'Gengibre'], instructions: ['Corte tudo e coloque na água', 'Deixe na geladeira', 'Beba durante a manhã'], benefits: ['Hidratante', 'Zero caloria', 'Detox'] },
+  { id: 'ow-d7', name: 'Chá de Cavalinha Diurético', category: 'overweight', timeOfDay: 'morning', ingredients: ['1 colher de cavalinha', '300ml de água', 'Limão'], instructions: ['Ferva a água', 'Adicione cavalinha', 'Coe e adicione limão'], benefits: ['Elimina inchaço', 'Diurético potente', 'Desintoxica'] },
+  
+  // TARDE - Sucos detox emagrecedores
+  { id: 'ow-d8', name: 'Suco de Abacaxi com Couve', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['2 fatias de abacaxi', '2 folhas de couve', 'Hortelã', 'Água gelada'], instructions: ['Bata tudo no liquidificador', 'Coe se preferir', 'Beba gelado'], benefits: ['Digestivo', 'Queima gordura', 'Anti-inflamatório'] },
+  { id: 'ow-d9', name: 'Chá de Gengibre e Canela', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['Gengibre fatiado', '2 paus de canela', '500ml de água', 'Limão'], instructions: ['Ferva água com gengibre e canela', 'Deixe em infusão', 'Adicione limão'], benefits: ['Termogênico', 'Acelera metabolismo', 'Saboroso'] },
+  { id: 'ow-d10', name: 'Limonada com Gengibre', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['2 limões', 'Gengibre (3cm)', '500ml de água gelada', 'Hortelã'], instructions: ['Bata limão com gengibre', 'Coe e adicione água', 'Sirva com hortelã'], benefits: ['Refrescante', 'Termogênico', 'Digestivo'] },
+  { id: 'ow-d11', name: 'Água de Berinjela', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['1 berinjela fatiada', '1L de água', 'Limão'], instructions: ['Deixe berinjela na água por 12h', 'Coe', 'Beba durante o dia'], benefits: ['Reduz colesterol', 'Emagrece', 'Diurético'] },
+  { id: 'ow-d12', name: 'Suco Detox de Melão', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['2 fatias de melão', 'Pepino', 'Hortelã', 'Limão', 'Água'], instructions: ['Bata melão com pepino', 'Adicione hortelã e limão', 'Sirva gelado'], benefits: ['Diurético', 'Baixa caloria', 'Refrescante'] },
+  { id: 'ow-d13', name: 'Chá de Carqueja', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['1 colher de carqueja', '300ml de água', 'Limão'], instructions: ['Ferva a água', 'Adicione carqueja', 'Coe e beba'], benefits: ['Queima gordura', 'Digestivo', 'Fígado saudável'] },
+  { id: 'ow-d14', name: 'Suco de Limão com Chia', category: 'overweight', timeOfDay: 'afternoon', ingredients: ['Suco de 2 limões', '400ml de água', '1 colher de chia', 'Hortelã'], instructions: ['Misture limão com água', 'Adicione chia e deixe hidratar', 'Sirva com hortelã'], benefits: ['Saciedade', 'Fibras', 'Emagrece'] },
+  
+  // NOITE - Bebidas leves para o sono
+  { id: 'ow-d15', name: 'Chá de Camomila com Gengibre', category: 'overweight', timeOfDay: 'night', ingredients: ['Camomila', 'Gengibre ralado', '300ml de água'], instructions: ['Ferva água com gengibre', 'Adicione camomila', 'Deixe em infusão'], benefits: ['Relaxante', 'Digestivo', 'Leve'] },
+  { id: 'ow-d16', name: 'Chá de Erva Doce', category: 'overweight', timeOfDay: 'night', ingredients: ['1 colher de erva doce', '300ml de água quente'], instructions: ['Ferva a água', 'Adicione erva doce', 'Deixe 10 min'], benefits: ['Digestivo', 'Reduz gases', 'Calmante'] },
+  { id: 'ow-d17', name: 'Água de Pepino Noturna', category: 'overweight', timeOfDay: 'night', ingredients: ['1/2 pepino', 'Limão', 'Hortelã', '500ml de água'], instructions: ['Corte pepino e limão', 'Deixe na água gelada', 'Beba antes de dormir'], benefits: ['Hidratante', 'Zero caloria', 'Leve'] },
+  { id: 'ow-d18', name: 'Chá de Boldo', category: 'overweight', timeOfDay: 'night', ingredients: ['Folhas de boldo', '300ml de água'], instructions: ['Ferva a água', 'Adicione boldo', 'Deixe 5 min em infusão'], benefits: ['Fígado saudável', 'Digestivo', 'Detox noturno'] },
+  { id: 'ow-d19', name: 'Infusão de Hortelã', category: 'overweight', timeOfDay: 'night', ingredients: ['Folhas de hortelã', '300ml de água quente', 'Limão'], instructions: ['Ferva água', 'Adicione hortelã', 'Finalize com limão'], benefits: ['Digestivo', 'Refrescante', 'Relaxante'] },
+  { id: 'ow-d20', name: 'Chá de Melissa', category: 'overweight', timeOfDay: 'night', ingredients: ['Folhas de melissa', '300ml de água', 'Mel (opcional)'], instructions: ['Ferva a água', 'Adicione melissa', 'Adoce se necessário'], benefits: ['Calmante', 'Ansiedade', 'Sono'] },
+  { id: 'ow-d21', name: 'Água Morna com Limão', category: 'overweight', timeOfDay: 'night', ingredients: ['300ml de água morna', 'Suco de 1/2 limão'], instructions: ['Aqueça a água', 'Adicione limão', 'Beba antes de dormir'], benefits: ['Detox noturno', 'Alcaliniza', 'Leve'] },
+];
+
+// ============= BEBIDAS PARA OBESIDADE (Super leves e detox intenso) =============
+const obeseDrinks: DetoxDrink[] = [
+  // MANHÃ - Detox intenso
+  { id: 'ob-d1', name: 'Água com Limão e Gengibre Forte', category: 'obese', timeOfDay: 'morning', ingredients: ['500ml de água morna', 'Suco de 1 limão', 'Gengibre ralado (3cm)', 'Pimenta caiena'], instructions: ['Aqueça a água', 'Misture todos ingredientes', 'Beba em jejum'], benefits: ['Desintoxica', 'Acelera metabolismo', 'Queima intensa'] },
+  { id: 'ob-d2', name: 'Shot Matinal Detox', category: 'obese', timeOfDay: 'morning', ingredients: ['Gengibre (3cm)', 'Cúrcuma', 'Limão', '50ml de água', 'Pimenta preta'], instructions: ['Bata gengibre e cúrcuma', 'Adicione limão e pimenta', 'Tome de uma vez'], benefits: ['Anti-inflamatório', 'Termogênico', 'Detox intenso'] },
+  { id: 'ob-d3', name: 'Suco Verde Intenso', category: 'obese', timeOfDay: 'morning', ingredients: ['Couve', 'Espinafre', 'Pepino', 'Salsão', 'Limão', 'Gengibre'], instructions: ['Bata todos os verdes', 'Adicione limão e gengibre', 'Coe e beba'], benefits: ['Clorofila', 'Zero caloria', 'Detox profundo'] },
+  { id: 'ob-d4', name: 'Chá Verde Concentrado', category: 'obese', timeOfDay: 'morning', ingredients: ['3 sachês de chá verde', '400ml de água', 'Gengibre', 'Limão'], instructions: ['Prepare chá forte', 'Adicione gengibre', 'Finalize com limão'], benefits: ['Queima acelerada', 'Energia', 'Antioxidante'] },
+  { id: 'ob-d5', name: 'Água Alcalina Detox', category: 'obese', timeOfDay: 'morning', ingredients: ['1L de água', 'Limão', 'Pepino', 'Hortelã', 'Bicarbonato (pitada)'], instructions: ['Corte limão e pepino', 'Adicione hortelã e bicarbonato', 'Deixe por 2h'], benefits: ['Alcaliniza', 'Desintoxica', 'pH equilibrado'] },
+  { id: 'ob-d6', name: 'Chá de Hibisco Triplo', category: 'obese', timeOfDay: 'morning', ingredients: ['2 colheres de hibisco', 'Canela', 'Gengibre', 'Cravo', '500ml de água'], instructions: ['Ferva água com especiarias', 'Adicione hibisco', 'Deixe forte'], benefits: ['Diurético intenso', 'Elimina gordura', 'Reduz medidas'] },
+  { id: 'ob-d7', name: 'Água de Coco com Limão', category: 'obese', timeOfDay: 'morning', ingredients: ['300ml de água de coco', 'Limão', 'Hortelã'], instructions: ['Misture água de coco com limão', 'Adicione hortelã', 'Beba gelado'], benefits: ['Hidratante', 'Baixa caloria', 'Eletrólitos'] },
+  
+  // TARDE - Diuréticos e saciantes
+  { id: 'ob-d8', name: 'Chá Diurético Potente', category: 'obese', timeOfDay: 'afternoon', ingredients: ['Cavalinha', 'Chapéu de couro', 'Cabelo de milho', '500ml de água'], instructions: ['Ferva água', 'Adicione as ervas', 'Deixe em infusão 15 min'], benefits: ['Elimina líquidos', 'Desincha', 'Diurético forte'] },
+  { id: 'ob-d9', name: 'Suco de Limão com Berinjela', category: 'obese', timeOfDay: 'afternoon', ingredients: ['1/2 berinjela', 'Suco de 2 limões', '400ml de água', 'Gengibre'], instructions: ['Bata berinjela com água', 'Adicione limão e gengibre', 'Coe e beba'], benefits: ['Reduz gordura', 'Colesterol', 'Emagrece'] },
+  { id: 'ob-d10', name: 'Água de Alcachofra', category: 'obese', timeOfDay: 'afternoon', ingredients: ['Folhas de alcachofra', '1L de água', 'Limão'], instructions: ['Ferva folhas na água', 'Deixe esfriar', 'Coe e adicione limão'], benefits: ['Fígado', 'Digestão', 'Elimina toxinas'] },
+  { id: 'ob-d11', name: 'Chá de Gengibre Intenso', category: 'obese', timeOfDay: 'afternoon', ingredients: ['Gengibre (5cm)', '500ml de água', 'Limão', 'Canela'], instructions: ['Ferva gengibre por 10 min', 'Adicione canela', 'Finalize com limão'], benefits: ['Termogênico forte', 'Queima gordura', 'Acelera'] },
+  { id: 'ob-d12', name: 'Suco de Salsão Detox', category: 'obese', timeOfDay: 'afternoon', ingredients: ['3 talos de salsão', 'Pepino', 'Limão', 'Água', 'Hortelã'], instructions: ['Bata salsão com pepino', 'Adicione limão', 'Coe bem'], benefits: ['Diurético', 'Baixíssima caloria', 'Detox'] },
+  { id: 'ob-d13', name: 'Chá de Boldo com Carqueja', category: 'obese', timeOfDay: 'afternoon', ingredients: ['Boldo', 'Carqueja', '300ml de água'], instructions: ['Ferva a água', 'Adicione as ervas', 'Deixe 10 min'], benefits: ['Fígado limpo', 'Digestão', 'Queima gordura'] },
+  { id: 'ob-d14', name: 'Água de Chia com Limão', category: 'obese', timeOfDay: 'afternoon', ingredients: ['2 colheres de chia', '500ml de água', 'Limão', 'Hortelã'], instructions: ['Hidrate chia na água', 'Adicione limão', 'Beba em intervalos'], benefits: ['Saciedade extrema', 'Fibras', 'Emagrece'] },
+  
+  // NOITE - Relaxantes zero caloria
+  { id: 'ob-d15', name: 'Chá de Camomila Puro', category: 'obese', timeOfDay: 'night', ingredients: ['Camomila', '300ml de água quente'], instructions: ['Ferva a água', 'Adicione camomila', 'Não adoce'], benefits: ['Zero caloria', 'Relaxante', 'Digestivo'] },
+  { id: 'ob-d16', name: 'Chá de Erva Cidreira', category: 'obese', timeOfDay: 'night', ingredients: ['Folhas de erva cidreira', '300ml de água'], instructions: ['Ferva a água', 'Adicione as folhas', 'Deixe 5 min'], benefits: ['Calmante', 'Ansiedade', 'Zero caloria'] },
+  { id: 'ob-d17', name: 'Água Morna com Limão', category: 'obese', timeOfDay: 'night', ingredients: ['300ml de água morna', 'Suco de 1/2 limão'], instructions: ['Aqueça a água', 'Adicione limão', 'Beba morno'], benefits: ['Detox noturno', 'Digestivo', 'Leve'] },
+  { id: 'ob-d18', name: 'Chá de Valeriana', category: 'obese', timeOfDay: 'night', ingredients: ['1 colher de valeriana', '300ml de água'], instructions: ['Ferva a água', 'Adicione valeriana', 'Deixe 10 min'], benefits: ['Induz sono', 'Relaxante muscular', 'Zero caloria'] },
+  { id: 'ob-d19', name: 'Infusão de Maracujá', category: 'obese', timeOfDay: 'night', ingredients: ['Folhas de maracujá', '300ml de água'], instructions: ['Ferva a água', 'Adicione as folhas', 'Coe e beba'], benefits: ['Calmante natural', 'Sono profundo', 'Sem açúcar'] },
+  { id: 'ob-d20', name: 'Chá de Mulungu', category: 'obese', timeOfDay: 'night', ingredients: ['1 colher de mulungu', '300ml de água'], instructions: ['Ferva a água', 'Adicione mulungu', 'Deixe 10 min'], benefits: ['Ansiolítico natural', 'Relaxante', 'Sono'] },
+  { id: 'ob-d21', name: 'Água Aromatizada Noturna', category: 'obese', timeOfDay: 'night', ingredients: ['500ml de água', 'Pepino', 'Limão', 'Hortelã'], instructions: ['Corte os ingredientes', 'Deixe na água', 'Beba antes de dormir'], benefits: ['Zero caloria', 'Hidratante', 'Leve'] },
+];
+
+// Exportar todas as bebidas
 export const detoxDrinks: DetoxDrink[] = [
-  ...createDetoxDrinks('underweight', 'uw-detox'),
-  ...createDetoxDrinks('normal', 'nm-detox'),
-  ...createDetoxDrinks('overweight', 'ow-detox'),
-  ...createDetoxDrinks('obese', 'ob-detox'),
+  ...underweightDrinks,
+  ...normalDrinks,
+  ...overweightDrinks,
+  ...obeseDrinks,
 ];
 
 export const getDetoxByCategory = (category: IMCCategory): DetoxDrink[] =>
