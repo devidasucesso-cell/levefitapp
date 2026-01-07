@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
@@ -39,14 +39,26 @@ const Dashboard = () => {
               <p className="text-primary-foreground/80 text-sm capitalize">{todayDisplay}</p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={handleLogout}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate('/admin')}
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+              >
+                <Shield className="w-5 h-5" />
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleLogout}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats */}

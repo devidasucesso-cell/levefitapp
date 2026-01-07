@@ -19,6 +19,7 @@ interface Profile {
   imc_category: IMCCategory;
   water_intake: number;
   created_at: string;
+  is_approved: boolean;
 }
 
 interface AuthContextType {
@@ -27,6 +28,8 @@ interface AuthContextType {
   profile: Profile | null;
   isLoading: boolean;
   isLoggedIn: boolean;
+  isApproved: boolean;
+  isAdmin: boolean;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   updateIMC: (weight: number, height: number) => Promise<void>;
@@ -66,6 +69,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(defaultNotificationSettings);
   const [progressHistory, setProgressHistory] = useState<SimpleProgressEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user has admin role
+  const checkAdminRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    setIsAdmin(!!data && !error);
+  };
 
   // Fetch profile data
   const fetchProfile = async (userId: string) => {
@@ -83,6 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         imc: Number(data.imc) || 0,
         imc_category: (data.imc_category as IMCCategory) || 'normal',
         created_at: data.created_at,
+        is_approved: data.is_approved ?? false,
       });
     }
   };
@@ -141,6 +158,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fetchCapsuleDays(user.id),
         fetchNotificationSettings(user.id),
         fetchProgressHistory(user.id),
+        checkAdminRole(user.id),
       ]);
     }
   };
@@ -158,12 +176,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchCapsuleDays(session.user.id);
           fetchNotificationSettings(session.user.id);
           fetchProgressHistory(session.user.id);
+          checkAdminRole(session.user.id);
         }, 0);
       } else {
         setProfile(null);
         setCapsuleDays([]);
         setNotificationSettings(defaultNotificationSettings);
         setProgressHistory([]);
+        setIsAdmin(false);
       }
     });
 
@@ -178,6 +198,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchCapsuleDays(session.user.id),
           fetchNotificationSettings(session.user.id),
           fetchProgressHistory(session.user.id),
+          checkAdminRole(session.user.id),
         ]).finally(() => setIsLoading(false));
       } else {
         setIsLoading(false);
@@ -252,6 +273,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCapsuleDays([]);
     setNotificationSettings(defaultNotificationSettings);
     setProgressHistory([]);
+    setIsAdmin(false);
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
@@ -356,6 +378,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         profile,
         isLoading,
         isLoggedIn: !!user,
+        isApproved: profile?.is_approved ?? false,
+        isAdmin,
         logout,
         updateProfile,
         updateIMC,
