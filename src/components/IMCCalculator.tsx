@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,20 +9,20 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const IMCCalculator = () => {
-  const { user, updateIMC } = useUser();
-  const [weight, setWeight] = useState(user?.weight?.toString() || '');
-  const [height, setHeight] = useState(user?.height?.toString() || '');
+  const { profile, updateIMC } = useAuth();
+  const [weight, setWeight] = useState(profile?.weight?.toString() || '');
+  const [height, setHeight] = useState(profile?.height?.toString() || '');
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     const w = parseFloat(weight);
     const h = parseFloat(height);
     if (w > 0 && h > 0) {
-      updateIMC(w, h);
+      await updateIMC(w, h);
     }
   };
 
   const getCategoryInfo = () => {
-    if (!user?.imc) return null;
+    if (!profile?.imc) return null;
     
     const categories = {
       underweight: { label: 'Abaixo do peso', color: 'bg-info', description: 'Receitas para ganho saudável' },
@@ -31,7 +31,7 @@ const IMCCalculator = () => {
       obese: { label: 'Obesidade', color: 'bg-destructive', description: 'Receitas leves e saudáveis' },
     };
 
-    return categories[user.imcCategory];
+    return categories[profile.imc_category];
   };
 
   const categoryInfo = getCategoryInfo();
@@ -87,7 +87,7 @@ const IMCCalculator = () => {
           Calcular IMC
         </Button>
 
-        {user?.imc !== undefined && user.imc > 0 && categoryInfo && (
+        {profile?.imc !== undefined && profile.imc > 0 && categoryInfo && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ const IMCCalculator = () => {
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Seu IMC</p>
               <p className="text-5xl font-bold text-primary font-display">
-                {user.imc.toFixed(1)}
+                {profile.imc.toFixed(1)}
               </p>
             </div>
 
@@ -127,7 +127,7 @@ const IMCCalculator = () => {
                 <motion.div
                   initial={{ left: '0%' }}
                   animate={{ 
-                    left: `${Math.min(Math.max((user.imc - 15) / 25 * 100, 0), 100)}%` 
+                    left: `${Math.min(Math.max((profile.imc - 15) / 25 * 100, 0), 100)}%` 
                   }}
                   className="absolute w-4 h-4 -top-1 -ml-2 rounded-full bg-foreground border-2 border-card shadow-lg"
                 />

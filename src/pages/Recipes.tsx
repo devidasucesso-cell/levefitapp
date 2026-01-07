@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sun, CloudSun, Moon, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -19,11 +19,11 @@ const mealTimeConfig = {
 };
 
 const Recipes = () => {
-  const { user } = useUser();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const [selectedMealTime, setSelectedMealTime] = useState<MealTime>('morning');
   
-  const category = user?.imcCategory || 'normal';
+  const category = profile?.imc_category || 'normal';
   const recipes = getRecipesByMealTime(category, selectedMealTime);
   const description = getCategoryDescription(category);
 

@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      capsule_days: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_settings: {
+        Row: {
+          capsule_reminder: boolean | null
+          capsule_time: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          water_interval: number | null
+          water_reminder: boolean | null
+        }
+        Insert: {
+          capsule_reminder?: boolean | null
+          capsule_time?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          water_interval?: number | null
+          water_reminder?: boolean | null
+        }
+        Update: {
+          capsule_reminder?: boolean | null
+          capsule_time?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          water_interval?: number | null
+          water_reminder?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          imc: number | null
+          imc_category: string | null
+          name: string
+          updated_at: string
+          user_id: string
+          water_intake: number | null
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          imc?: number | null
+          imc_category?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+          water_intake?: number | null
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          imc?: number | null
+          imc_category?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+          water_intake?: number | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      progress_history: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          imc: number
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          imc: number
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          imc?: number
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

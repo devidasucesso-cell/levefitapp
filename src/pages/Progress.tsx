@@ -1,18 +1,17 @@
 import React from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 import { format, subDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const Progress = () => {
-  const { user, progressHistory } = useUser();
+  const { profile, capsuleDays } = useAuth();
   const navigate = useNavigate();
 
   // Generate sample data for visualization
@@ -20,7 +19,7 @@ const Progress = () => {
     const data = [];
     for (let i = 30; i >= 0; i--) {
       const date = subDays(new Date(), i);
-      const baseWeight = user?.weight || 70;
+      const baseWeight = profile?.weight || 70;
       const variation = Math.sin(i * 0.3) * 0.5 + (Math.random() - 0.5) * 0.3;
       data.push({
         date: format(date, 'dd/MM'),
@@ -37,7 +36,7 @@ const Progress = () => {
     pesoInicial: chartData[0]?.peso || 0,
     pesoAtual: chartData[chartData.length - 1]?.peso || 0,
     mediaAgua: Math.round(chartData.reduce((acc, d) => acc + d.agua, 0) / chartData.length),
-    diasCapsulas: user?.capsuleDays.length || 0,
+    diasCapsulas: capsuleDays.length,
   };
 
   const pesoDiff = stats.pesoAtual - stats.pesoInicial;
