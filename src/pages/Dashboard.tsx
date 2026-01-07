@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Leaf, Pill, Droplets, LogOut } from 'lucide-react';
@@ -12,14 +12,14 @@ import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user, markCapsuleTaken, logout } = useUser();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout } = useAuth();
   const navigate = useNavigate();
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
-  const capsuleTakenToday = user?.capsuleDays.includes(today);
+  const capsuleTakenToday = isCapsuleTaken(today);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -34,7 +34,7 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold font-display text-primary-foreground">
-                Olá, {user?.name?.split(' ')[0]}! 👋
+                Olá, {profile?.name?.split(' ')[0] || 'Usuário'}! 👋
               </h1>
               <p className="text-primary-foreground/80 text-sm capitalize">{todayDisplay}</p>
             </div>
@@ -60,7 +60,7 @@ const Dashboard = () => {
                 <Droplets className="w-8 h-8 text-primary-foreground" />
                 <div>
                   <p className="text-primary-foreground/80 text-xs">Água hoje</p>
-                  <p className="text-primary-foreground font-bold text-lg">{user?.waterIntake || 0}ml</p>
+                  <p className="text-primary-foreground font-bold text-lg">{profile?.water_intake || 0}ml</p>
                 </div>
               </div>
             </Card>
@@ -75,7 +75,7 @@ const Dashboard = () => {
                 <Pill className="w-8 h-8 text-primary-foreground" />
                 <div>
                   <p className="text-primary-foreground/80 text-xs">Dias LeveFit</p>
-                  <p className="text-primary-foreground font-bold text-lg">{user?.capsuleDays.length || 0}</p>
+                  <p className="text-primary-foreground font-bold text-lg">{capsuleDays.length}</p>
                 </div>
               </div>
             </Card>
@@ -127,7 +127,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Category Info */}
-        {user?.imc !== undefined && user.imc > 0 && (
+        {profile?.imc !== undefined && profile.imc > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

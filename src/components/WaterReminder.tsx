@@ -1,12 +1,12 @@
 import React from 'react';
 import { Droplets } from 'lucide-react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const WaterReminder = () => {
-  const { user, addWaterIntake } = useUser();
+  const { profile, addWaterIntake } = useAuth();
   const waterGoal = 2000; // 2L
-  const currentIntake = user?.waterIntake || 0;
+  const currentIntake = profile?.water_intake || 0;
   const percentage = Math.min((currentIntake / waterGoal) * 100, 100);
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -12,14 +12,14 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const CalendarPage = () => {
-  const { user, markCapsuleTaken } = useUser();
+  const { capsuleDays, markCapsuleTaken, isCapsuleTaken } = useAuth();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-  const capsuleDays = user?.capsuleDays.map(d => parseISO(d)) || [];
+  const capsuleDates = capsuleDays.map(d => parseISO(d));
   
   const isDateTaken = (date: Date) => {
-    return capsuleDays.some(d => isSameDay(d, date));
+    return capsuleDates.some(d => isSameDay(d, date));
   };
 
   const handleMarkToday = () => {
@@ -29,8 +29,7 @@ const CalendarPage = () => {
     }
   };
 
-  const totalDays = user?.capsuleDays.length || 0;
-  const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
+  const totalDays = capsuleDays.length;
   const isSelectedDateTaken = selectedDate && isDateTaken(selectedDate);
 
   return (
@@ -74,7 +73,7 @@ const CalendarPage = () => {
               locale={ptBR}
               className="rounded-md pointer-events-auto"
               modifiers={{
-                taken: capsuleDays,
+                taken: capsuleDates,
               }}
               modifiersStyles={{
                 taken: {

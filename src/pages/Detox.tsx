@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sun, CloudSun, Moon, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -19,11 +19,11 @@ const timeConfig = {
 };
 
 const Detox = () => {
-  const { user } = useUser();
+  const { profile } = useAuth();
   const navigate = useNavigate();
   const [selectedTime, setSelectedTime] = useState<TimeOfDay>('morning');
   
-  const category = user?.imcCategory || 'normal';
+  const category = profile?.imc_category || 'normal';
   const drinks = getDetoxByTimeOfDay(category, selectedTime);
 
   const categoryLabels = {

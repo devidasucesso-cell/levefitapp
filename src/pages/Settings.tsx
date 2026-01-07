@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
-  const { notificationSettings, updateNotificationSettings } = useUser();
+  const { notificationSettings, updateNotificationSettings } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,8 +22,8 @@ const Settings = () => {
   const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder);
   const [waterInterval, setWaterInterval] = useState(notificationSettings.waterInterval.toString());
 
-  const handleSave = () => {
-    updateNotificationSettings({
+  const handleSave = async () => {
+    await updateNotificationSettings({
       capsuleReminder,
       capsuleTime,
       waterReminder,
