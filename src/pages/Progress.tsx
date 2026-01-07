@@ -1,45 +1,65 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
-import { format, subDays } from 'date-fns';
+import { format, differenceInDays, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Progress = () => {
-  const { profile, capsuleDays } = useAuth();
+  const { profile, capsuleDays, progressHistory } = useAuth();
   const navigate = useNavigate();
 
-  // Generate sample data for visualization
-  const generateChartData = () => {
-    const data = [];
-    for (let i = 30; i >= 0; i--) {
-      const date = subDays(new Date(), i);
-      const baseWeight = profile?.weight || 70;
-      const variation = Math.sin(i * 0.3) * 0.5 + (Math.random() - 0.5) * 0.3;
-      data.push({
-        date: format(date, 'dd/MM'),
-        peso: Math.round((baseWeight - (i * 0.05) + variation) * 10) / 10,
-        agua: Math.round(1500 + Math.random() * 1000),
-      });
-    }
-    return data;
-  };
+  // Calculate days since user started (first login/profile creation)
+  const daysSinceStart = useMemo(() => {
+    if (!profile) return 0;
+    const createdAt = parseISO(profile.created_at || new Date().toISOString());
+    return differenceInDays(new Date(), createdAt) + 1;
+  }, [profile]);
 
-  const chartData = generateChartData();
+  // Use real progress history data
+  const chartData = useMemo(() => {
+    if (progressHistory.length === 0) {
+      // If no progress history, show current data as single point
+      if (profile?.weight && profile.weight > 0) {
+        return [{
+          date: format(new Date(), 'dd/MM'),
+          peso: profile.weight,
+        }];
+      }
+      return [];
+    }
+
+    return progressHistory.map(entry => ({
+      date: format(parseISO(entry.date), 'dd/MM'),
+      peso: entry.weight,
+    }));
+  }, [progressHistory, profile]);
   
-  const stats = {
-    pesoInicial: chartData[0]?.peso || 0,
-    pesoAtual: chartData[chartData.length - 1]?.peso || 0,
-    mediaAgua: Math.round(chartData.reduce((acc, d) => acc + d.agua, 0) / chartData.length),
-    diasCapsulas: capsuleDays.length,
-  };
+  const stats = useMemo(() => {
+    const pesoInicial = progressHistory.length > 0 
+      ? progressHistory[0].weight 
+      : profile?.weight || 0;
+    
+    const pesoAtual = progressHistory.length > 0 
+      ? progressHistory[progressHistory.length - 1].weight 
+      : profile?.weight || 0;
+
+    return {
+      pesoInicial,
+      pesoAtual,
+      diasCapsulas: capsuleDays.length,
+      diasDesdeInicio: daysSinceStart,
+    };
+  }, [progressHistory, profile, capsuleDays, daysSinceStart]);
 
   const pesoDiff = stats.pesoAtual - stats.pesoInicial;
+  
   const getTrend = () => {
     if (pesoDiff < -0.5) return { icon: TrendingDown, color: 'text-success', label: 'Perdendo peso' };
     if (pesoDiff > 0.5) return { icon: TrendingUp, color: 'text-destructive', label: 'Ganhando peso' };
@@ -48,6 +68,12 @@ const Progress = () => {
 
   const trend = getTrend();
   const TrendIcon = trend.icon;
+
+  // Calculate consistency percentage
+  const consistencyPercentage = useMemo(() => {
+    if (daysSinceStart === 0) return 0;
+    return Math.round((capsuleDays.length / daysSinceStart) * 100);
+  }, [capsuleDays.length, daysSinceStart]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -64,7 +90,7 @@ const Progress = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold font-display text-primary-foreground">Sua Evolução</h1>
-            <p className="text-primary-foreground/80 text-sm">Acompanhe seu progresso</p>
+            <p className="text-primary-foreground/80 text-sm">Acompanhe seu progresso real</p>
           </div>
         </div>
       </div>
@@ -90,11 +116,11 @@ const Progress = () => {
 
           <Card className="p-4 bg-card">
             <div className="flex items-center gap-2 mb-2">
-              <Droplets className="w-5 h-5 text-info" />
-              <span className="text-sm text-muted-foreground">Média Água</span>
+              <Calendar className="w-5 h-5 text-info" />
+              <span className="text-sm text-muted-foreground">Dias de Jornada</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{stats.mediaAgua}ml</p>
-            <span className="text-xs text-muted-foreground">por dia</span>
+            <p className="text-2xl font-bold text-foreground">{stats.diasDesdeInicio}</p>
+            <span className="text-xs text-muted-foreground">desde o início</span>
           </Card>
 
           <Card className="p-4 bg-card">
@@ -103,7 +129,7 @@ const Progress = () => {
               <span className="text-sm text-muted-foreground">Dias LeveFit</span>
             </div>
             <p className="text-2xl font-bold text-foreground">{stats.diasCapsulas}</p>
-            <span className="text-xs text-muted-foreground">dias consistentes</span>
+            <span className="text-xs text-muted-foreground">{consistencyPercentage}% consistência</span>
           </Card>
 
           <Card className="p-4 bg-card">
@@ -114,7 +140,7 @@ const Progress = () => {
             <p className={`text-2xl font-bold ${pesoDiff < 0 ? 'text-success' : pesoDiff > 0 ? 'text-destructive' : 'text-foreground'}`}>
               {pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(1)} kg
             </p>
-            <span className="text-xs text-muted-foreground">últimos 30 dias</span>
+            <span className="text-xs text-muted-foreground">desde o início</span>
           </Card>
         </motion.div>
 
@@ -126,98 +152,78 @@ const Progress = () => {
         >
           <Card className="p-4 bg-card">
             <h3 className="font-semibold mb-4 text-foreground">Evolução do Peso</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorPeso" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    domain={['dataMin - 1', 'dataMax + 1']}
-                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="peso" 
-                    stroke="hsl(var(--primary))" 
-                    fillOpacity={1} 
-                    fill="url(#colorPeso)" 
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {chartData.length > 0 ? (
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorPeso" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      domain={['dataMin - 1', 'dataMax + 1']}
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px'
+                      }}
+                      formatter={(value: number) => [`${value} kg`, 'Peso']}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="peso" 
+                      stroke="hsl(var(--primary))" 
+                      fillOpacity={1} 
+                      fill="url(#colorPeso)" 
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground">
+                <p className="text-center">
+                  Adicione seu peso no Dashboard para<br />
+                  acompanhar sua evolução
+                </p>
+              </div>
+            )}
           </Card>
         </motion.div>
 
-        {/* Water Chart */}
+        {/* Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-4 bg-card">
-            <h3 className="font-semibold mb-4 text-foreground">Consumo de Água</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorAgua" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--info))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--info))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="agua" 
-                    stroke="hsl(var(--info))" 
-                    fillOpacity={1} 
-                    fill="url(#colorAgua)" 
-                    strokeWidth={2}
-                    name="Água (ml)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+          <Card className="p-4 bg-card/50 border-primary/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Droplets className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-foreground mb-1">Dica de Hidratação</h4>
+                <p className="text-sm text-muted-foreground">
+                  Beber água regularmente ajuda no metabolismo e potencializa os efeitos do Leve Fit. 
+                  Meta diária recomendada: 2 litros.
+                </p>
+              </div>
             </div>
           </Card>
         </motion.div>
