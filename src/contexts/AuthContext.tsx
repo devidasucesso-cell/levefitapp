@@ -20,6 +20,8 @@ interface Profile {
   water_intake: number;
   created_at: string;
   is_approved: boolean;
+  kit_type: string | null;
+  treatment_start_date: string | null;
 }
 
 interface AuthContextType {
@@ -100,6 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         imc_category: (data.imc_category as IMCCategory) || 'normal',
         created_at: data.created_at,
         is_approved: data.is_approved ?? false,
+        kit_type: data.kit_type ?? null,
+        treatment_start_date: data.treatment_start_date ?? null,
       });
     }
   };

@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Leaf, Pill, Droplets, LogOut, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import IMCCalculator from '@/components/IMCCalculator';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
+import TreatmentReminder from '@/components/TreatmentReminder';
 import { useNavigate } from 'react-router-dom';
+
+const getKitDuration = (kitType: string | null): number => {
+  switch (kitType) {
+    case '1_pote': return 30;
+    case '3_potes': return 90;
+    case '5_potes': return 150;
+    default: return 30;
+  }
+};
 
 const Dashboard = () => {
   const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin } = useAuth();
@@ -17,6 +27,24 @@ const Dashboard = () => {
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
   const capsuleTakenToday = isCapsuleTaken(today);
+  
+  const [showTreatmentReminder, setShowTreatmentReminder] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState(0);
+
+  useEffect(() => {
+    if (profile?.treatment_start_date && profile?.kit_type) {
+      const startDate = parseISO(profile.treatment_start_date);
+      const kitDuration = getKitDuration(profile.kit_type);
+      const daysPassed = differenceInDays(new Date(), startDate);
+      const remaining = kitDuration - daysPassed;
+      
+      // Show reminder in last 5 days
+      if (remaining >= 0 && remaining <= 5) {
+        setDaysRemaining(remaining);
+        setShowTreatmentReminder(true);
+      }
+    }
+  }, [profile]);
 
   const handleLogout = async () => {
     await logout();
@@ -190,6 +218,12 @@ const Dashboard = () => {
       </div>
 
       <WaterReminder />
+      {showTreatmentReminder && (
+        <TreatmentReminder 
+          daysRemaining={daysRemaining} 
+          onClose={() => setShowTreatmentReminder(false)} 
+        />
+      )}
       <Navigation />
     </div>
   );

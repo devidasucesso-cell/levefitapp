@@ -107,8 +107,9 @@ const Auth = () => {
 
     try {
       const redirectUrl = `${window.location.origin}/`;
+      const selectedKit = sessionStorage.getItem('selectedKit') || '1_pote';
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
@@ -134,6 +135,37 @@ const Auth = () => {
           });
         }
       } else {
+        // Update profile with kit info
+        if (data.user) {
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Wait a bit for the trigger to create the profile
+          setTimeout(async () => {
+            await supabase
+              .from('profiles')
+              .update({
+                kit_type: selectedKit,
+                treatment_start_date: today,
+              })
+              .eq('user_id', data.user!.id);
+          }, 1000);
+
+          // Notify admin via edge function
+          try {
+            await supabase.functions.invoke('notify-admin-new-user', {
+              body: {
+                userName: signupName,
+                userEmail: signupEmail,
+                kitType: selectedKit,
+              },
+            });
+          } catch (notifyError) {
+            console.error('Error notifying admin:', notifyError);
+          }
+        }
+
+        sessionStorage.removeItem('selectedKit');
+        
         toast({
           title: 'Conta criada com sucesso!',
           description: 'Bem-vindo ao LeveFit!',
