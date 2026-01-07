@@ -76,7 +76,9 @@ export type Database = {
           imc: number | null
           imc_category: string | null
           is_approved: boolean | null
+          kit_type: string | null
           name: string
+          treatment_start_date: string | null
           updated_at: string
           user_id: string
           water_intake: number | null
@@ -89,7 +91,9 @@ export type Database = {
           imc?: number | null
           imc_category?: string | null
           is_approved?: boolean | null
+          kit_type?: string | null
           name: string
+          treatment_start_date?: string | null
           updated_at?: string
           user_id: string
           water_intake?: number | null
@@ -102,7 +106,9 @@ export type Database = {
           imc?: number | null
           imc_category?: string | null
           is_approved?: boolean | null
+          kit_type?: string | null
           name?: string
+          treatment_start_date?: string | null
           updated_at?: string
           user_id?: string
           water_intake?: number | null
