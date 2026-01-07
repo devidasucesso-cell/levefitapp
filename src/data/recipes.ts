@@ -317,3 +317,14 @@ export const getRecipesByCategory = (category: IMCCategory): Recipe[] => {
 export const getRecipesByMealTime = (category: IMCCategory, mealTime: 'morning' | 'afternoon' | 'night'): Recipe[] => {
   return recipes.filter(recipe => recipe.category === category && recipe.mealTime === mealTime);
 };
+
+// Função para obter descrição da categoria
+export const getCategoryDescription = (category: string): string => {
+  const descriptions: Record<string, string> = {
+    underweight: 'Receitas nutritivas e calóricas para ganho de peso saudável',
+    normal: 'Receitas equilibradas para manutenção do peso ideal',
+    overweight: 'Receitas leves e saudáveis para emagrecimento',
+    obese: 'Receitas de baixa caloria para perda de peso intensiva',
+  };
+  return descriptions[category] || 'Receitas personalizadas para você';
+};
