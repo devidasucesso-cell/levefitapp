@@ -11,6 +11,18 @@ interface PushNotificationRequest {
   userId?: string;
 }
 
+// Decode JWT to get user ID (without verification - Supabase gateway already verified)
+function decodeJwt(token: string): { sub?: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 // Helper to encode to base64url
 function base64urlEncode(data: Uint8Array): string {
   const base64 = btoa(String.fromCharCode(...data));
@@ -154,28 +166,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Create client with user's JWT to validate authentication
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // Use getUser to validate the JWT and get user info
-    const { data: userData, error: userError } = await userClient.auth.getUser();
+    // Decode JWT to get user ID (Supabase gateway already verified the token)
+    const token = authHeader.replace('Bearer ', '');
+    const jwtPayload = decodeJwt(token);
     
-    if (userError || !userData?.user) {
-      console.error('User validation failed:', userError);
+    if (!jwtPayload?.sub) {
+      console.error('Could not extract user ID from token');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const authenticatedUserId = userData.user.id;
+    const authenticatedUserId = jwtPayload.sub;
     console.log('Authenticated user:', authenticatedUserId);
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
