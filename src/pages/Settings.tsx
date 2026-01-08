@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -403,6 +403,29 @@ const Settings = () => {
             <Save className="w-5 h-5 mr-2" />
             Salvar Configurações
           </Button>
+        </motion.div>
+
+        {/* Buy Kit Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <a 
+            href="https://wa.me/message/HQIWLURN37IUP1" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <Button 
+              variant="outline"
+              className="w-full h-12 border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold transition-all"
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              Comprar meu Kit
+              <ExternalLink className="w-4 h-4 ml-2" />
+            </Button>
+          </a>
         </motion.div>
 
         {/* Info Card */}
