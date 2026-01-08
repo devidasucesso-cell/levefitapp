@@ -29,9 +29,9 @@ const Settings = () => {
   } = usePushNotifications();
   const [testLoading, setTestLoading] = useState(false);
 
-  const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder);
+  const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder ?? true);
   const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
-  const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder);
+  const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder ?? true);
   const [waterInterval, setWaterInterval] = useState(notificationSettings.waterInterval.toString());
 
   const handleSave = async () => {
@@ -135,24 +135,24 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="gradient-primary p-6 pb-8 rounded-b-3xl">
+      <div className="bg-transparent p-6 pb-8">
         <div className="flex items-center gap-3 mb-4">
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => navigate('/dashboard')}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
+            className="text-foreground hover:bg-secondary"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold font-display text-primary-foreground">Configurações</h1>
-            <p className="text-primary-foreground/80 text-sm">Personalize seus lembretes</p>
+            <h1 className="text-2xl font-bold font-display text-foreground">Configurações</h1>
+            <p className="text-muted-foreground text-sm">Personalize seus lembretes</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 -mt-4 space-y-4">
+      <div className="p-4 space-y-4">
         {/* Push Notifications Toggle */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
