@@ -12,7 +12,7 @@ interface PushNotificationRequest {
 }
 
 // VAPID Public Key - must match the one in the frontend
-const VAPID_PUBLIC_KEY = 'BDMRZv9-Y5P6v0xg0o7q-Gx0_5kX7E4nMwJ9rL2hT8Km3F1pQ6sD8uY5nWbKjR3zHvAxC9fEiO7tGhU2yNa4BsM';
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 
 // Send Web Push notification - simplified version
 const sendWebPushNotification = async (
