@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "esterferreira18000@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,11 +32,84 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Validate Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('Missing or invalid Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Create client with user's JWT to validate authentication
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Validate JWT and get user claims
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error('JWT validation failed:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authenticatedUserId = claimsData.claims.sub;
+    const authenticatedUserEmail = claimsData.claims.email;
+    console.log('Authenticated user:', authenticatedUserId, authenticatedUserEmail);
+
     const { userName, userEmail, kitType }: NewUserNotificationRequest = await req.json();
 
-    console.log("Sending notification for new user:", { userName, userEmail, kitType });
+    // Security check: Only allow users to notify about their own signup
+    // This prevents spam attacks where someone calls this function repeatedly
+    if (userEmail !== authenticatedUserEmail) {
+      console.error('User tried to notify about different email:', { authenticated: authenticatedUserEmail, requested: userEmail });
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Can only notify about your own signup' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const adminEmail = "esterferreira18000@gmail.com";
+    // Rate limiting: Check if this user already triggered a notification recently
+    // Use service role for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Check if profile was created in the last 5 minutes (indicating recent signup)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('created_at')
+      .eq('user_id', authenticatedUserId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Profile not found for user:', authenticatedUserId);
+      return new Response(
+        JSON.stringify({ error: 'Profile not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const profileCreatedAt = new Date(profile.created_at);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    
+    if (profileCreatedAt < fiveMinutesAgo) {
+      console.log('Profile created more than 5 minutes ago, notification likely already sent');
+      return new Response(
+        JSON.stringify({ success: true, message: 'Notification already sent' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Sending notification for new user:", { userName, userEmail, kitType });
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -44,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "LeveFit <onboarding@resend.dev>",
-        to: [adminEmail],
+        to: [ADMIN_EMAIL],
         subject: "🆕 Novo usuário cadastrado no LeveFit!",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
