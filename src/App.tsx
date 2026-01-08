@@ -27,7 +27,8 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoading, isCodeValidated, isAdmin, profile } = useAuth();
   
-  if (isLoading) {
+  // Wait for both auth and profile to load
+  if (isLoading || (isLoggedIn && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -55,7 +56,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const KitSelectionRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoading, isCodeValidated, isAdmin, profile } = useAuth();
   
-  if (isLoading) {
+  // Wait for both auth and profile to load
+  if (isLoading || (isLoggedIn && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -81,9 +83,10 @@ const KitSelectionRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const CodeVerificationRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn, isLoading, isCodeValidated, isAdmin } = useAuth();
+  const { isLoggedIn, isLoading, isCodeValidated, isAdmin, profile } = useAuth();
   
-  if (isLoading) {
+  // Wait for both auth and profile to load
+  if (isLoading || (isLoggedIn && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
