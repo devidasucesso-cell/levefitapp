@@ -54,50 +54,68 @@ async function createVapidJwt(audience: string, subject: string, privateKeyBase6
 
 async function sendWebPushNotification(
   subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; icon?: string }
+  payload: { title: string; body: string; icon?: string; tag?: string; url?: string }
 ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-  const vapidPublicKey = Deno.env.get('VITE_VAPID_PUBLIC_KEY');
+  const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
   const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@levefit.com';
   
-  if (!vapidPrivateKey || !vapidPublicKey) {
-    console.warn('VAPID keys not configured - notifications will be sent without VAPID auth');
+  if (!vapidPrivateKey) {
+    console.error('VAPID_PRIVATE_KEY not configured');
+    return { success: false, error: 'VAPID key not configured' };
   }
 
   try {
     const url = new URL(subscription.endpoint);
     const audience = `${url.protocol}//${url.host}`;
     
+    // Create the notification payload matching service worker expectations
+    const notificationPayload = JSON.stringify({
+      title: payload.title,
+      body: payload.body,
+      icon: payload.icon || '/pwa-192x192.png',
+      tag: payload.tag || 'levefit-notification',
+      data: {
+        url: payload.url || '/dashboard'
+      }
+    });
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'TTL': '86400',
+      'Content-Length': new TextEncoder().encode(notificationPayload).length.toString(),
+      'TTL': '86400', // 24 hours
+      'Urgency': 'high', // Ensure high priority for background delivery
     };
 
-    // Add VAPID authentication if keys are available
-    if (vapidPrivateKey && vapidPublicKey) {
-      try {
-        const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey);
-        headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
-      } catch (vapidError) {
-        console.warn('Failed to create VAPID JWT, sending without auth:', vapidError);
-      }
+    // Add VAPID authentication
+    try {
+      const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey);
+      headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
+    } catch (vapidError) {
+      console.error('Failed to create VAPID JWT:', vapidError);
+      return { success: false, error: 'VAPID JWT creation failed' };
     }
 
+    console.log(`Sending push to: ${subscription.endpoint.substring(0, 50)}...`);
+    
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: notificationPayload,
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      console.error('Push notification failed:', response.status, await response.text());
+      console.error('Push notification failed:', response.status, responseText);
       return { 
         success: false, 
         statusCode: response.status,
-        error: `HTTP ${response.status}` 
+        error: `HTTP ${response.status}: ${responseText}` 
       };
     }
 
+    console.log('Push notification sent successfully');
     return { success: true };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -182,7 +200,9 @@ const handler = async (req: Request): Promise<Response> => {
     let notificationPayload = {
       title: 'LeveFit',
       body: 'Notificação de teste',
-      icon: '/pwa-192x192.png'
+      icon: '/pwa-192x192.png',
+      tag: 'levefit-test',
+      url: '/dashboard'
     };
 
     // For test notifications, the target is the authenticated user (or specified userId if admin)
@@ -190,8 +210,10 @@ const handler = async (req: Request): Promise<Response> => {
       targetUserIds = [userId || authenticatedUserId];
       notificationPayload = {
         title: '🔔 Teste de Notificação',
-        body: 'As notificações estão funcionando corretamente!',
-        icon: '/pwa-192x192.png'
+        body: 'As notificações estão funcionando! Você receberá lembretes mesmo com o app fechado.',
+        icon: '/pwa-192x192.png',
+        tag: 'levefit-test-' + Date.now(),
+        url: '/dashboard'
       };
     } else if (type === 'capsule') {
       // For capsule reminders - only admins can trigger bulk notifications
@@ -230,7 +252,9 @@ const handler = async (req: Request): Promise<Response> => {
       notificationPayload = {
         title: '💊 Hora da sua cápsula!',
         body: 'Não esqueça de tomar sua cápsula LeveFit hoje.',
-        icon: '/pwa-192x192.png'
+        icon: '/pwa-192x192.png',
+        tag: 'levefit-capsule-' + Date.now(),
+        url: '/calendar'
       };
     } else if (type === 'water') {
       // For water reminders - only admins can trigger bulk notifications
@@ -262,7 +286,9 @@ const handler = async (req: Request): Promise<Response> => {
       notificationPayload = {
         title: '💧 Hora de beber água!',
         body: 'Mantenha-se hidratado para melhores resultados.',
-        icon: '/pwa-192x192.png'
+        icon: '/pwa-192x192.png',
+        tag: 'levefit-water-' + Date.now(),
+        url: '/dashboard'
       };
     } else if (type === 'treatment_end') {
       // For treatment end notifications - only admins can trigger
@@ -310,7 +336,9 @@ const handler = async (req: Request): Promise<Response> => {
       notificationPayload = {
         title: '🎉 Parabéns!',
         body: 'Seu tratamento LeveFit terminou hoje! Veja seus resultados.',
-        icon: '/pwa-192x192.png'
+        icon: '/pwa-192x192.png',
+        tag: 'levefit-treatment-end-' + Date.now(),
+        url: '/progress'
       };
     }
 
