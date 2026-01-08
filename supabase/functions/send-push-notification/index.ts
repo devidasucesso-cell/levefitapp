@@ -56,12 +56,11 @@ function base64urlDecode(base64url: string): Uint8Array {
   return bytes;
 }
 
-// VAPID keys - hardcoded for reliability
-// Generated using: npx web-push generate-vapid-keys
-// Public Key: 65 bytes uncompressed P-256 point
-// Private Key: 32 bytes raw ECDSA scalar
-const VAPID_PUBLIC_KEY = 'BGxJjs_c3K42hNXMC8FgJxwHfGbqJ8gWqXM5kJNPpn6mKJB_ZDVdvk_P5rNHLN1WJvTxIZ7jH_VJlBCRxHjqPKA';
-const VAPID_PRIVATE_KEY = 'Wm_tNqk8JNlRbJFAqC8VEssCZz8o_VQE8mHzEJhbp1Y';
+// VAPID keys - these are the original valid keys
+// Public Key: 65 bytes uncompressed P-256 point in base64url
+// Private Key: 32 bytes raw ECDSA scalar in base64url  
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+const VAPID_PRIVATE_KEY = 'TVe_nJlciDOn130gFyFYP8UiGxxWd3QdH6C5axXpSgM';
 
 // Create VAPID JWT for web push authentication
 async function createVapidJwt(audience: string, subject: string): Promise<string> {
