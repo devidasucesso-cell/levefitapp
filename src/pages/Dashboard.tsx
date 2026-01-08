@@ -141,7 +141,7 @@ const Dashboard = () => {
                 <div>
                   <h3 className="font-semibold text-foreground">Lembrete LeveFit</h3>
                   <p className="text-sm text-muted-foreground">
-                    {capsuleTakenToday ? 'Você já tomou hoje! ✅' : 'Não esqueça de tomar!'}
+                    {capsuleTakenToday ? 'Você já tomou hoje! ✅' : '2 cápsulas/dia, antes das refeições'}
                   </p>
                 </div>
               </div>
