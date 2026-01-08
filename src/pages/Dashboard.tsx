@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Leaf, Pill, Droplets, LogOut, Shield } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import IMCCalculator from '@/components/IMCCalculator';
@@ -11,6 +11,7 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
+import OnboardingTutorial from '@/components/OnboardingTutorial';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
 
@@ -32,7 +33,22 @@ const Dashboard = () => {
   
   const [showTreatmentReminder, setShowTreatmentReminder] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
+  // Check if user should see onboarding (first time after kit selection)
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem(`onboarding_completed_${profile?.user_id}`);
+    if (profile?.kit_type && !hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [profile?.kit_type, profile?.user_id]);
+
+  const handleOnboardingComplete = () => {
+    if (profile?.user_id) {
+      localStorage.setItem(`onboarding_completed_${profile.user_id}`, 'true');
+    }
+    setShowOnboarding(false);
+  };
   useEffect(() => {
     if (profile?.treatment_start_date && profile?.kit_type) {
       const startDate = parseISO(profile.treatment_start_date);
@@ -238,6 +254,13 @@ const Dashboard = () => {
         />
       )}
       <Navigation />
+      
+      {/* Onboarding Tutorial */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingTutorial onComplete={handleOnboardingComplete} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

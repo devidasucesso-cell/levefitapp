@@ -5,16 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+const kits = [
+  { id: '1_pote', label: '1 Pote', description: '30 dias de tratamento' },
+  { id: '3_potes', label: '3 Potes', description: '90 dias de tratamento' },
+  { id: '5_potes', label: '5 Potes', description: '150 dias de tratamento' },
+];
 
 const Settings = () => {
-  const { notificationSettings, updateNotificationSettings } = useAuth();
+  const { notificationSettings, updateNotificationSettings, profile, updateProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { 
@@ -28,11 +36,53 @@ const Settings = () => {
     getPermissionMessage 
   } = usePushNotifications();
   const [testLoading, setTestLoading] = useState(false);
+  const [showKitDialog, setShowKitDialog] = useState(false);
+  const [selectedKit, setSelectedKit] = useState(profile?.kit_type || '');
+  const [kitLoading, setKitLoading] = useState(false);
 
   const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder ?? true);
   const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
   const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder ?? true);
   const [waterInterval, setWaterInterval] = useState(notificationSettings.waterInterval.toString());
+
+  useEffect(() => {
+    if (profile?.kit_type) {
+      setSelectedKit(profile.kit_type);
+    }
+  }, [profile?.kit_type]);
+
+  const handleKitChange = async () => {
+    if (!selectedKit) return;
+    
+    setKitLoading(true);
+    try {
+      await updateProfile({ 
+        kit_type: selectedKit,
+        treatment_start_date: new Date().toISOString().split('T')[0]
+      });
+      
+      toast({
+        title: 'Kit alterado!',
+        description: 'Seu tratamento foi reiniciado com o novo kit.',
+      });
+      
+      setShowKitDialog(false);
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível alterar o kit. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setKitLoading(false);
+    }
+  };
+
+  const getKitLabel = (kitType: string | null) => {
+    const kit = kits.find(k => k.id === kitType);
+    return kit ? kit.label : 'Não selecionado';
+  };
+
 
   const handleSave = async () => {
     await updateNotificationSettings({
@@ -153,6 +203,28 @@ const Settings = () => {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Kit Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card 
+            className="p-4 bg-card cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => setShowKitDialog(true)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+                <Package className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Meu Kit</h3>
+                <p className="text-sm text-muted-foreground">{getKitLabel(profile?.kit_type)}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </motion.div>
+
         {/* Push Notifications Toggle */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -347,6 +419,52 @@ const Settings = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Kit Selection Dialog */}
+      <Dialog open={showKitDialog} onOpenChange={setShowKitDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Alterar Kit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Ao alterar o kit, sua data de início será reiniciada para hoje.
+            </p>
+            <RadioGroup value={selectedKit} onValueChange={setSelectedKit} className="space-y-3">
+              {kits.map((kit) => (
+                <Label
+                  key={kit.id}
+                  htmlFor={`kit-${kit.id}`}
+                  className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all ${
+                    selectedKit === kit.id
+                      ? 'bg-primary/10 border-2 border-primary'
+                      : 'bg-secondary border-2 border-transparent hover:bg-secondary/80'
+                  }`}
+                >
+                  <RadioGroupItem value={kit.id} id={`kit-${kit.id}`} className="sr-only" />
+                  <Package className={`w-6 h-6 ${selectedKit === kit.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div className="flex-1">
+                    <p className={`font-semibold ${selectedKit === kit.id ? 'text-primary' : 'text-foreground'}`}>
+                      {kit.label}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{kit.description}</p>
+                  </div>
+                </Label>
+              ))}
+            </RadioGroup>
+            <Button
+              onClick={handleKitChange}
+              disabled={!selectedKit || kitLoading}
+              className="w-full gradient-primary text-primary-foreground"
+            >
+              {kitLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Confirmar Alteração
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <WaterReminder />
       <Navigation />
