@@ -5,17 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 const Settings = () => {
   const { notificationSettings, updateNotificationSettings } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSupported, isSubscribed, isLoading: pushLoading, subscribeUser, unsubscribeUser } = usePushNotifications();
 
   const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder);
   const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
@@ -30,31 +32,21 @@ const Settings = () => {
       waterInterval: parseInt(waterInterval) || 60,
     });
 
-    // Request notification permission
-    if ((capsuleReminder || waterReminder) && 'Notification' in window) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          toast({
-            title: "Configurações salvas!",
-            description: "Suas notificações foram ativadas com sucesso.",
-          });
-        } else {
-          toast({
-            title: "Configurações salvas!",
-            description: "Ative as notificações no navegador para receber lembretes.",
-            variant: "destructive",
-          });
-        }
-      });
+    toast({
+      title: "Configurações salvas!",
+      description: "Suas preferências foram atualizadas.",
+    });
+  };
+
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribeUser();
     } else {
-      toast({
-        title: "Configurações salvas!",
-        description: "Suas preferências foram atualizadas.",
-      });
+      await subscribeUser();
     }
   };
 
-  // Schedule notifications
+  // Schedule local notifications (fallback when app is open)
   useEffect(() => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
@@ -73,7 +65,7 @@ const Settings = () => {
       const timerId = setTimeout(() => {
         new Notification('💊 Hora do LeveFit!', {
           body: 'Não esqueça de tomar sua cápsula LeveFit hoje!',
-          icon: '/favicon.ico',
+          icon: '/pwa-192x192.png',
         });
       }, timeout);
 
@@ -85,12 +77,12 @@ const Settings = () => {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
     if (waterReminder && waterInterval) {
-      const interval = parseInt(waterInterval) * 60 * 1000; // Convert to ms
+      const interval = parseInt(waterInterval) * 60 * 1000;
       
       const intervalId = setInterval(() => {
         new Notification('💧 Beba Água!', {
           body: 'É hora de se hidratar! Beba um copo de água.',
-          icon: '/favicon.ico',
+          icon: '/pwa-192x192.png',
         });
       }, interval);
 
@@ -119,10 +111,51 @@ const Settings = () => {
       </div>
 
       <div className="p-4 -mt-4 space-y-4">
+        {/* Push Notifications Toggle */}
+        {isSupported && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="p-4 bg-card border-2 border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                  <BellRing className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">Notificações Push</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isSubscribed 
+                      ? 'Receba lembretes mesmo com o app fechado' 
+                      : 'Ative para receber lembretes em segundo plano'
+                    }
+                  </p>
+                </div>
+                <Button
+                  variant={isSubscribed ? "outline" : "default"}
+                  size="sm"
+                  onClick={handlePushToggle}
+                  disabled={pushLoading}
+                  className={isSubscribed ? "" : "bg-gradient-to-r from-orange-500 to-red-500"}
+                >
+                  {pushLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isSubscribed ? (
+                    'Desativar'
+                  ) : (
+                    'Ativar'
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Capsule Reminder */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
         >
           <Card className="p-4 bg-card">
             <div className="flex items-center gap-3 mb-4">
@@ -162,7 +195,7 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
         >
           <Card className="p-4 bg-card">
             <div className="flex items-center gap-3 mb-4">
@@ -206,7 +239,7 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <Button 
             onClick={handleSave}
@@ -221,11 +254,12 @@ const Settings = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
         >
           <Card className="p-4 bg-secondary/50">
             <p className="text-sm text-muted-foreground">
-              <strong>Nota:</strong> Para receber notificações, permita o acesso no seu navegador quando solicitado. As notificações funcionam apenas quando a página está aberta.
+              <strong>💡 Dica:</strong> Ative as notificações push para receber lembretes mesmo quando o app estiver fechado. 
+              Isso funciona como um alarme no seu celular!
             </p>
           </Card>
         </motion.div>
