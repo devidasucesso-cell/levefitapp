@@ -10,7 +10,9 @@ import IMCCalculator from '@/components/IMCCalculator';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
+import DailyDietSuggestion from '@/components/DailyDietSuggestion';
 import { useNavigate } from 'react-router-dom';
+import { IMCCategory } from '@/types';
 
 const getKitDuration = (kitType: string | null): number => {
   switch (kitType) {
@@ -166,12 +168,23 @@ const Dashboard = () => {
           <IMCCalculator />
         </motion.div>
 
+        {/* Daily Diet Suggestion */}
+        {profile?.imc !== undefined && profile.imc > 0 && profile?.imc_category && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <DailyDietSuggestion imcCategory={profile.imc_category as IMCCategory} />
+          </motion.div>
+        )}
+
         {/* Category Info */}
         {profile?.imc !== undefined && profile.imc > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
           >
             <Card className="p-4 shadow-md bg-card">
               <h3 className="font-semibold mb-3 text-foreground">Conteúdo personalizado</h3>
