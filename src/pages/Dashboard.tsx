@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut, Shield } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -207,7 +207,7 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Com base no seu IMC, preparamos receitas e dicas especiais para você!
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button 
                   variant="outline" 
                   className="h-auto py-3 flex flex-col gap-1"
@@ -239,6 +239,22 @@ const Dashboard = () => {
                 >
                   <span className="text-xl">📈</span>
                   <span className="text-xs">Evolução</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-3 flex flex-col gap-1"
+                  onClick={() => navigate('/calendar')}
+                >
+                  <span className="text-xl">📅</span>
+                  <span className="text-xs">Calendário</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-3 flex flex-col gap-1"
+                  onClick={() => navigate('/settings')}
+                >
+                  <span className="text-xl">⚙️</span>
+                  <span className="text-xs">Configurações</span>
                 </Button>
               </div>
             </Card>
