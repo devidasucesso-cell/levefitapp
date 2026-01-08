@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Droplets } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
-const WaterReminder = () => {
+const WaterReminder = forwardRef<HTMLDivElement>((_, ref) => {
   const { profile, addWaterIntake } = useAuth();
   const waterGoal = 2000; // 2L
   const currentIntake = profile?.water_intake || 0;
@@ -40,6 +40,8 @@ const WaterReminder = () => {
       </motion.button>
     </motion.div>
   );
-};
+});
+
+WaterReminder.displayName = 'WaterReminder';
 
 export default WaterReminder;

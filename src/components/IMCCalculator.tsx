@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Scale, Ruler, Calculator } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-const IMCCalculator = () => {
+const IMCCalculator = forwardRef<HTMLDivElement>((_, ref) => {
   const { profile, updateIMC } = useAuth();
   const [weight, setWeight] = useState(profile?.weight?.toString() || '');
   const [height, setHeight] = useState(profile?.height?.toString() || '');
@@ -138,6 +138,8 @@ const IMCCalculator = () => {
       </div>
     </Card>
   );
-};
+});
+
+IMCCalculator.displayName = 'IMCCalculator';
 
 export default IMCCalculator;

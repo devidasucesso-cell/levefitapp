@@ -15,6 +15,9 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/pwa-512x512.png" />
+
     <!-- Open Graph -->
     <meta property="og:title" content="Leve Fit - Saúde e Bem-estar" />
     <meta property="og:description" content="Acompanhe sua saúde, peso, hidratação e tratamento com Leve Fit" />
@@ -24,10 +27,89 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Leve Fit - Saúde e Bem-estar" />
     <meta name="twitter:image" content="/pwa-512x512.png" />
+
+    <style>
+      /* Splash screen styles */
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+      #splash-screen.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash-logo {
+        width: 120px;
+        height: 120px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        animation: pulse 2s infinite;
+      }
+      #splash-logo svg {
+        width: 64px;
+        height: 64px;
+        fill: white;
+      }
+      #splash-title {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        font-family: system-ui, -apple-system, sans-serif;
+        margin-bottom: 8px;
+      }
+      #splash-subtitle {
+        color: rgba(255,255,255,0.8);
+        font-size: 14px;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+    </style>
   </head>
 
   <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+      <div id="splash-logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
+        </svg>
+      </div>
+      <div id="splash-title">Leve Fit</div>
+      <div id="splash-subtitle">Saúde e Bem-estar</div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Hide splash screen when app loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var splash = document.getElementById('splash-screen');
+          if (splash) {
+            splash.classList.add('fade-out');
+            setTimeout(function() {
+              splash.remove();
+            }, 300);
+          }
+        }, 800);
+      });
+    </script>
   </body>
 </html>
