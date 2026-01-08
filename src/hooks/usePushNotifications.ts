@@ -149,16 +149,17 @@ export const usePushNotifications = () => {
       // Register service worker
       const registration = await registerServiceWorker();
 
-      // Check if already subscribed
-      let subscription = await registration.pushManager.getSubscription();
-      
-      // If not subscribed, create new subscription
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        });
+      // Always unsubscribe first to ensure we use the latest VAPID key
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await existingSubscription.unsubscribe();
       }
+      
+      // Create new subscription with current VAPID key
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
 
       // Extract keys from subscription
       const p256dhKey = subscription.getKey('p256dh');
