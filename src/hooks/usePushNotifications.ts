@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // VAPID Public Key - this is safe to expose in client code
 // This key pair was generated using web-push library
-const VAPID_PUBLIC_KEY = 'BLBx-hVivRDh5X-6w8i3oK7vVMxFzPqL3sWLqYr5CKCIY7xb6-F1HnpJVMJ9HQNL1m82K1G6U0Q9C1P8TKj_VXc';
+const VAPID_PUBLIC_KEY = 'BOEQSjdhorIf8M0XFNlwohK3sTzO9iJwvbYU-fuXRF0tvRpPPMGO6d_gJC_pUQwBT7wD8rKutpNTFHOHN3VqJ0A';
 
 type PermissionStatus = 'granted' | 'denied' | 'default' | 'unsupported';
 

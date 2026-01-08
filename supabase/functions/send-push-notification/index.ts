@@ -57,10 +57,8 @@ function base64urlDecode(base64url: string): Uint8Array {
 }
 
 // VAPID public key (65 bytes uncompressed P-256 point in base64url)
-const VAPID_PUBLIC_KEY = 'BLBx-hVivRDh5X-6w8i3oK7vVMxFzPqL3sWLqYr5CKCIY7xb6-F1HnpJVMJ9HQNL1m82K1G6U0Q9C1P8TKj_VXc';
-// Corresponding private key coordinates (will be read from env)
-const VAPID_PUBLIC_X = 'sHH6FWK9EOHlf7rDyLegru9UzEXM-ovexYupivkIoog';
-const VAPID_PUBLIC_Y = 'iGO8W-vhdR56SVTCfR0DS9ZvNitRulNEPQtT_Eyo_1U';
+// Generated using: npx web-push generate-vapid-keys
+const VAPID_PUBLIC_KEY = 'BOEQSjdhorIf8M0XFNlwohK3sTzO9iJwvbYU-fuXRF0tvRpPPMGO6d_gJC_pUQwBT7wD8rKutpNTFHOHN3VqJ0A';
 
 // Create VAPID JWT for web push authentication
 async function createVapidJwt(audience: string, subject: string, privateKeyD: string): Promise<string> {
@@ -76,13 +74,30 @@ async function createVapidJwt(audience: string, subject: string, privateKeyD: st
   const payloadB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
+  // Decode the public key to extract X and Y coordinates
+  const publicKeyBytes = base64urlDecode(VAPID_PUBLIC_KEY);
+  console.log('Public key bytes length:', publicKeyBytes.length);
+  
+  // Public key format: 0x04 + X (32 bytes) + Y (32 bytes)
+  if (publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+    throw new Error('Invalid public key format');
+  }
+  
+  const x = base64urlEncode(publicKeyBytes.slice(1, 33));
+  const y = base64urlEncode(publicKeyBytes.slice(33, 65));
+  
+  // Clean private key
+  const d = privateKeyD.replace(/[\r\n\s]/g, '');
+  
+  console.log('Creating JWK with x length:', x.length, 'y length:', y.length, 'd length:', d.length);
+
   // Create JWK with the private key (d) and corresponding public key (x, y)
   const jwk = {
     kty: 'EC',
     crv: 'P-256',
-    x: VAPID_PUBLIC_X,
-    y: VAPID_PUBLIC_Y,
-    d: privateKeyD.replace(/[\r\n\s]/g, ''),
+    x: x,
+    y: y,
+    d: d,
   };
   
   console.log('Importing VAPID key...');
