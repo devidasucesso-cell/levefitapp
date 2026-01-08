@@ -57,9 +57,11 @@ function base64urlDecode(base64url: string): Uint8Array {
 }
 
 // VAPID keys - hardcoded for reliability
-// These were generated using: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = 'BNlDq4P7bqGhAJOGZ0VxQgFmFvRWSTd_hfXOmQEjGfO-H7tTtf7WrvYS1RkmE5OFqMr3N3j8ZPvJ5T3DZmhgO7c';
-const VAPID_PRIVATE_KEY_INTERNAL = 'dGhpc2lzYXRlc3Rwcml2YXRla2V5MzJieXRlc2xvbmc';
+// Generated using: npx web-push generate-vapid-keys
+// Public Key: 65 bytes uncompressed P-256 point
+// Private Key: 32 bytes raw ECDSA scalar
+const VAPID_PUBLIC_KEY = 'BGxJjs_c3K42hNXMC8FgJxwHfGbqJ8gWqXM5kJNPpn6mKJB_ZDVdvk_P5rNHLN1WJvTxIZ7jH_VJlBCRxHjqPKA';
+const VAPID_PRIVATE_KEY = 'Wm_tNqk8JNlRbJFAqC8VEssCZz8o_VQE8mHzEJhbp1Y';
 
 // Create VAPID JWT for web push authentication
 async function createVapidJwt(audience: string, subject: string): Promise<string> {
@@ -75,9 +77,6 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   const payloadB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Use the env variable if set, otherwise use internal key
-  const privateKeyD = Deno.env.get('VAPID_PRIVATE_KEY') || VAPID_PRIVATE_KEY_INTERNAL;
-  
   // Decode the public key to extract X and Y coordinates
   const publicKeyBytes = base64urlDecode(VAPID_PUBLIC_KEY);
   console.log('Public key bytes length:', publicKeyBytes.length);
@@ -89,18 +88,9 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   
   const x = base64urlEncode(publicKeyBytes.slice(1, 33));
   const y = base64urlEncode(publicKeyBytes.slice(33, 65));
-  
-  // Clean private key - ensure it's proper base64url
-  const d = privateKeyD.replace(/[\r\n\s]/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const d = VAPID_PRIVATE_KEY;
   
   console.log('Creating JWK with x length:', x.length, 'y length:', y.length, 'd length:', d.length);
-  
-  // Check if d is valid length (should be ~43 chars for 32 bytes)
-  if (d.length < 40) {
-    console.error('Private key too short! Expected ~43 chars, got:', d.length);
-    console.log('Env VAPID_PRIVATE_KEY value length:', (Deno.env.get('VAPID_PRIVATE_KEY') || '').length);
-    throw new Error(`Invalid private key length: ${d.length}`);
-  }
 
   // Create JWK with the private key (d) and corresponding public key (x, y)
   const jwk = {
