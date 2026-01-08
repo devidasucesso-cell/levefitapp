@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, Leaf, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Leaf, ArrowLeft, Loader2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+// Password validation schema
+const passwordSchema = z.string()
+  .min(8, 'A senha deve ter pelo menos 8 caracteres')
+  .regex(/[a-zA-Z]/, 'A senha deve conter pelo menos uma letra')
+  .regex(/[0-9]/, 'A senha deve conter pelo menos um número');
+
+// Email validation schema
+const emailSchema = z.string()
+  .trim()
+  .email('Email inválido')
+  .max(255, 'Email muito longo');
+
+// Name validation schema
+const nameSchema = z.string()
+  .trim()
+  .min(2, 'Nome deve ter pelo menos 2 caracteres')
+  .max(100, 'Nome muito longo');
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -27,6 +46,16 @@ const Auth = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+
+  // Password strength indicators
+  const passwordChecks = {
+    minLength: signupPassword.length >= 8,
+    hasLetter: /[a-zA-Z]/.test(signupPassword),
+    hasNumber: /[0-9]/.test(signupPassword),
+    matches: signupPassword === signupConfirmPassword && signupConfirmPassword.length > 0,
+  };
+
+  const isPasswordValid = passwordChecks.minLength && passwordChecks.hasLetter && passwordChecks.hasNumber;
 
   useEffect(() => {
     // Check if user is already logged in
@@ -131,19 +160,43 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (signupPassword !== signupConfirmPassword) {
+    // Validate name
+    const nameResult = nameSchema.safeParse(signupName);
+    if (!nameResult.success) {
       toast({
         title: 'Erro',
-        description: 'As senhas não coincidem.',
+        description: nameResult.error.errors[0].message,
         variant: 'destructive',
       });
       return;
     }
 
-    if (signupPassword.length < 6) {
+    // Validate email
+    const emailResult = emailSchema.safeParse(signupEmail);
+    if (!emailResult.success) {
       toast({
         title: 'Erro',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
+        description: emailResult.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate password strength
+    const passwordResult = passwordSchema.safeParse(signupPassword);
+    if (!passwordResult.success) {
+      toast({
+        title: 'Senha fraca',
+        description: passwordResult.error.errors[0].message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (signupPassword !== signupConfirmPassword) {
+      toast({
+        title: 'Erro',
+        description: 'As senhas não coincidem.',
         variant: 'destructive',
       });
       return;
@@ -433,12 +486,12 @@ const Auth = () => {
                       <Input
                         id="signup-password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 8 caracteres"
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                         className="pl-10 pr-10"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                       <button
                         type="button"
@@ -448,6 +501,42 @@ const Auth = () => {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    
+                    {/* Password strength indicators */}
+                    {signupPassword.length > 0 && (
+                      <div className="space-y-1 pt-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          {passwordChecks.minLength ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className={passwordChecks.minLength ? 'text-green-600' : 'text-muted-foreground'}>
+                            Mínimo 8 caracteres
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {passwordChecks.hasLetter ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className={passwordChecks.hasLetter ? 'text-green-600' : 'text-muted-foreground'}>
+                            Contém letras
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {passwordChecks.hasNumber ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className={passwordChecks.hasNumber ? 'text-green-600' : 'text-muted-foreground'}>
+                            Contém números
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -462,15 +551,27 @@ const Auth = () => {
                         onChange={(e) => setSignupConfirmPassword(e.target.value)}
                         className="pl-10"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                     </div>
+                    {signupConfirmPassword.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs pt-1">
+                        {passwordChecks.matches ? (
+                          <Check className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <X className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className={passwordChecks.matches ? 'text-green-600' : 'text-red-500'}>
+                          {passwordChecks.matches ? 'Senhas coincidem' : 'Senhas não coincidem'}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    disabled={loading}
+                    disabled={loading || !isPasswordValid || !passwordChecks.matches}
                   >
                     {loading ? 'Criando conta...' : 'Criar conta'}
                   </Button>
