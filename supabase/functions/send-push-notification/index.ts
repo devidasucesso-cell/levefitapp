@@ -15,10 +15,21 @@ interface PushNotificationRequest {
 function decodeJwt(token: string): { sub?: string } | null {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (parts.length !== 3) {
+      console.log('JWT does not have 3 parts:', parts.length);
+      return null;
+    }
+    // Convert base64url to base64
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    // Add padding if needed
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const payload = JSON.parse(atob(base64));
+    console.log('JWT payload decoded, sub:', payload.sub);
     return payload;
-  } catch {
+  } catch (e) {
+    console.error('JWT decode error:', e);
     return null;
   }
 }
