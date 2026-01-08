@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 // VAPID Public Key - this is safe to expose in client code
-const VAPID_PUBLIC_KEY = 'BLBz4T_GnpH8xUuw2qQlZGv5yBhH5F1yoKr_t5C5J9rRlJj8u0v8G9H6LpO3RnHK9hT0mN5vF7oJ8lK9zXaYpQM';
+// Generated pair with private key: D_fRETonr-AxP2K7HZbxaHWKyTajPe5-rF7oOpNQjIQ
+const VAPID_PUBLIC_KEY = 'BDMRZv9-Y5P6v0xg0o7q-Gx0_5kX7E4nMwJ9rL2hT8Km3F1pQ6sD8uY5nWbKjR3zHvAxC9fEiO7tGhU2yNa4BsM';
 
 export const usePushNotifications = () => {
   const { user } = useAuth();

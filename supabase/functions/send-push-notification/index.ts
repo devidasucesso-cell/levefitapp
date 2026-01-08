@@ -11,13 +11,15 @@ interface PushNotificationRequest {
   userId?: string;
 }
 
-// Web Push notification sending using fetch
+// VAPID Public Key - must match the one in the frontend
+const VAPID_PUBLIC_KEY = 'BDMRZv9-Y5P6v0xg0o7q-Gx0_5kX7E4nMwJ9rL2hT8Km3F1pQ6sD8uY5nWbKjR3zHvAxC9fEiO7tGhU2yNa4BsM';
+
+// Send Web Push notification - simplified version
 const sendWebPushNotification = async (
   subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; tag: string }
+  payload: { title: string; body: string; tag: string; icon?: string }
 ) => {
   const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
-  const VAPID_PUBLIC_KEY = 'BLBz4T_GnpH8xUuw2qQlZGv5yBhH5F1yoKr_t5C5J9rRlJj8u0v8G9H6LpO3RnHK9hT0mN5vF7oJ8lK9zXaYpQM';
   
   if (!VAPID_PRIVATE_KEY) {
     console.error('VAPID_PRIVATE_KEY not configured');
@@ -25,37 +27,32 @@ const sendWebPushNotification = async (
   }
 
   try {
-    // Create JWT for VAPID authentication
-    const header = { alg: 'ES256', typ: 'JWT' };
-    const now = Math.floor(Date.now() / 1000);
-    const claims = {
-      aud: new URL(subscription.endpoint).origin,
-      exp: now + 12 * 60 * 60, // 12 hours
-      sub: 'mailto:levefit@app.com',
-    };
-
-    // For now, use a simpler approach - send via the push service directly
-    // Note: Full VAPID implementation requires crypto operations
-    console.log('Sending push to:', subscription.endpoint);
+    console.log('Sending push to endpoint:', subscription.endpoint);
     console.log('Payload:', JSON.stringify(payload));
 
-    // Try to send using basic push
+    // For Web Push, we need to send an empty POST to trigger the push
+    // The actual notification content is handled by the service worker
+    // which will show a default notification when it receives a push event
+    
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'TTL': '86400',
+        'Content-Length': '0',
       },
-      body: JSON.stringify(payload),
     });
 
+    console.log('Push response status:', response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Push error:', response.status, errorText);
       
-      // If push fails, it might be due to expired subscription
       if (response.status === 410 || response.status === 404) {
-        console.log('Subscription expired or invalid');
+        console.log('Subscription expired or invalid - should be removed');
+      }
+      if (response.status === 401 || response.status === 403) {
+        console.log('Authorization error - VAPID keys may be incorrect');
       }
       return false;
     }
@@ -81,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { type, userId }: PushNotificationRequest = await req.json();
     console.log('Processing notification type:', type, 'for user:', userId || 'all');
 
-    let notifications: { title: string; body: string; tag: string }[] = [];
+    let notifications: { title: string; body: string; tag: string; icon?: string }[] = [];
     let targetUsers: string[] = [];
 
     const now = new Date();
@@ -90,11 +87,10 @@ const handler = async (req: Request): Promise<Response> => {
     const currentMinute = now.getUTCMinutes();
 
     if (type === 'test') {
-      // Test notification for specific user
       if (userId) {
         targetUsers = [userId];
+        console.log('Test notification for specific user:', userId);
       } else {
-        // Get all users with push subscriptions for test
         const { data: subs } = await supabase
           .from('push_subscriptions')
           .select('user_id')
@@ -108,6 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: '🔔 Teste de Notificação',
         body: 'As notificações push estão funcionando! 🎉',
         tag: 'test-notification',
+        icon: '/pwa-192x192.png',
       }];
 
     } else if (type === 'capsule') {
@@ -140,6 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: '💊 Hora do LeveFit!',
         body: 'Não esqueça de tomar sua cápsula LeveFit hoje!',
         tag: 'capsule-reminder',
+        icon: '/pwa-192x192.png',
       }];
 
     } else if (type === 'water') {
@@ -155,6 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: '💧 Beba Água!',
         body: 'É hora de se hidratar! Beba um copo de água.',
         tag: 'water-reminder',
+        icon: '/pwa-192x192.png',
       }];
 
     } else if (type === 'treatment_end') {
@@ -190,6 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: '🎯 Reta final do tratamento!',
         body: 'Você está nos últimos dias! Continue firme no seu objetivo!',
         tag: 'treatment-end-reminder',
+        icon: '/pwa-192x192.png',
       }];
     }
 
@@ -209,7 +209,7 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      console.log('Found subscriptions for user:', subscriptions?.length || 0);
+      console.log('Found subscriptions for user', targetUserId, ':', subscriptions?.length || 0);
 
       for (const sub of subscriptions || []) {
         for (const notification of notifications) {
