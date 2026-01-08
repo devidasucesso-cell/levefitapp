@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { KeyRound, Loader2, LogOut, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 const CodeVerification = () => {
   const { logout, profile, user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -84,8 +86,9 @@ const CodeVerification = () => {
         description: "Seu acesso foi liberado com sucesso.",
       });
 
-      // Refresh profile to update the state
+      // Refresh profile then navigate to kit selection
       await refreshProfile();
+      navigate('/kit-selection', { state: { fromCodeVerification: true }, replace: true });
 
     } catch (error: unknown) {
       console.error('Error verifying code:', error);
