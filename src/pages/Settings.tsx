@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -17,7 +17,16 @@ const Settings = () => {
   const { notificationSettings, updateNotificationSettings } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSupported, isSubscribed, isLoading: pushLoading, subscribeUser, unsubscribeUser, sendTestNotification } = usePushNotifications();
+  const { 
+    isSupported, 
+    isSubscribed, 
+    isLoading: pushLoading, 
+    permissionStatus,
+    subscribeUser, 
+    unsubscribeUser, 
+    sendTestNotification,
+    getPermissionMessage 
+  } = usePushNotifications();
   const [testLoading, setTestLoading] = useState(false);
 
   const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder);
@@ -52,6 +61,32 @@ const Settings = () => {
     await sendTestNotification();
     setTestLoading(false);
   };
+
+  // Get permission status icon and color
+  const getPermissionStatusUI = () => {
+    switch (permissionStatus) {
+      case 'granted':
+        return {
+          icon: <CheckCircle2 className="w-4 h-4" />,
+          color: 'text-green-500',
+          bgColor: 'bg-green-500/10'
+        };
+      case 'denied':
+        return {
+          icon: <XCircle className="w-4 h-4" />,
+          color: 'text-red-500',
+          bgColor: 'bg-red-500/10'
+        };
+      default:
+        return {
+          icon: <AlertCircle className="w-4 h-4" />,
+          color: 'text-yellow-500',
+          bgColor: 'bg-yellow-500/10'
+        };
+    }
+  };
+
+  const permissionUI = getPermissionStatusUI();
 
   // Schedule local notifications (fallback when app is open)
   useEffect(() => {
@@ -119,30 +154,30 @@ const Settings = () => {
 
       <div className="p-4 -mt-4 space-y-4">
         {/* Push Notifications Toggle */}
-        {isSupported && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card className="p-4 bg-card border-2 border-primary/20">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                  <BellRing className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">Notificações Push</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isSubscribed 
-                      ? 'Receba lembretes mesmo com o app fechado' 
-                      : 'Ative para receber lembretes em segundo plano'
-                    }
-                  </p>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="p-4 bg-card border-2 border-primary/20">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                <BellRing className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Notificações Push</h3>
+                <p className="text-sm text-muted-foreground">
+                  {isSubscribed 
+                    ? 'Receba lembretes mesmo com o app fechado' 
+                    : 'Ative para receber lembretes em segundo plano'
+                  }
+                </p>
+              </div>
+              {isSupported ? (
                 <Button
                   variant={isSubscribed ? "outline" : "default"}
                   size="sm"
                   onClick={handlePushToggle}
-                  disabled={pushLoading}
+                  disabled={pushLoading || permissionStatus === 'denied'}
                   className={isSubscribed ? "" : "bg-gradient-to-r from-orange-500 to-red-500"}
                 >
                   {pushLoading ? (
@@ -153,29 +188,51 @@ const Settings = () => {
                     'Ativar'
                   )}
                 </Button>
-              </div>
-              
-              {isSubscribed && (
-                <div className="pt-3 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleTestNotification}
-                    disabled={testLoading}
-                    className="w-full"
-                  >
-                    {testLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <Send className="w-4 h-4 mr-2" />
-                    )}
-                    Enviar Notificação de Teste
-                  </Button>
-                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">Não suportado</span>
               )}
-            </Card>
-          </motion.div>
-        )}
+            </div>
+
+            {/* Permission Status Indicator */}
+            {isSupported && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${permissionUI.bgColor}`}>
+                <span className={permissionUI.color}>{permissionUI.icon}</span>
+                <span className={`text-xs ${permissionUI.color}`}>
+                  {getPermissionMessage()}
+                </span>
+              </div>
+            )}
+
+            {/* Blocked Permission Help */}
+            {permissionStatus === 'denied' && (
+              <div className="mt-3 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  <strong>Como desbloquear:</strong> Clique no ícone de cadeado na barra de endereço do navegador, 
+                  encontre "Notificações" e altere para "Permitir". Depois, recarregue a página.
+                </p>
+              </div>
+            )}
+            
+            {isSubscribed && (
+              <div className="pt-3 mt-3 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestNotification}
+                  disabled={testLoading}
+                  className="w-full"
+                >
+                  {testLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Enviar Notificação de Teste
+                </Button>
+              </div>
+            )}
+          </Card>
+        </motion.div>
 
         {/* Capsule Reminder */}
         <motion.div

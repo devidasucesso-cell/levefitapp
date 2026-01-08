@@ -7,30 +7,59 @@ import { useToast } from '@/hooks/use-toast';
 // This key pair was generated using web-push library
 const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 
+type PermissionStatus = 'granted' | 'denied' | 'default' | 'unsupported';
+
 export const usePushNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('default');
 
+  // Check browser support and current permission status
   useEffect(() => {
-    // Check if push notifications are supported
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    setIsSupported(supported);
+    const checkSupport = () => {
+      const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+      setIsSupported(supported);
+      
+      if (supported) {
+        setPermissionStatus(Notification.permission as PermissionStatus);
+      } else {
+        setPermissionStatus('unsupported');
+      }
+    };
 
-    if (supported && user) {
+    checkSupport();
+
+    if (isSupported && user) {
       checkSubscription();
     }
-  }, [user]);
+  }, [user, isSupported]);
 
   const checkSubscription = async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
+      
+      // Also verify subscription exists in database
+      if (subscription && user) {
+        const { data } = await supabase
+          .from('push_subscriptions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('endpoint', subscription.endpoint)
+          .maybeSingle();
+        
+        // If subscription exists locally but not in DB, update state
+        if (!data) {
+          setIsSubscribed(false);
+        }
+      }
     } catch (error) {
       console.error('Error checking subscription:', error);
+      setIsSubscribed(false);
     }
   };
 
@@ -39,10 +68,63 @@ export const usePushNotifications = () => {
       throw new Error('Service workers not supported');
     }
 
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    try {
+      // Unregister old service workers first
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        if (registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
+          await registration.unregister();
+        }
+      }
+    } catch (e) {
+      console.warn('Error unregistering old service workers:', e);
+    }
+
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+      scope: '/'
+    });
     await navigator.serviceWorker.ready;
     return registration;
   };
+
+  const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
+    if (!isSupported) {
+      toast({
+        title: 'Não suportado',
+        description: 'Seu navegador não suporta notificações push.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setPermissionStatus(permission as PermissionStatus);
+      
+      if (permission === 'denied') {
+        toast({
+          title: 'Permissão bloqueada',
+          description: 'As notificações foram bloqueadas. Você pode habilitá-las nas configurações do navegador.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      if (permission === 'default') {
+        toast({
+          title: 'Permissão não concedida',
+          description: 'Você precisa permitir as notificações quando solicitado.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      return false;
+    }
+  }, [isSupported, toast]);
 
   const subscribeUser = useCallback(async () => {
     if (!user) {
@@ -58,31 +140,38 @@ export const usePushNotifications = () => {
 
     try {
       // Request notification permission
-      const permission = await Notification.requestPermission();
-      
-      if (permission !== 'granted') {
-        toast({
-          title: 'Permissão negada',
-          description: 'Você precisa permitir notificações para receber lembretes.',
-          variant: 'destructive',
-        });
+      const hasPermission = await requestNotificationPermission();
+      if (!hasPermission) {
+        setIsLoading(false);
         return false;
       }
 
       // Register service worker
       const registration = await registerServiceWorker();
 
-      // Subscribe to push notifications
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription();
+      
+      // If not subscribed, create new subscription
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
 
       // Extract keys from subscription
-      const p256dh = btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')!)));
-      const auth = btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!)));
+      const p256dhKey = subscription.getKey('p256dh');
+      const authKey = subscription.getKey('auth');
+      
+      if (!p256dhKey || !authKey) {
+        throw new Error('Failed to get subscription keys');
+      }
 
-      // Save subscription to database
+      const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhKey)));
+      const auth = btoa(String.fromCharCode(...new Uint8Array(authKey)));
+
+      // Save subscription to database (upsert to handle existing subscriptions)
       const { error } = await supabase
         .from('push_subscriptions')
         .upsert({
@@ -90,15 +179,16 @@ export const usePushNotifications = () => {
           endpoint: subscription.endpoint,
           p256dh,
           auth,
+          updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'user_id,endpoint',
+          onConflict: 'user_id',
         });
 
       if (error) throw error;
 
       setIsSubscribed(true);
       toast({
-        title: 'Notificações ativadas!',
+        title: 'Notificações ativadas! 🔔',
         description: 'Você receberá lembretes mesmo com o app fechado.',
       });
 
@@ -114,7 +204,7 @@ export const usePushNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, requestNotificationPermission]);
 
   const unsubscribeUser = useCallback(async () => {
     if (!user) return false;
@@ -127,14 +217,13 @@ export const usePushNotifications = () => {
 
       if (subscription) {
         await subscription.unsubscribe();
-
-        // Remove from database
-        await supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('endpoint', subscription.endpoint);
       }
+
+      // Remove from database
+      await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id);
 
       setIsSubscribed(false);
       toast({
@@ -173,8 +262,17 @@ export const usePushNotifications = () => {
 
       if (error) throw error;
 
+      if (data?.sent === 0) {
+        toast({
+          title: 'Atenção',
+          description: 'Nenhuma assinatura encontrada. Tente desativar e ativar novamente.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+
       toast({
-        title: 'Teste enviado!',
+        title: 'Teste enviado! 📬',
         description: 'Você deve receber uma notificação em instantes.',
       });
 
@@ -190,13 +288,34 @@ export const usePushNotifications = () => {
     }
   }, [user, isSubscribed, toast]);
 
+  // Get a user-friendly permission status message
+  const getPermissionMessage = useCallback(() => {
+    switch (permissionStatus) {
+      case 'granted':
+        return isSubscribed 
+          ? 'Notificações ativas' 
+          : 'Permissão concedida, clique para ativar';
+      case 'denied':
+        return 'Notificações bloqueadas nas configurações do navegador';
+      case 'default':
+        return 'Clique para ativar notificações';
+      case 'unsupported':
+        return 'Seu navegador não suporta notificações';
+      default:
+        return '';
+    }
+  }, [permissionStatus, isSubscribed]);
+
   return {
     isSupported,
     isSubscribed,
     isLoading,
+    permissionStatus,
     subscribeUser,
     unsubscribeUser,
     sendTestNotification,
+    requestNotificationPermission,
+    getPermissionMessage,
   };
 };
 
