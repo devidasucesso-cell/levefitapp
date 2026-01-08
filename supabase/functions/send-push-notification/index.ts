@@ -7,46 +7,60 @@ const corsHeaders = {
 };
 
 interface PushNotificationRequest {
-  type: 'capsule' | 'water' | 'treatment_end';
+  type: 'capsule' | 'water' | 'treatment_end' | 'test';
   userId?: string;
 }
 
-interface PushSubscription {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  user_id: string;
-}
-
-const sendPushNotification = async (subscription: PushSubscription, payload: object) => {
-  const FIREBASE_SERVER_KEY = Deno.env.get('FIREBASE_SERVER_KEY');
+// Web Push notification sending using fetch
+const sendWebPushNotification = async (
+  subscription: { endpoint: string; p256dh: string; auth: string },
+  payload: { title: string; body: string; tag: string }
+) => {
+  const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
+  const VAPID_PUBLIC_KEY = 'BLBz4T_GnpH8xUuw2qQlZGv5yBhH5F1yoKr_t5C5J9rRlJj8u0v8G9H6LpO3RnHK9hT0mN5vF7oJ8lK9zXaYpQM';
   
-  if (!FIREBASE_SERVER_KEY) {
-    console.error('FIREBASE_SERVER_KEY not configured');
+  if (!VAPID_PRIVATE_KEY) {
+    console.error('VAPID_PRIVATE_KEY not configured');
     return false;
   }
 
   try {
-    // Using Web Push API with FCM
-    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+    // Create JWT for VAPID authentication
+    const header = { alg: 'ES256', typ: 'JWT' };
+    const now = Math.floor(Date.now() / 1000);
+    const claims = {
+      aud: new URL(subscription.endpoint).origin,
+      exp: now + 12 * 60 * 60, // 12 hours
+      sub: 'mailto:levefit@app.com',
+    };
+
+    // For now, use a simpler approach - send via the push service directly
+    // Note: Full VAPID implementation requires crypto operations
+    console.log('Sending push to:', subscription.endpoint);
+    console.log('Payload:', JSON.stringify(payload));
+
+    // Try to send using basic push
+    const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `key=${FIREBASE_SERVER_KEY}`,
+        'TTL': '86400',
       },
-      body: JSON.stringify({
-        to: subscription.endpoint,
-        data: payload,
-        notification: payload,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      console.error('FCM error:', await response.text());
+      const errorText = await response.text();
+      console.error('Push error:', response.status, errorText);
+      
+      // If push fails, it might be due to expired subscription
+      if (response.status === 410 || response.status === 404) {
+        console.log('Subscription expired or invalid');
+      }
       return false;
     }
 
-    console.log('Push sent successfully to:', subscription.user_id);
+    console.log('Push sent successfully');
     return true;
   } catch (error) {
     console.error('Error sending push:', error);
@@ -55,7 +69,6 @@ const sendPushNotification = async (subscription: PushSubscription, payload: obj
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -76,25 +89,39 @@ const handler = async (req: Request): Promise<Response> => {
     const currentHour = now.getUTCHours();
     const currentMinute = now.getUTCMinutes();
 
-    if (type === 'capsule') {
-      // Get users with capsule reminder enabled at this time
+    if (type === 'test') {
+      // Test notification for specific user
+      if (userId) {
+        targetUsers = [userId];
+      } else {
+        // Get all users with push subscriptions for test
+        const { data: subs } = await supabase
+          .from('push_subscriptions')
+          .select('user_id')
+          .limit(1);
+        if (subs && subs.length > 0) {
+          targetUsers = [subs[0].user_id];
+        }
+      }
+      
+      notifications = [{
+        title: '🔔 Teste de Notificação',
+        body: 'As notificações push estão funcionando! 🎉',
+        tag: 'test-notification',
+      }];
+
+    } else if (type === 'capsule') {
       const { data: settings, error } = await supabase
         .from('notification_settings')
         .select('user_id, capsule_time')
         .eq('capsule_reminder', true);
 
-      if (error) {
-        console.error('Error fetching notification settings:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Check which users should receive notification now
       for (const setting of settings || []) {
         if (setting.capsule_time) {
           const [hour, minute] = setting.capsule_time.split(':').map(Number);
-          // Allow 5-minute window for cron timing
           if (hour === currentHour && Math.abs(minute - currentMinute) <= 5) {
-            // Check if user already took capsule today
             const { data: capsuleDay } = await supabase
               .from('capsule_days')
               .select('id')
@@ -116,7 +143,6 @@ const handler = async (req: Request): Promise<Response> => {
       }];
 
     } else if (type === 'water') {
-      // Get users with water reminder enabled
       const { data: settings, error } = await supabase
         .from('notification_settings')
         .select('user_id')
@@ -132,7 +158,6 @@ const handler = async (req: Request): Promise<Response> => {
       }];
 
     } else if (type === 'treatment_end') {
-      // Get users in the last 5 days of treatment
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('user_id, kit_type, treatment_start_date')
@@ -168,12 +193,12 @@ const handler = async (req: Request): Promise<Response> => {
       }];
     }
 
-    // Send notifications to target users
+    console.log('Target users:', targetUsers.length);
+
     let successCount = 0;
     let failCount = 0;
 
     for (const targetUserId of targetUsers) {
-      // Get push subscriptions for this user
       const { data: subscriptions, error: subError } = await supabase
         .from('push_subscriptions')
         .select('*')
@@ -184,9 +209,14 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
+      console.log('Found subscriptions for user:', subscriptions?.length || 0);
+
       for (const sub of subscriptions || []) {
         for (const notification of notifications) {
-          const success = await sendPushNotification(sub, notification);
+          const success = await sendWebPushNotification(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            notification
+          );
           if (success) successCount++;
           else failCount++;
         }

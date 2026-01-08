@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -17,7 +17,8 @@ const Settings = () => {
   const { notificationSettings, updateNotificationSettings } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSupported, isSubscribed, isLoading: pushLoading, subscribeUser, unsubscribeUser } = usePushNotifications();
+  const { isSupported, isSubscribed, isLoading: pushLoading, subscribeUser, unsubscribeUser, sendTestNotification } = usePushNotifications();
+  const [testLoading, setTestLoading] = useState(false);
 
   const [capsuleReminder, setCapsuleReminder] = useState(notificationSettings.capsuleReminder);
   const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
@@ -44,6 +45,12 @@ const Settings = () => {
     } else {
       await subscribeUser();
     }
+  };
+
+  const handleTestNotification = async () => {
+    setTestLoading(true);
+    await sendTestNotification();
+    setTestLoading(false);
   };
 
   // Schedule local notifications (fallback when app is open)
@@ -118,7 +125,7 @@ const Settings = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             <Card className="p-4 bg-card border-2 border-primary/20">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
                   <BellRing className="w-5 h-5 text-white" />
                 </div>
@@ -147,6 +154,25 @@ const Settings = () => {
                   )}
                 </Button>
               </div>
+              
+              {isSubscribed && (
+                <div className="pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestNotification}
+                    disabled={testLoading}
+                    className="w-full"
+                  >
+                    {testLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    Enviar Notificação de Teste
+                  </Button>
+                </div>
+              )}
             </Card>
           </motion.div>
         )}

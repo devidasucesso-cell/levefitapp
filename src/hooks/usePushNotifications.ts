@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+// VAPID Public Key - this is safe to expose in client code
+const VAPID_PUBLIC_KEY = 'BLBz4T_GnpH8xUuw2qQlZGv5yBhH5F1yoKr_t5C5J9rRlJj8u0v8G9H6LpO3RnHK9hT0mN5vF7oJ8lK9zXaYpQM';
+
 export const usePushNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,10 +74,7 @@ export const usePushNotifications = () => {
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          // This is a placeholder - you'll need to generate VAPID keys
-          'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
-        ),
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
       // Extract keys from subscription
@@ -155,12 +155,47 @@ export const usePushNotifications = () => {
     }
   }, [user, toast]);
 
+  const sendTestNotification = useCallback(async () => {
+    if (!user || !isSubscribed) {
+      toast({
+        title: 'Erro',
+        description: 'Você precisa ativar as notificações primeiro.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: { type: 'test', userId: user.id },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Teste enviado!',
+        description: 'Você deve receber uma notificação em instantes.',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível enviar a notificação de teste.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [user, isSubscribed, toast]);
+
   return {
     isSupported,
     isSubscribed,
     isLoading,
     subscribeUser,
     unsubscribeUser,
+    sendTestNotification,
   };
 };
 
