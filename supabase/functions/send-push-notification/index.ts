@@ -56,11 +56,11 @@ function base64urlDecode(base64url: string): Uint8Array {
   return bytes;
 }
 
-// VAPID keys - these are the original valid keys
+// VAPID keys - loaded from environment secrets
 // Public Key: 65 bytes uncompressed P-256 point in base64url
-// Private Key: 32 bytes raw ECDSA scalar in base64url  
+// Private Key: 32 bytes raw ECDSA scalar in base64url (stored in secrets)
 const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE_KEY = 'TVe_nJlciDOn130gFyFYP8UiGxxWd3QdH6C5axXpSgM';
+const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Create VAPID JWT for web push authentication
 async function createVapidJwt(audience: string, subject: string): Promise<string> {
