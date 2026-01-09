@@ -1,7 +1,12 @@
 import { Recipe, IMCCategory } from '@/types';
+import { 
+  underweightRecipesExpanded, 
+  normalRecipesExpanded, 
+  overweightRecipesExpanded, 
+  obeseRecipesExpanded 
+} from './recipesExpanded';
 
 // ============= RECEITAS PARA ABAIXO DO PESO (Ganho de massa) =============
-const underweightRecipes: Recipe[] = [
   // MANHÃ - Receitas calóricas e nutritivas para ganho de peso (22 receitas)
   { id: 'uw-1', name: 'Vitamina Hipercalórica de Banana', category: 'underweight', mealTime: 'morning', ingredients: ['2 bananas maduras', '300ml de leite integral', '3 colheres de aveia', '2 colheres de pasta de amendoim', '1 colher de mel', 'Whey protein (opcional)'], instructions: ['Bata todos os ingredientes no liquidificador', 'Adicione gelo se preferir gelado', 'Sirva imediatamente'], calories: 650, prepTime: '5 min' },
   { id: 'uw-2', name: 'Panqueca Proteica com Manteiga', category: 'underweight', mealTime: 'morning', ingredients: ['2 ovos inteiros', '1 banana', '4 colheres de aveia', '2 colheres de whey', '1 colher de manteiga', 'Mel para cobrir'], instructions: ['Bata tudo no liquidificador', 'Frite em manteiga até dourar', 'Cubra com mel e frutas'], calories: 580, prepTime: '12 min' },
@@ -300,12 +305,16 @@ const obeseRecipes: Recipe[] = [
   { id: 'ob-66', name: 'Chá de Alecrim', category: 'obese', mealTime: 'night', ingredients: ['Alecrim', 'Água quente', 'Mel (gotas)'], instructions: ['Ferva água', 'Adicione alecrim', 'Deixe em infusão'], calories: 5, prepTime: '10 min' },
 ];
 
-// Exportação unificada
+// Exportação unificada com receitas expandidas
 export const recipes: Recipe[] = [
   ...underweightRecipes,
+  ...underweightRecipesExpanded,
   ...normalRecipes,
+  ...normalRecipesExpanded,
   ...overweightRecipes,
-  ...obeseRecipes
+  ...overweightRecipesExpanded,
+  ...obeseRecipes,
+  ...obeseRecipesExpanded
 ];
 
 // Função para filtrar receitas por categoria

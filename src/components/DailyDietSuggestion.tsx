@@ -30,10 +30,15 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       default: return '';
     }
   };
-  // Get a random recipe/drink for each time of day based on today's date (so it changes daily)
+  // Get a random recipe/drink for each time of day based on today's date and IMC category
+  // This changes daily AND when the IMC category changes
   const dailySelection = useMemo(() => {
     const today = new Date();
-    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    // Include imcCategory in the seed so it changes when IMC updates
+    const categoryOffset = imcCategory === 'underweight' ? 0 : 
+                           imcCategory === 'normal' ? 100 : 
+                           imcCategory === 'overweight' ? 200 : 300;
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate() + categoryOffset;
     
     const getRandomItem = <T,>(items: T[], offset: number): T | null => {
       if (items.length === 0) return null;

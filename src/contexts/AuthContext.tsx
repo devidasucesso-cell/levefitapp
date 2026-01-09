@@ -23,6 +23,7 @@ interface Profile {
   kit_type: string | null;
   treatment_start_date: string | null;
   code_validated: boolean;
+  onboarding_completed: boolean;
 }
 
 interface AuthContextType {
@@ -47,6 +48,7 @@ interface AuthContextType {
   progressHistory: SimpleProgressEntry[];
   addProgressEntry: (entry: SimpleProgressEntry) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  markOnboardingComplete: () => Promise<void>;
 }
 
 const defaultNotificationSettings: NotificationSettings = {
@@ -107,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         kit_type: data.kit_type ?? null,
         treatment_start_date: data.treatment_start_date ?? null,
         code_validated: data.code_validated ?? false,
+        onboarding_completed: data.onboarding_completed ?? false,
       });
     }
   };
@@ -377,6 +380,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const markOnboardingComplete = async () => {
+    if (!user || !profile) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('user_id', user.id);
+
+    if (!error) {
+      setProfile({ ...profile, onboarding_completed: true });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -401,6 +417,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         progressHistory,
         addProgressEntry,
         refreshProfile,
+        markOnboardingComplete,
       }}
     >
       {children}

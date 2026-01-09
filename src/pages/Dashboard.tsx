@@ -25,7 +25,7 @@ const getKitDuration = (kitType: string | null): number => {
 };
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete } = useAuth();
   const navigate = useNavigate();
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
@@ -35,18 +35,15 @@ const Dashboard = () => {
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Check if user should see onboarding (first time after kit selection)
+  // Check if user should see onboarding (first time login - never completed onboarding)
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem(`onboarding_completed_${profile?.user_id}`);
-    if (profile?.kit_type && !hasSeenOnboarding) {
+    if (profile?.kit_type && profile?.onboarding_completed === false) {
       setShowOnboarding(true);
     }
-  }, [profile?.kit_type, profile?.user_id]);
+  }, [profile?.kit_type, profile?.onboarding_completed]);
 
-  const handleOnboardingComplete = () => {
-    if (profile?.user_id) {
-      localStorage.setItem(`onboarding_completed_${profile.user_id}`, 'true');
-    }
+  const handleOnboardingComplete = async () => {
+    await markOnboardingComplete();
     setShowOnboarding(false);
   };
   useEffect(() => {

@@ -106,6 +106,7 @@ export type Database = {
           is_approved: boolean | null
           kit_type: string | null
           name: string
+          onboarding_completed: boolean | null
           treatment_start_date: string | null
           updated_at: string
           user_id: string
@@ -122,6 +123,7 @@ export type Database = {
           is_approved?: boolean | null
           kit_type?: string | null
           name: string
+          onboarding_completed?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
           user_id: string
@@ -138,6 +140,7 @@ export type Database = {
           is_approved?: boolean | null
           kit_type?: string | null
           name?: string
+          onboarding_completed?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
           user_id?: string
