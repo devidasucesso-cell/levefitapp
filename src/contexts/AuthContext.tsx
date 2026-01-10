@@ -317,13 +317,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const addWaterIntake = async () => {
     if (!user || !profile) return;
 
+    const today = new Date().toISOString().split('T')[0];
     const newIntake = profile.water_intake + 250;
+    
+    // Update profile water intake
     await updateProfile({ water_intake: newIntake });
+    
+    // Save to water history
+    const { error } = await supabase
+      .from('water_intake_history')
+      .upsert({ 
+        user_id: user.id, 
+        date: today, 
+        total_intake: newIntake 
+      }, { 
+        onConflict: 'user_id,date' 
+      });
   };
 
   const resetWaterIntake = async () => {
     if (!user) return;
     await updateProfile({ water_intake: 0 });
+  };
+
+  // Check and reset water intake at start of new day
+  const checkDailyWaterReset = async () => {
+    if (!user || !profile) return;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const lastUpdate = profile.created_at?.split('T')[0];
+    
+    // Get last water history entry
+    const { data } = await supabase
+      .from('water_intake_history')
+      .select('date, total_intake')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    // If last entry is not today and profile has water, save yesterday's and reset
+    if (data && data.date !== today && profile.water_intake > 0) {
+      await updateProfile({ water_intake: 0 });
+    } else if (!data && profile.water_intake > 0) {
+      // First time - just reset for new day tracking
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      await supabase.from('water_intake_history').insert({
+        user_id: user.id,
+        date: yesterday.toISOString().split('T')[0],
+        total_intake: profile.water_intake
+      });
+      await updateProfile({ water_intake: 0 });
+    }
   };
 
   const markCapsuleTaken = async (date: string) => {
