@@ -59,3 +59,9 @@ export interface NotificationSettings {
   waterReminder: boolean;
   waterInterval: number;
 }
+
+export interface WaterGoalSettings {
+  useCustomGoal: boolean;
+  customGoal: number;
+  calculatedGoal: number;
+}

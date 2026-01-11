@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -44,12 +44,27 @@ const Settings = () => {
   const [capsuleTime, setCapsuleTime] = useState(notificationSettings.capsuleTime);
   const [waterReminder, setWaterReminder] = useState(notificationSettings.waterReminder ?? true);
   const [waterInterval, setWaterInterval] = useState(notificationSettings.waterInterval.toString());
+  
+  // Water goal settings
+  const [useCustomWaterGoal, setUseCustomWaterGoal] = useState(false);
+  const [customWaterGoal, setCustomWaterGoal] = useState((profile?.water_goal || 2000).toString());
+  
+  // Calculate recommended water goal based on weight (30-35ml per kg)
+  const calculatedWaterGoal = useMemo(() => {
+    const weight = profile?.weight || 70;
+    return Math.round((weight * 35) / 100) * 100; // Round to nearest 100ml
+  }, [profile?.weight]);
 
   useEffect(() => {
     if (profile?.kit_type) {
       setSelectedKit(profile.kit_type);
     }
-  }, [profile?.kit_type]);
+    // Check if user has a custom water goal different from calculated
+    if (profile?.water_goal && profile.water_goal !== calculatedWaterGoal && profile.water_goal !== 2000) {
+      setUseCustomWaterGoal(true);
+      setCustomWaterGoal(profile.water_goal.toString());
+    }
+  }, [profile?.kit_type, profile?.water_goal, calculatedWaterGoal]);
 
   const handleKitChange = async () => {
     if (!selectedKit) return;
@@ -85,12 +100,21 @@ const Settings = () => {
 
 
   const handleSave = async () => {
+    // Determine the water goal to save
+    const waterGoalToSave = useCustomWaterGoal 
+      ? parseInt(customWaterGoal) || 2000 
+      : calculatedWaterGoal;
+    
+    // Update notification settings
     await updateNotificationSettings({
       capsuleReminder,
       capsuleTime,
       waterReminder,
       waterInterval: parseInt(waterInterval) || 60,
     });
+    
+    // Update water goal in profile
+    await updateProfile({ water_goal: waterGoalToSave });
 
     toast({
       title: "Configurações salvas!",
@@ -387,6 +411,89 @@ const Settings = () => {
                 </div>
               </div>
             )}
+          </Card>
+        </motion.div>
+
+        {/* Water Goal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="p-4 bg-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Target className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Meta Diária de Água</h3>
+                <p className="text-sm text-muted-foreground">Personalize sua meta de hidratação</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-3 border-t border-border">
+              {/* Calculated Goal Info */}
+              <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <Calculator className="w-5 h-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    Meta recomendada: <span className="text-primary">{calculatedWaterGoal}ml</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Baseado no seu peso ({profile?.weight || 70}kg × 35ml)
+                  </p>
+                </div>
+              </div>
+
+              {/* Custom Goal Toggle */}
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-foreground">
+                  Usar meta personalizada
+                </Label>
+                <Switch
+                  checked={useCustomWaterGoal}
+                  onCheckedChange={(checked) => {
+                    setUseCustomWaterGoal(checked);
+                    if (!checked) {
+                      setCustomWaterGoal(calculatedWaterGoal.toString());
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Custom Goal Input */}
+              {useCustomWaterGoal && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-foreground">
+                    <Droplets className="w-4 h-4 text-info" />
+                    Meta personalizada (ml)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={customWaterGoal}
+                    onChange={(e) => setCustomWaterGoal(e.target.value)}
+                    placeholder="2000"
+                    min="1000"
+                    max="5000"
+                    step="100"
+                    className="bg-secondary border-0"
+                  />
+                  <p className="text-xs text-muted-foreground">Mínimo: 1000ml | Máximo: 5000ml</p>
+                </div>
+              )}
+
+              {/* Current Goal Display */}
+              <div className="flex items-center justify-center p-4 bg-primary/10 rounded-xl">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-primary">
+                    {useCustomWaterGoal ? customWaterGoal : calculatedWaterGoal}ml
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {useCustomWaterGoal ? 'Meta personalizada' : 'Meta calculada'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </Card>
         </motion.div>
 

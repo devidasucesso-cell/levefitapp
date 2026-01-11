@@ -18,6 +18,7 @@ interface Profile {
   imc: number;
   imc_category: IMCCategory;
   water_intake: number;
+  water_goal: number;
   created_at: string;
   is_approved: boolean;
   kit_type: string | null;
@@ -104,6 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         height: Number(data.height) || 0,
         imc: Number(data.imc) || 0,
         imc_category: (data.imc_category as IMCCategory) || 'normal',
+        water_goal: data.water_goal ?? 2000,
         created_at: data.created_at,
         is_approved: data.is_approved ?? false,
         kit_type: data.kit_type ?? null,
