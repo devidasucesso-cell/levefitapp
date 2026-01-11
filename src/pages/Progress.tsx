@@ -1,17 +1,20 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
+import WaterHistoryChart from '@/components/WaterHistoryChart';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const Progress = () => {
+  const [activeTab, setActiveTab] = useState('weight');
   const { profile, capsuleDays, progressHistory } = useAuth();
   const navigate = useNavigate();
 
@@ -96,137 +99,135 @@ const Progress = () => {
       </div>
 
       <div className="p-4 -mt-4 space-y-4">
-        {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 gap-3"
-        >
-          <Card className="p-4 bg-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Scale className="w-5 h-5 text-primary" />
-              <span className="text-sm text-muted-foreground">Peso Atual</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats.pesoAtual} kg</p>
-            <div className={`flex items-center gap-1 mt-1 ${trend.color}`}>
-              <TrendIcon className="w-4 h-4" />
-              <span className="text-xs">{trend.label}</span>
-            </div>
-          </Card>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="weight" className="flex items-center gap-2">
+              <Scale className="w-4 h-4" />
+              Peso
+            </TabsTrigger>
+            <TabsTrigger value="water" className="flex items-center gap-2">
+              <Droplets className="w-4 h-4" />
+              Hidratação
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="p-4 bg-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-5 h-5 text-info" />
-              <span className="text-sm text-muted-foreground">Dias de Jornada</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats.diasDesdeInicio}</p>
-            <span className="text-xs text-muted-foreground">desde o início</span>
-          </Card>
+          <TabsContent value="weight" className="space-y-4 mt-4">
+            {/* Stats Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-2 gap-3"
+            >
+              <Card className="p-4 bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Scale className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">Peso Atual</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.pesoAtual} kg</p>
+                <div className={`flex items-center gap-1 mt-1 ${trend.color}`}>
+                  <TrendIcon className="w-4 h-4" />
+                  <span className="text-xs">{trend.label}</span>
+                </div>
+              </Card>
 
-          <Card className="p-4 bg-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Pill className="w-5 h-5 text-primary" />
-              <span className="text-sm text-muted-foreground">Dias LeveFit</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{stats.diasCapsulas}</p>
-            <span className="text-xs text-muted-foreground">{consistencyPercentage}% consistência</span>
-          </Card>
+              <Card className="p-4 bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-5 h-5 text-info" />
+                  <span className="text-sm text-muted-foreground">Dias de Jornada</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.diasDesdeInicio}</p>
+                <span className="text-xs text-muted-foreground">desde o início</span>
+              </Card>
 
-          <Card className="p-4 bg-card">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="w-5 h-5 text-success" />
-              <span className="text-sm text-muted-foreground">Variação</span>
-            </div>
-            <p className={`text-2xl font-bold ${pesoDiff < 0 ? 'text-success' : pesoDiff > 0 ? 'text-destructive' : 'text-foreground'}`}>
-              {pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(1)} kg
-            </p>
-            <span className="text-xs text-muted-foreground">desde o início</span>
-          </Card>
-        </motion.div>
+              <Card className="p-4 bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <Pill className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">Dias LeveFit</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.diasCapsulas}</p>
+                <span className="text-xs text-muted-foreground">{consistencyPercentage}% consistência</span>
+              </Card>
 
-        {/* Weight Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="p-4 bg-card">
-            <h3 className="font-semibold mb-4 text-foreground">Evolução do Peso</h3>
-            {chartData.length > 0 ? (
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="colorPeso" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      domain={['dataMin - 1', 'dataMax + 1']}
-                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                      formatter={(value: number) => [`${value} kg`, 'Peso']}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="peso" 
-                      stroke="hsl(var(--primary))" 
-                      fillOpacity={1} 
-                      fill="url(#colorPeso)" 
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-48 flex items-center justify-center text-muted-foreground">
-                <p className="text-center">
-                  Adicione seu peso no Dashboard para<br />
-                  acompanhar sua evolução
+              <Card className="p-4 bg-card">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown className="w-5 h-5 text-success" />
+                  <span className="text-sm text-muted-foreground">Variação</span>
+                </div>
+                <p className={`text-2xl font-bold ${pesoDiff < 0 ? 'text-success' : pesoDiff > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                  {pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(1)} kg
                 </p>
-              </div>
-            )}
-          </Card>
-        </motion.div>
+                <span className="text-xs text-muted-foreground">desde o início</span>
+              </Card>
+            </motion.div>
 
-        {/* Info Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="p-4 bg-card/50 border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Droplets className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-foreground mb-1">Dica de Hidratação</h4>
-                <p className="text-sm text-muted-foreground">
-                  Beber água regularmente ajuda no metabolismo e potencializa os efeitos do Leve Fit. 
-                  Meta diária recomendada: 2 litros.
-                </p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+            {/* Weight Chart */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="p-4 bg-card">
+                <h3 className="font-semibold mb-4 text-foreground">Evolução do Peso</h3>
+                {chartData.length > 0 ? (
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="colorPeso" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis 
+                          domain={['dataMin - 1', 'dataMax + 1']}
+                          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            background: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            fontSize: '12px'
+                          }}
+                          formatter={(value: number) => [`${value} kg`, 'Peso']}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="peso" 
+                          stroke="hsl(var(--primary))" 
+                          fillOpacity={1} 
+                          fill="url(#colorPeso)" 
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-48 flex items-center justify-center text-muted-foreground">
+                    <p className="text-center">
+                      Adicione seu peso no Dashboard para<br />
+                      acompanhar sua evolução
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="water" className="mt-4">
+            <WaterHistoryChart />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <WaterReminder />
