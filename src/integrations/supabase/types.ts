@@ -68,6 +68,7 @@ export type Database = {
           capsule_time: string | null
           created_at: string
           id: string
+          last_water_notification: string | null
           updated_at: string
           user_id: string
           water_interval: number | null
@@ -78,6 +79,7 @@ export type Database = {
           capsule_time?: string | null
           created_at?: string
           id?: string
+          last_water_notification?: string | null
           updated_at?: string
           user_id: string
           water_interval?: number | null
@@ -88,6 +90,7 @@ export type Database = {
           capsule_time?: string | null
           created_at?: string
           id?: string
+          last_water_notification?: string | null
           updated_at?: string
           user_id?: string
           water_interval?: number | null
@@ -110,6 +113,7 @@ export type Database = {
           treatment_start_date: string | null
           updated_at: string
           user_id: string
+          water_goal: number | null
           water_intake: number | null
           weight: number | null
         }
@@ -127,6 +131,7 @@ export type Database = {
           treatment_start_date?: string | null
           updated_at?: string
           user_id: string
+          water_goal?: number | null
           water_intake?: number | null
           weight?: number | null
         }
@@ -144,6 +149,7 @@ export type Database = {
           treatment_start_date?: string | null
           updated_at?: string
           user_id?: string
+          water_goal?: number | null
           water_intake?: number | null
           weight?: number | null
         }

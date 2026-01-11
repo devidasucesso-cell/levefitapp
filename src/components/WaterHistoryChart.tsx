@@ -16,7 +16,9 @@ const WaterHistoryChart = () => {
   const { user, profile } = useAuth();
   const [history, setHistory] = useState<WaterHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const waterGoal = 2000;
+  
+  // Use personalized water goal from profile
+  const waterGoal = profile?.water_goal || 2000;
 
   useEffect(() => {
     if (!user) return;

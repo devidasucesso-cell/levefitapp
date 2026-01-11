@@ -1,11 +1,16 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { Droplets } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const WaterReminder = forwardRef<HTMLDivElement>((_, ref) => {
   const { profile, addWaterIntake } = useAuth();
-  const waterGoal = 2000; // 2L
+  
+  // Use personalized water goal from profile, default to 2000ml
+  const waterGoal = useMemo(() => {
+    return profile?.water_goal || 2000;
+  }, [profile?.water_goal]);
+  
   const currentIntake = profile?.water_intake || 0;
   const percentage = Math.min((currentIntake / waterGoal) * 100, 100);
 
