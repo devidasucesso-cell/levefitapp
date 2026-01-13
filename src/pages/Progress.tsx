@@ -3,20 +3,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import WaterHistoryChart from '@/components/WaterHistoryChart';
+import AchievementsCard from '@/components/AchievementsCard';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useWaterStreak } from '@/hooks/useWaterStreak';
 
 const Progress = () => {
   const [activeTab, setActiveTab] = useState('weight');
   const { profile, capsuleDays, progressHistory } = useAuth();
   const navigate = useNavigate();
+  const { currentStreak, totalDaysMetGoal } = useWaterStreak();
 
   // Calculate days since user started (first login/profile creation)
   const daysSinceStart = useMemo(() => {
@@ -81,7 +84,7 @@ const Progress = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="gradient-hero p-6 pb-8 rounded-b-3xl">
+      <div className="gradient-hero p-4 sm:p-6 pb-6 sm:pb-8 rounded-b-3xl">
         <div className="flex items-center gap-3 mb-4">
           <Button 
             variant="ghost" 
@@ -92,69 +95,81 @@ const Progress = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold font-display text-primary-foreground">Sua Evolução</h1>
-            <p className="text-primary-foreground/80 text-sm">Acompanhe seu progresso real</p>
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-primary-foreground">Sua Evolução</h1>
+            <p className="text-primary-foreground/80 text-xs sm:text-sm">Acompanhe seu progresso real</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 -mt-4 space-y-4">
+      <div className="p-3 sm:p-4 -mt-4 space-y-3 sm:space-y-4 max-w-4xl mx-auto">
+        {/* Achievements Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <AchievementsCard 
+            capsuleDays={capsuleDays.length}
+            waterStreak={currentStreak}
+            totalWaterDays={totalDaysMetGoal}
+          />
+        </motion.div>
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="weight" className="flex items-center gap-2">
-              <Scale className="w-4 h-4" />
+            <TabsTrigger value="weight" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Scale className="w-3 h-3 sm:w-4 sm:h-4" />
               Peso
             </TabsTrigger>
-            <TabsTrigger value="water" className="flex items-center gap-2">
-              <Droplets className="w-4 h-4" />
+            <TabsTrigger value="water" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Droplets className="w-3 h-3 sm:w-4 sm:h-4" />
               Hidratação
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weight" className="space-y-4 mt-4">
+          <TabsContent value="weight" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
             {/* Stats Cards */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 gap-2 sm:gap-3"
             >
-              <Card className="p-4 bg-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Scale className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Peso Atual</span>
+              <Card className="p-3 sm:p-4 bg-card">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                  <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  <span className="text-xs sm:text-sm text-muted-foreground">Peso Atual</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{stats.pesoAtual} kg</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.pesoAtual} kg</p>
                 <div className={`flex items-center gap-1 mt-1 ${trend.color}`}>
-                  <TrendIcon className="w-4 h-4" />
+                  <TrendIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="text-xs">{trend.label}</span>
                 </div>
               </Card>
 
-              <Card className="p-4 bg-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-5 h-5 text-info" />
-                  <span className="text-sm text-muted-foreground">Dias de Jornada</span>
+              <Card className="p-3 sm:p-4 bg-card">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
+                  <span className="text-xs sm:text-sm text-muted-foreground">Dias de Jornada</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{stats.diasDesdeInicio}</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.diasDesdeInicio}</p>
                 <span className="text-xs text-muted-foreground">desde o início</span>
               </Card>
 
-              <Card className="p-4 bg-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <Pill className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Dias LeveFit</span>
+              <Card className="p-3 sm:p-4 bg-card">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                  <Pill className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  <span className="text-xs sm:text-sm text-muted-foreground">Dias LeveFit</span>
                 </div>
-                <p className="text-2xl font-bold text-foreground">{stats.diasCapsulas}</p>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.diasCapsulas}</p>
                 <span className="text-xs text-muted-foreground">{consistencyPercentage}% consistência</span>
               </Card>
 
-              <Card className="p-4 bg-card">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="w-5 h-5 text-success" />
-                  <span className="text-sm text-muted-foreground">Variação</span>
+              <Card className="p-3 sm:p-4 bg-card">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                  <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
+                  <span className="text-xs sm:text-sm text-muted-foreground">Variação</span>
                 </div>
-                <p className={`text-2xl font-bold ${pesoDiff < 0 ? 'text-success' : pesoDiff > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                <p className={`text-xl sm:text-2xl font-bold ${pesoDiff < 0 ? 'text-success' : pesoDiff > 0 ? 'text-destructive' : 'text-foreground'}`}>
                   {pesoDiff > 0 ? '+' : ''}{pesoDiff.toFixed(1)} kg
                 </p>
                 <span className="text-xs text-muted-foreground">desde o início</span>
@@ -167,10 +182,10 @@ const Progress = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="p-4 bg-card">
-                <h3 className="font-semibold mb-4 text-foreground">Evolução do Peso</h3>
+              <Card className="p-3 sm:p-4 bg-card">
+                <h3 className="font-semibold mb-3 sm:mb-4 text-foreground text-sm sm:text-base">Evolução do Peso</h3>
                 {chartData.length > 0 ? (
-                  <div className="h-48">
+                  <div className="h-40 sm:h-48">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
                         <defs>
@@ -213,8 +228,8 @@ const Progress = () => {
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-48 flex items-center justify-center text-muted-foreground">
-                    <p className="text-center">
+                  <div className="h-40 sm:h-48 flex items-center justify-center text-muted-foreground">
+                    <p className="text-center text-sm">
                       Adicione seu peso na tela inicial para<br />
                       acompanhar sua evolução
                     </p>
@@ -224,7 +239,7 @@ const Progress = () => {
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="water" className="mt-4">
+          <TabsContent value="water" className="mt-3 sm:mt-4">
             <WaterHistoryChart />
           </TabsContent>
         </Tabs>
