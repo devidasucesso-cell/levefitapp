@@ -114,60 +114,60 @@ const WaterHistoryChart = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <Card className="glass-card">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-primary/20">
-                <Droplets className="w-4 h-4 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-full bg-primary/20">
+                <Droplets className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Hoje</p>
-                <p className="text-lg font-bold text-foreground">{todayIntake}ml</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Hoje</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{todayIntake}ml</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="glass-card">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-primary/20">
-                <TrendingUp className="w-4 h-4 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-full bg-primary/20">
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Média</p>
-                <p className="text-lg font-bold text-foreground">{averageIntake}ml</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Média</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{averageIntake}ml</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="glass-card">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-primary/20">
-                <Target className="w-4 h-4 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-full bg-primary/20">
+                <Target className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Consistência</p>
-                <p className="text-lg font-bold text-foreground">{consistencyRate}%</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Consistência</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{consistencyRate}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="glass-card">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-full bg-primary/20">
-                <Calendar className="w-4 h-4 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-full bg-primary/20">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Meta atingida</p>
-                <p className="text-lg font-bold text-foreground">{daysMetGoal} dias</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Meta atingida</p>
+                <p className="text-base sm:text-lg font-bold text-foreground">{daysMetGoal} dias</p>
               </div>
             </div>
           </CardContent>

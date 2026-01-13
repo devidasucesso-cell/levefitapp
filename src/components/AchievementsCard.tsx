@@ -104,20 +104,20 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
   const unlockedCount = achievements.filter(a => a.unlocked).length;
 
   return (
-    <Card className="p-4 bg-card">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-            <Trophy className="w-5 h-5 text-white" />
+    <Card className="p-3 sm:p-4 bg-card">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+            <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Conquistas</h3>
-            <p className="text-xs text-muted-foreground">{unlockedCount}/{achievements.length} desbloqueadas</p>
+            <h3 className="font-semibold text-foreground text-sm sm:text-base">Conquistas</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{unlockedCount}/{achievements.length} desbloqueadas</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
         {achievements.map((achievement, index) => (
           <motion.div
             key={achievement.id}
@@ -128,31 +128,51 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
           >
             <div
               className={cn(
-                "w-full aspect-square rounded-xl flex items-center justify-center transition-all",
+                "w-full aspect-square rounded-lg sm:rounded-xl flex items-center justify-center transition-all",
                 achievement.unlocked
                   ? `bg-gradient-to-br ${achievement.color} shadow-lg`
                   : "bg-muted/50 opacity-40"
               )}
             >
-              <span className={achievement.unlocked ? "text-white" : "text-muted-foreground"}>
+              <span className={cn(
+                "scale-75 sm:scale-100",
+                achievement.unlocked ? "text-white" : "text-muted-foreground"
+              )}>
                 {achievement.icon}
               </span>
             </div>
             
             {/* Progress indicator */}
             {!achievement.unlocked && achievement.progress !== undefined && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground font-medium">
+              <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium">
                 {achievement.progress}/{achievement.total}
               </div>
             )}
 
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-[120px]">
+            {/* Tooltip - hidden on mobile, visible on hover for desktop */}
+            <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-[120px]">
               <p className="text-xs font-medium text-foreground text-center">{achievement.name}</p>
               <p className="text-[10px] text-muted-foreground text-center">{achievement.description}</p>
             </div>
           </motion.div>
         ))}
+      </div>
+      
+      {/* Mobile achievement names - horizontal scroll */}
+      <div className="mt-3 sm:hidden overflow-x-auto -mx-3 px-3">
+        <div className="flex gap-2 pb-1">
+          {achievements.filter(a => a.unlocked).slice(0, 4).map((achievement) => (
+            <div 
+              key={achievement.id}
+              className="flex-shrink-0 px-2 py-1 bg-secondary rounded-full"
+            >
+              <span className="text-[10px] text-foreground font-medium">{achievement.name}</span>
+            </div>
+          ))}
+          {achievements.filter(a => a.unlocked).length === 0 && (
+            <span className="text-[10px] text-muted-foreground">Complete desafios para desbloquear conquistas!</span>
+          )}
+        </div>
       </div>
     </Card>
   );

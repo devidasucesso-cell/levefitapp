@@ -69,53 +69,53 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="gradient-hero p-6 pb-8 rounded-b-3xl shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary-foreground/20 flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-primary-foreground" />
+      <div className="gradient-hero p-4 sm:p-6 pb-6 sm:pb-8 rounded-b-3xl shadow-lg safe-area-top">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary-foreground/20 flex items-center justify-center">
+              <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold font-display text-primary-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold font-display text-primary-foreground">
                 Olá, {profile?.name?.split(' ')[0] || 'Usuário'}! 👋
               </h1>
-              <p className="text-primary-foreground/80 text-sm capitalize">{todayDisplay}</p>
+              <p className="text-primary-foreground/80 text-xs sm:text-sm capitalize">{todayDisplay}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {isAdmin && (
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => navigate('/admin')}
-                className="text-primary-foreground hover:bg-primary-foreground/20"
+                className="text-primary-foreground hover:bg-primary-foreground/20 w-9 h-9 sm:w-10 sm:h-10"
               >
-                <Shield className="w-5 h-5" />
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             )}
             <Button 
               variant="ghost" 
               size="icon"
               onClick={handleLogout}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              className="text-primary-foreground hover:bg-primary-foreground/20 w-9 h-9 sm:w-10 sm:h-10"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
-              <div className="flex items-center gap-3">
-                <Droplets className="w-8 h-8 text-primary-foreground" />
+            <Card className="p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Droplets className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 <div>
-                  <p className="text-primary-foreground/80 text-xs">Água hoje</p>
-                  <p className="text-primary-foreground font-bold text-lg">{profile?.water_intake || 0}ml</p>
+                  <p className="text-primary-foreground/80 text-[10px] sm:text-xs">Água hoje</p>
+                  <p className="text-primary-foreground font-bold text-base sm:text-lg">{profile?.water_intake || 0}ml</p>
                 </div>
               </div>
             </Card>
@@ -125,12 +125,12 @@ const Dashboard = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
-              <div className="flex items-center gap-3">
-                <Pill className="w-8 h-8 text-primary-foreground" />
+            <Card className="p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Pill className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 <div>
-                  <p className="text-primary-foreground/80 text-xs">Dias LeveFit</p>
-                  <p className="text-primary-foreground font-bold text-lg">{capsuleDays.length}</p>
+                  <p className="text-primary-foreground/80 text-[10px] sm:text-xs">Dias LeveFit</p>
+                  <p className="text-primary-foreground font-bold text-base sm:text-lg">{capsuleDays.length}</p>
                 </div>
               </div>
             </Card>
@@ -139,7 +139,7 @@ const Dashboard = () => {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4 -mt-4">
+      <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
         {/* Capsule Reminder */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
