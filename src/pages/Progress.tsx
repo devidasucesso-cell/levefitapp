@@ -10,15 +10,20 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import WaterHistoryChart from '@/components/WaterHistoryChart';
 import AchievementsCard from '@/components/AchievementsCard';
+import GoalTracker from '@/components/GoalTracker';
+import ActivityTracker from '@/components/ActivityTracker';
+import PrizeBanner from '@/components/PrizeBanner';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWaterStreak } from '@/hooks/useWaterStreak';
+import { useGoalProgress } from '@/hooks/useGoalProgress';
 
 const Progress = () => {
-  const [activeTab, setActiveTab] = useState('weight');
+  const [activeTab, setActiveTab] = useState('goals');
   const { profile, capsuleDays, progressHistory } = useAuth();
   const navigate = useNavigate();
+  const { completedExercises, completedRecipes, completedDetox } = useGoalProgress();
   const { currentStreak, totalDaysMetGoal } = useWaterStreak();
 
   // Calculate days since user started (first login/profile creation)
@@ -114,18 +119,37 @@ const Progress = () => {
           />
         </motion.div>
 
+        {/* Prize Banner */}
+        <PrizeBanner />
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="goals" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Metas</span>
+              <span className="sm:hidden">Metas</span>
+            </TabsTrigger>
             <TabsTrigger value="weight" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <Scale className="w-3 h-3 sm:w-4 sm:h-4" />
-              Peso
+              <span className="hidden sm:inline">Peso</span>
+              <span className="sm:hidden">Peso</span>
             </TabsTrigger>
             <TabsTrigger value="water" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <Droplets className="w-3 h-3 sm:w-4 sm:h-4" />
-              Hidratação
+              <span className="hidden sm:inline">Água</span>
+              <span className="sm:hidden">Água</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="goals" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+            <GoalTracker />
+            <ActivityTracker 
+              completedExercises={completedExercises}
+              completedRecipes={completedRecipes}
+              completedDetox={completedDetox}
+            />
+          </TabsContent>
 
           <TabsContent value="weight" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
             {/* Stats Cards */}

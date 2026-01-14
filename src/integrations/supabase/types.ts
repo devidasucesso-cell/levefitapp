@@ -62,6 +62,87 @@ export type Database = {
         }
         Relationships: []
       }
+      completed_detox: {
+        Row: {
+          completed_at: string
+          created_at: string
+          detox_id: string
+          detox_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          detox_id: string
+          detox_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          detox_id?: string
+          detox_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      completed_exercises: {
+        Row: {
+          completed_at: string
+          created_at: string
+          exercise_id: string
+          exercise_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          exercise_id: string
+          exercise_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          exercise_id?: string
+          exercise_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      completed_recipes: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          recipe_id: string
+          recipe_name: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          recipe_id: string
+          recipe_name: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          recipe_id?: string
+          recipe_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           capsule_reminder: boolean | null
@@ -208,6 +289,30 @@ export type Database = {
           id?: string
           p256dh?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shown_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          id: string
+          shown_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          id?: string
+          shown_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          id?: string
+          shown_at?: string
           user_id?: string
         }
         Relationships: []
