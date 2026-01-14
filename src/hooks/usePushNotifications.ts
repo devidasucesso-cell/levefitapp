@@ -311,6 +311,25 @@ export const usePushNotifications = () => {
     }
 
     try {
+      // Verificar se há assinatura no banco antes de enviar
+      const { data: dbSub, error: dbError } = await supabase
+        .from('push_subscriptions')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (dbError || !dbSub) {
+        console.log('No subscription in DB, need to re-subscribe');
+        toast({
+          title: 'Atenção',
+          description: 'Assinatura não encontrada. Clique em "Desativar" e depois "Ativar" novamente.',
+          variant: 'destructive',
+        });
+        setIsSubscribed(false);
+        return false;
+      }
+
+      // Envia a notificação passando o userId explicitamente
       const { data, error } = await supabase.functions.invoke('send-push-notification', {
         body: { type: 'test', userId: user.id },
       });
@@ -320,10 +339,9 @@ export const usePushNotifications = () => {
       if (data?.sent === 0) {
         toast({
           title: 'Atenção',
-          description: 'Nenhuma assinatura encontrada. Tente desativar e ativar novamente.',
+          description: 'Erro ao enviar. Tente desativar e ativar novamente.',
           variant: 'destructive',
         });
-        // Reset subscription state
         setIsSubscribed(false);
         return false;
       }

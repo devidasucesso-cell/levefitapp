@@ -7,31 +7,8 @@ const corsHeaders = {
 };
 
 interface PushNotificationRequest {
-  type: 'test' | 'capsule' | 'water' | 'treatment_end';
+  type: 'test' | 'capsule' | 'water' | 'treatment_end' | 'daily_summary';
   userId?: string;
-}
-
-// Decode JWT to get user ID (without verification - Supabase gateway already verified)
-function decodeJwt(token: string): { sub?: string } | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      console.log('JWT does not have 3 parts:', parts.length);
-      return null;
-    }
-    // Convert base64url to base64
-    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    // Add padding if needed
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    const payload = JSON.parse(atob(base64));
-    console.log('JWT payload decoded, sub:', payload.sub);
-    return payload;
-  } catch (e) {
-    console.error('JWT decode error:', e);
-    return null;
-  }
 }
 
 // Helper to encode to base64url
@@ -56,9 +33,7 @@ function base64urlDecode(base64url: string): Uint8Array {
   return bytes;
 }
 
-// VAPID keys - loaded from environment secrets
-// Public Key: 65 bytes uncompressed P-256 point in base64url
-// Private Key: 32 bytes raw ECDSA scalar in base64url (stored in secrets)
+// VAPID keys
 const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
@@ -76,87 +51,45 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   const payloadB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Decode the public key to extract X and Y coordinates
   const publicKeyBytes = base64urlDecode(VAPID_PUBLIC_KEY);
-  console.log('Public key bytes length:', publicKeyBytes.length);
-  
-  // Public key format: 0x04 + X (32 bytes) + Y (32 bytes)
-  if (publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
-    throw new Error('Invalid public key format');
-  }
-  
   const x = base64urlEncode(publicKeyBytes.slice(1, 33));
   const y = base64urlEncode(publicKeyBytes.slice(33, 65));
   const d = VAPID_PRIVATE_KEY;
-  
-  console.log('Creating JWK with x length:', x.length, 'y length:', y.length, 'd length:', d.length);
 
-  // Create JWK with the private key (d) and corresponding public key (x, y)
-  const jwk = {
-    kty: 'EC',
-    crv: 'P-256',
-    x: x,
-    y: y,
-    d: d,
-  };
-  
-  console.log('Importing VAPID key...');
-  
-  const key = await crypto.subtle.importKey(
-    'jwk',
-    jwk,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
+  const jwk = { kty: 'EC', crv: 'P-256', x, y, d };
+  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(unsignedToken));
 
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    key,
-    new TextEncoder().encode(unsignedToken)
-  );
-
-  const signatureB64 = base64urlEncode(new Uint8Array(signature));
-  return `${unsignedToken}.${signatureB64}`;
+  return `${unsignedToken}.${base64urlEncode(new Uint8Array(signature))}`;
 }
 
 async function sendWebPushNotification(
   subscription: { endpoint: string; p256dh: string; auth: string },
   payload: { title: string; body: string; icon?: string; tag?: string; url?: string }
 ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
-  const vapidPublicKey = VAPID_PUBLIC_KEY;
   const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@levefit.com';
 
   try {
     const url = new URL(subscription.endpoint);
     const audience = `${url.protocol}//${url.host}`;
     
-    // Create the notification payload matching service worker expectations
     const notificationPayload = JSON.stringify({
       title: payload.title,
       body: payload.body,
       icon: payload.icon || '/pwa-192x192.png',
       tag: payload.tag || 'levefit-notification',
-      data: {
-        url: payload.url || '/dashboard'
-      }
+      data: { url: payload.url || '/dashboard' }
     });
+    
+    const jwt = await createVapidJwt(audience, vapidSubject);
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Content-Length': new TextEncoder().encode(notificationPayload).length.toString(),
-      'TTL': '86400', // 24 hours
-      'Urgency': 'high', // Ensure high priority for background delivery
+      'TTL': '86400',
+      'Urgency': 'high',
+      'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
     };
-
-    // Add VAPID authentication
-    try {
-      const jwt = await createVapidJwt(audience, vapidSubject);
-      headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
-    } catch (vapidError) {
-      console.error('Failed to create VAPID JWT:', vapidError);
-      return { success: false, error: 'VAPID JWT creation failed' };
-    }
 
     console.log(`Sending push to: ${subscription.endpoint.substring(0, 50)}...`);
     
@@ -170,11 +103,7 @@ async function sendWebPushNotification(
     
     if (!response.ok) {
       console.error('Push notification failed:', response.status, responseText);
-      return { 
-        success: false, 
-        statusCode: response.status,
-        error: `HTTP ${response.status}: ${responseText}` 
-      };
+      return { success: false, statusCode: response.status, error: `HTTP ${response.status}: ${responseText}` };
     }
 
     console.log('Push notification sent successfully');
@@ -182,10 +111,7 @@ async function sendWebPushNotification(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Web push error:', error);
-    return { 
-      success: false, 
-      error: errorMessage 
-    };
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -197,59 +123,46 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Validate Authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.error('Missing or invalid Authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Decode JWT to get user ID (Supabase gateway already verified the token)
-    const token = authHeader.replace('Bearer ', '');
-    const jwtPayload = decodeJwt(token);
-    
-    if (!jwtPayload?.sub) {
-      console.error('Could not extract user ID from token');
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const authenticatedUserId = jwtPayload.sub;
-    console.log('Authenticated user:', authenticatedUserId);
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Create client with anon key to validate user token
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Get the Authorization header and extract user
+    const authHeader = req.headers.get('Authorization');
+    let authenticatedUserId: string | null = null;
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Use getUser to properly validate the JWT and extract user
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+      
+      if (!authError && user) {
+        authenticatedUserId = user.id;
+        console.log('Authenticated user:', authenticatedUserId);
+      } else {
+        console.log('Auth error or no user:', authError?.message);
+      }
+    }
 
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { type, userId }: PushNotificationRequest = await req.json();
-    console.log('Notification request:', { type, userId });
+    console.log('Notification request:', { type, userId, authenticatedUserId });
 
-    // Authorization check: users can only send notifications to themselves
-    // unless they are admins
-    if (userId && userId !== authenticatedUserId) {
-      // Check if the authenticated user is an admin
-      const { data: adminRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authenticatedUserId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (roleError || !adminRole) {
-        console.error('Non-admin user tried to send notification to another user');
-        return new Response(
-          JSON.stringify({ error: 'Forbidden: Can only send notifications to yourself' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      console.log('Admin user authorized to send notification to:', userId);
+    // Determine target user - prefer userId from body, fallback to authenticated user
+    const targetUserId = userId || authenticatedUserId;
+    
+    if (!targetUserId && type === 'test') {
+      console.error('No user ID available for test notification');
+      return new Response(
+        JSON.stringify({ error: 'User ID required', sent: 0 }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     let targetUserIds: string[] = [];
@@ -261,9 +174,8 @@ const handler = async (req: Request): Promise<Response> => {
       url: '/dashboard'
     };
 
-    // For test notifications, the target is the authenticated user (or specified userId if admin)
     if (type === 'test') {
-      targetUserIds = [userId || authenticatedUserId];
+      targetUserIds = [targetUserId!];
       notificationPayload = {
         title: '🔔 Teste de Notificação',
         body: 'As notificações estão funcionando! Você receberá lembretes mesmo com o app fechado.',
@@ -272,39 +184,28 @@ const handler = async (req: Request): Promise<Response> => {
         url: '/dashboard'
       };
     } else if (type === 'capsule') {
-      // For capsule reminders - only admins can trigger bulk notifications
-      const { data: adminRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authenticatedUserId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (!adminRole) {
-        return new Response(
-          JSON.stringify({ error: 'Forbidden: Only admins can trigger bulk notifications' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
       const now = new Date();
       const currentHour = now.getHours().toString().padStart(2, '0');
       const currentMinute = now.getMinutes().toString().padStart(2, '0');
-      const currentTime = `${currentHour}:${currentMinute}`;
 
       const { data: usersToNotify, error: usersError } = await supabase
         .from('notification_settings')
-        .select('user_id')
+        .select('user_id, capsule_time')
         .eq('capsule_reminder', true)
-        .gte('capsule_time', currentTime)
-        .lte('capsule_time', `${currentHour}:${(parseInt(currentMinute) + 5).toString().padStart(2, '0')}`);
+        .not('capsule_time', 'is', null);
 
-      if (usersError) {
-        console.error('Error fetching users for capsule notification:', usersError);
-        throw usersError;
-      }
+      if (usersError) throw usersError;
 
-      targetUserIds = usersToNotify?.map(u => u.user_id) || [];
+      // Filter users whose capsule time is within 5 min window
+      const filtered = usersToNotify?.filter(s => {
+        if (!s.capsule_time) return false;
+        const [h, m] = s.capsule_time.split(':').map(Number);
+        const settingMinutes = h * 60 + m;
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        return Math.abs(settingMinutes - currentMinutes) <= 5;
+      }) || [];
+
+      targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
         title: '💊 Hora da sua cápsula!',
         body: 'Não esqueça de tomar sua cápsula LeveFit hoje.',
@@ -313,32 +214,30 @@ const handler = async (req: Request): Promise<Response> => {
         url: '/calendar'
       };
     } else if (type === 'water') {
-      // For water reminders - only admins can trigger bulk notifications
-      const { data: adminRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authenticatedUserId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (!adminRole) {
-        return new Response(
-          JSON.stringify({ error: 'Forbidden: Only admins can trigger bulk notifications' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
+      const now = new Date();
+      
       const { data: usersToNotify, error: usersError } = await supabase
         .from('notification_settings')
-        .select('user_id')
+        .select('user_id, water_interval, last_water_notification')
         .eq('water_reminder', true);
 
-      if (usersError) {
-        console.error('Error fetching users for water notification:', usersError);
-        throw usersError;
-      }
+      if (usersError) throw usersError;
 
-      targetUserIds = usersToNotify?.map(u => u.user_id) || [];
+      const filtered = usersToNotify?.filter(s => {
+        if (!s.water_interval) return false;
+        const intervalMs = s.water_interval * 60 * 1000;
+        
+        if (s.last_water_notification) {
+          const lastNotif = new Date(s.last_water_notification).getTime();
+          const elapsed = now.getTime() - lastNotif;
+          return elapsed >= intervalMs;
+        }
+        
+        const hour = now.getHours();
+        return hour >= 7 && hour <= 22;
+      }) || [];
+
+      targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
         title: '💧 Hora de beber água!',
         body: 'Mantenha-se hidratado para melhores resultados.',
@@ -346,22 +245,74 @@ const handler = async (req: Request): Promise<Response> => {
         tag: 'levefit-water-' + Date.now(),
         url: '/dashboard'
       };
-    } else if (type === 'treatment_end') {
-      // For treatment end notifications - only admins can trigger
-      const { data: adminRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authenticatedUserId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (!adminRole) {
+    } else if (type === 'daily_summary') {
+      // Daily summary notification - sent once per day
+      const { data: allUsers, error: usersError } = await supabase
+        .from('push_subscriptions')
+        .select('user_id');
+      
+      if (usersError) throw usersError;
+      
+      // Get unique user IDs
+      const uniqueUserIds = [...new Set(allUsers?.map(u => u.user_id) || [])];
+      
+      // For each user, generate personalized summary
+      for (const uid of uniqueUserIds) {
+        // Get user profile and progress data
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, water_intake, water_goal, treatment_start_date, kit_type')
+          .eq('user_id', uid)
+          .single();
+        
+        // Get capsule days count
+        const { count: capsuleDays } = await supabase
+          .from('capsule_days')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', uid);
+        
+        // Get today's water intake
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayWater } = await supabase
+          .from('water_intake_history')
+          .select('total_intake')
+          .eq('user_id', uid)
+          .eq('date', today)
+          .single();
+        
+        const waterProgress = todayWater?.total_intake || 0;
+        const waterGoal = profile?.water_goal || 2000;
+        const waterPercent = Math.round((waterProgress / waterGoal) * 100);
+        
+        // Calculate treatment day
+        let treatmentDay = 0;
+        if (profile?.treatment_start_date) {
+          const startDate = new Date(profile.treatment_start_date);
+          const diffTime = new Date().getTime() - startDate.getTime();
+          treatmentDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+        
+        const name = profile?.name?.split(' ')[0] || 'Usuário';
+        
+        notificationPayload = {
+          title: `📊 Resumo do Dia, ${name}!`,
+          body: `Dia ${treatmentDay} de tratamento | ${capsuleDays || 0} cápsulas | Água: ${waterPercent}%`,
+          icon: '/pwa-192x192.png',
+          tag: 'levefit-daily-summary-' + today,
+          url: '/progress'
+        };
+        
+        targetUserIds.push(uid);
+      }
+      
+      // Set a generic notification for the batch (will be customized per user above)
+      if (targetUserIds.length === 0) {
         return new Response(
-          JSON.stringify({ error: 'Forbidden: Only admins can trigger treatment notifications' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: true, message: 'No users to notify', sent: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
+    } else if (type === 'treatment_end') {
       const today = new Date().toISOString().split('T')[0];
       
       const { data: endingProfiles, error: profilesError } = await supabase
@@ -369,10 +320,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select('user_id, kit_type, treatment_start_date')
         .not('treatment_start_date', 'is', null);
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
+      if (profilesError) throw profilesError;
 
       const usersEndingToday = endingProfiles?.filter(profile => {
         if (!profile.treatment_start_date || !profile.kit_type) return false;
@@ -413,10 +361,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select('*')
       .in('user_id', targetUserIds);
 
-    if (subError) {
-      console.error('Error fetching subscriptions:', subError);
-      throw subError;
-    }
+    if (subError) throw subError;
 
     console.log(`Found ${subscriptions?.length || 0} subscriptions`);
 
@@ -424,19 +369,78 @@ const handler = async (req: Request): Promise<Response> => {
     let failureCount = 0;
     const expiredSubscriptions: string[] = [];
 
-    for (const sub of subscriptions || []) {
-      const result = await sendWebPushNotification(
-        { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-        notificationPayload
-      );
-      
-      if (result.success) {
-        successCount++;
-      } else {
-        failureCount++;
-        // Track expired subscriptions (410 Gone) for cleanup
-        if (result.statusCode === 410) {
-          expiredSubscriptions.push(sub.id);
+    // For daily_summary, we need personalized notifications per user
+    if (type === 'daily_summary') {
+      for (const sub of subscriptions || []) {
+        // Get personalized data for this user
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, water_goal, treatment_start_date')
+          .eq('user_id', sub.user_id)
+          .single();
+        
+        const { count: capsuleDays } = await supabase
+          .from('capsule_days')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', sub.user_id);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayWater } = await supabase
+          .from('water_intake_history')
+          .select('total_intake')
+          .eq('user_id', sub.user_id)
+          .eq('date', today)
+          .single();
+        
+        const waterProgress = todayWater?.total_intake || 0;
+        const waterGoal = profile?.water_goal || 2000;
+        const waterPercent = Math.round((waterProgress / waterGoal) * 100);
+        
+        let treatmentDay = 0;
+        if (profile?.treatment_start_date) {
+          const startDate = new Date(profile.treatment_start_date);
+          const diffTime = new Date().getTime() - startDate.getTime();
+          treatmentDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+        
+        const name = profile?.name?.split(' ')[0] || 'Usuário';
+        
+        const personalPayload = {
+          title: `📊 Resumo do Dia, ${name}!`,
+          body: `Dia ${treatmentDay} | ${capsuleDays || 0} cápsulas tomadas | Água hoje: ${waterPercent}%`,
+          icon: '/pwa-192x192.png',
+          tag: 'levefit-daily-summary-' + today,
+          url: '/progress'
+        };
+        
+        const result = await sendWebPushNotification(
+          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+          personalPayload
+        );
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          failureCount++;
+          if (result.statusCode === 410) {
+            expiredSubscriptions.push(sub.id);
+          }
+        }
+      }
+    } else {
+      for (const sub of subscriptions || []) {
+        const result = await sendWebPushNotification(
+          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+          notificationPayload
+        );
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          failureCount++;
+          if (result.statusCode === 410) {
+            expiredSubscriptions.push(sub.id);
+          }
         }
       }
     }

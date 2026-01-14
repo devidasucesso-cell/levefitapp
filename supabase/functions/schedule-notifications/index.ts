@@ -79,7 +79,12 @@ async function sendPush(
       body: notificationPayload,
     });
 
-    return response.ok;
+    if (!response.ok) {
+      console.error('Push failed:', response.status, await response.text());
+      return false;
+    }
+
+    return true;
   } catch (error) {
     console.error('Push error:', error);
     return false;
@@ -100,12 +105,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { type } = await req.json();
     const now = new Date();
-    const currentHour = now.getHours().toString().padStart(2, '0');
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentTime = `${currentHour}:${currentMinute}:00`;
     
     let successCount = 0;
     let totalUsers = 0;
+    const expiredSubscriptions: string[] = [];
 
     if (type === 'capsule') {
       // Find users whose capsule time matches current time (within 5 min window)
@@ -127,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
       }) || [];
 
       totalUsers = targetUsers.length;
-      console.log(`Capsule reminders: ${totalUsers} users to notify at ${currentTime}`);
+      console.log(`Capsule reminders: ${totalUsers} users to notify`);
 
       for (const setting of targetUsers) {
         const { data: subs } = await supabase
@@ -205,6 +208,72 @@ const handler = async (req: Request): Promise<Response> => {
             .from('notification_settings')
             .update({ last_water_notification: now.toISOString() })
             .eq('user_id', setting.user_id);
+        }
+      }
+    } else if (type === 'daily_summary') {
+      // Daily summary notifications - sent at 8pm
+      console.log('Sending daily summary notifications');
+      
+      // Get all users with push subscriptions
+      const { data: subscriptions, error } = await supabase
+        .from('push_subscriptions')
+        .select('*');
+      
+      if (error) throw error;
+      
+      // Get unique user IDs
+      const userIds = [...new Set(subscriptions?.map(s => s.user_id) || [])];
+      totalUsers = userIds.length;
+      
+      for (const userId of userIds) {
+        // Get user data for personalized notification
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, water_goal, treatment_start_date')
+          .eq('user_id', userId)
+          .single();
+        
+        const { count: capsuleDays } = await supabase
+          .from('capsule_days')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId);
+        
+        const today = now.toISOString().split('T')[0];
+        const { data: todayWater } = await supabase
+          .from('water_intake_history')
+          .select('total_intake')
+          .eq('user_id', userId)
+          .eq('date', today)
+          .single();
+        
+        const waterProgress = todayWater?.total_intake || 0;
+        const waterGoal = profile?.water_goal || 2000;
+        const waterPercent = Math.round((waterProgress / waterGoal) * 100);
+        
+        let treatmentDay = 0;
+        if (profile?.treatment_start_date) {
+          const startDate = new Date(profile.treatment_start_date);
+          const diffTime = now.getTime() - startDate.getTime();
+          treatmentDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+        
+        const name = profile?.name?.split(' ')[0] || 'Usuário';
+        
+        // Get this user's subscriptions
+        const userSubs = subscriptions?.filter(s => s.user_id === userId) || [];
+        
+        for (const sub of userSubs) {
+          const success = await sendPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            {
+              title: `📊 Resumo do Dia, ${name}!`,
+              body: `Dia ${treatmentDay} de tratamento | ${capsuleDays || 0} cápsulas | Água: ${waterPercent}%`,
+              icon: '/pwa-192x192.png',
+              tag: 'levefit-daily-summary-' + today,
+              url: '/progress'
+            }
+          );
+          if (success) successCount++;
         }
       }
     }
