@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 // VAPID Public Key - this is safe to expose in client code
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+const VAPID_PUBLIC_KEY = 'BGvcZblHyosik-jYhehmJCmLgGXN2YFq45b--Tr3Lgk8xEFzDix4xBrJMjLXSmguJzwGWKtbmmGlkZxCbzttF1s';
 
 type PermissionStatus = 'granted' | 'denied' | 'default' | 'unsupported';
 
