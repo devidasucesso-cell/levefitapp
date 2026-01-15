@@ -70,6 +70,8 @@ async function sendWebPushNotification(
   const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@levefit.com';
 
   try {
+    console.log(`Attempting push to endpoint: ${subscription.endpoint.substring(0, 60)}...`);
+    
     const url = new URL(subscription.endpoint);
     const audience = `${url.protocol}//${url.host}`;
     
@@ -81,7 +83,9 @@ async function sendWebPushNotification(
       data: { url: payload.url || '/dashboard' }
     });
     
+    console.log('Creating VAPID JWT...');
     const jwt = await createVapidJwt(audience, vapidSubject);
+    console.log('VAPID JWT created successfully');
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -91,7 +95,7 @@ async function sendWebPushNotification(
       'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
     };
 
-    console.log(`Sending push to: ${subscription.endpoint.substring(0, 50)}...`);
+    console.log(`Sending push request to ${audience}...`);
     
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
@@ -100,17 +104,20 @@ async function sendWebPushNotification(
     });
 
     const responseText = await response.text();
+    console.log(`Push response: ${response.status} - ${responseText.substring(0, 200)}`);
     
     if (!response.ok) {
-      console.error('Push notification failed:', response.status, responseText);
+      console.error(`Push notification failed: ${response.status} ${responseText}`);
       return { success: false, statusCode: response.status, error: `HTTP ${response.status}: ${responseText}` };
     }
 
-    console.log('Push notification sent successfully');
+    console.log('Push notification sent successfully!');
     return { success: true };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Web push error:', error);
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('Web push error:', errorMessage);
+    console.error('Error stack:', errorStack);
     return { success: false, error: errorMessage };
   }
 }
@@ -185,8 +192,11 @@ const handler = async (req: Request): Promise<Response> => {
       };
     } else if (type === 'capsule') {
       const now = new Date();
-      const currentHour = now.getHours().toString().padStart(2, '0');
-      const currentMinute = now.getMinutes().toString().padStart(2, '0');
+      const currentHour = now.getUTCHours(); // Use UTC for server
+      const currentMinute = now.getUTCMinutes();
+      const currentMinutes = currentHour * 60 + currentMinute;
+
+      console.log(`Current UTC time: ${currentHour}:${currentMinute} (${currentMinutes} minutes)`);
 
       const { data: usersToNotify, error: usersError } = await supabase
         .from('notification_settings')
@@ -194,16 +204,33 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('capsule_reminder', true)
         .not('capsule_time', 'is', null);
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Error fetching notification settings:', usersError);
+        throw usersError;
+      }
 
-      // Filter users whose capsule time is within 5 min window
+      console.log(`Found ${usersToNotify?.length || 0} users with capsule reminder enabled`);
+
+      // Filter users whose capsule time is within 2 min window
+      // capsule_time is stored as "HH:MM:SS" in the database
       const filtered = usersToNotify?.filter(s => {
         if (!s.capsule_time) return false;
-        const [h, m] = s.capsule_time.split(':').map(Number);
+        // Handle both "HH:MM" and "HH:MM:SS" formats
+        const timeParts = s.capsule_time.split(':').map(Number);
+        const h = timeParts[0];
+        const m = timeParts[1];
         const settingMinutes = h * 60 + m;
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        return Math.abs(settingMinutes - currentMinutes) <= 5;
+        
+        // Adjust for Brazil timezone (UTC-3)
+        const brazilMinutes = (currentMinutes + (24 * 60) - 180) % (24 * 60);
+        const diff = Math.abs(settingMinutes - brazilMinutes);
+        
+        console.log(`User ${s.user_id}: capsule_time=${s.capsule_time}, settingMin=${settingMinutes}, brazilMin=${brazilMinutes}, diff=${diff}`);
+        
+        return diff <= 2 || diff >= (24 * 60 - 2); // Handle midnight wrap-around
       }) || [];
+
+      console.log(`Filtered to ${filtered.length} users to notify`);
 
       targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
