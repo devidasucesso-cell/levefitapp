@@ -34,7 +34,7 @@ function base64urlDecode(base64url: string): Uint8Array {
 }
 
 // VAPID keys
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+const VAPID_PUBLIC_KEY = 'BGvcZblHyosik-jYhehmJCmLgGXN2YFq45b--Tr3Lgk8xEFzDix4xBrJMjLXSmguJzwGWKtbmmGlkZxCbzttF1s';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Create VAPID JWT for web push authentication
@@ -51,16 +51,42 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   const payloadB64 = base64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  const publicKeyBytes = base64urlDecode(VAPID_PUBLIC_KEY);
-  const x = base64urlEncode(publicKeyBytes.slice(1, 33));
-  const y = base64urlEncode(publicKeyBytes.slice(33, 65));
-  const d = VAPID_PRIVATE_KEY;
+  try {
+    // Decode public key (uncompressed format: 0x04 + x + y)
+    const publicKeyBytes = base64urlDecode(VAPID_PUBLIC_KEY);
+    const x = base64urlEncode(publicKeyBytes.slice(1, 33));
+    const y = base64urlEncode(publicKeyBytes.slice(33, 65));
+    const d = VAPID_PRIVATE_KEY;
 
-  const jwk = { kty: 'EC', crv: 'P-256', x, y, d };
-  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(unsignedToken));
+    if (!d) {
+      throw new Error('VAPID_PRIVATE_KEY not configured');
+    }
 
-  return `${unsignedToken}.${base64urlEncode(new Uint8Array(signature))}`;
+    // Log key info for debugging (not the actual values for security)
+    console.log(`VAPID key check - Public key length: ${VAPID_PUBLIC_KEY.length}, Private key length: ${d.length}`);
+    console.log(`x length: ${x.length}, y length: ${y.length}`);
+
+    const jwk = { kty: 'EC' as const, crv: 'P-256' as const, x, y, d };
+    
+    const key = await crypto.subtle.importKey(
+      'jwk', 
+      jwk, 
+      { name: 'ECDSA', namedCurve: 'P-256' }, 
+      false, 
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' }, 
+      key, 
+      new TextEncoder().encode(unsignedToken)
+    );
+
+    return `${unsignedToken}.${base64urlEncode(new Uint8Array(signature))}`;
+  } catch (error) {
+    console.error('Error creating VAPID JWT:', error);
+    throw error;
+  }
 }
 
 async function sendWebPushNotification(
