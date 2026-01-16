@@ -173,7 +173,12 @@ const Dashboard = () => {
           </Card>
         </motion.div>
 
-        {/* IMC Calculator */}
+        {/* Progress Summary - Moved to top */}
+        {profile?.imc !== undefined && profile.imc > 0 && (
+          <ProgressSummary />
+        )}
+
+        {/* IMC Calculator (now "Registro de IMC") */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -191,77 +196,6 @@ const Dashboard = () => {
           >
             <DailyDietSuggestion imcCategory={profile.imc_category as IMCCategory} />
           </motion.div>
-        )}
-
-        {/* Category Info */}
-        {profile?.imc !== undefined && profile.imc > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="p-4 shadow-md bg-card">
-              <h3 className="font-semibold mb-3 text-foreground">Conteúdo personalizado</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Com base no seu IMC, preparamos receitas e dicas especiais para você!
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/recipes')}
-                >
-                  <span className="text-xl">🍽️</span>
-                  <span className="text-xs">Receitas</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/detox')}
-                >
-                  <span className="text-xl">🍵</span>
-                  <span className="text-xs">Detox</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/exercises')}
-                >
-                  <span className="text-xl">🏃</span>
-                  <span className="text-xs">Exercícios</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/progress')}
-                >
-                  <span className="text-xl">📈</span>
-                  <span className="text-xs">Evolução</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/calendar')}
-                >
-                  <span className="text-xl">📅</span>
-                  <span className="text-xs">Calendário</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1"
-                  onClick={() => navigate('/settings')}
-                >
-                  <span className="text-xl">⚙️</span>
-                  <span className="text-xs">Configurações</span>
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Progress Summary */}
-        {profile?.imc !== undefined && profile.imc > 0 && (
-          <ProgressSummary />
         )}
       </div>
 
