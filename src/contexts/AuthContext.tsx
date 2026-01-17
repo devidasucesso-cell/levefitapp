@@ -314,13 +314,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const heightInMeters = height / 100;
     const imc = weight / (heightInMeters * heightInMeters);
     const imcCategory = calculateIMCCategory(imc);
+    const imcRounded = Math.round(imc * 100) / 100;
+    const today = new Date().toISOString().split('T')[0];
 
+    // Update profile first
     await updateProfile({
       weight,
       height,
-      imc: Math.round(imc * 100) / 100,
+      imc: imcRounded,
       imc_category: imcCategory,
     });
+
+    // Automatically add to progress history
+    const { error } = await supabase
+      .from('progress_history')
+      .upsert({
+        user_id: user.id,
+        date: today,
+        weight: weight,
+        imc: imcRounded,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+    if (!error) {
+      // Update local state immediately
+      setProgressHistory(prev => {
+        const existingIndex = prev.findIndex(e => e.date === today);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = { date: today, weight, imc: imcRounded };
+          return updated;
+        }
+        return [...prev, { date: today, weight, imc: imcRounded }];
+      });
+    }
   };
 
   const addWaterIntake = async () => {

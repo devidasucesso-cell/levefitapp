@@ -1,24 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Sun, CloudSun, Moon, UtensilsCrossed, GlassWater, ChevronRight, Clock, Flame, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getRecipesByMealTime } from '@/data/recipes';
 import { getDetoxByTimeOfDay } from '@/data/detoxDrinks';
 import { IMCCategory, Recipe, DetoxDrink } from '@/types';
-import { useNavigate } from 'react-router-dom';
+import { getRecipeImage, getDetoxImage } from '@/data/recipeImages';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
 interface DailyDietSuggestionProps {
   imcCategory: IMCCategory;
 }
 
 const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
-  const navigate = useNavigate();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedDrink, setSelectedDrink] = useState<DetoxDrink | null>(null);
 
@@ -30,11 +29,10 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       default: return '';
     }
   };
+
   // Get a random recipe/drink for each time of day based on today's date and IMC category
-  // This changes daily AND when the IMC category changes
   const dailySelection = useMemo(() => {
     const today = new Date();
-    // Include imcCategory in the seed so it changes when IMC updates
     const categoryOffset = imcCategory === 'underweight' ? 0 : 
                            imcCategory === 'normal' ? 100 : 
                            imcCategory === 'overweight' ? 200 : 300;
@@ -46,12 +44,10 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       return items[index];
     };
 
-    // Get recipes for each meal time
     const morningRecipes = getRecipesByMealTime(imcCategory, 'morning');
     const afternoonRecipes = getRecipesByMealTime(imcCategory, 'afternoon');
     const nightRecipes = getRecipesByMealTime(imcCategory, 'night');
 
-    // Get detox drinks for each time
     const morningDrinks = getDetoxByTimeOfDay(imcCategory, 'morning');
     const afternoonDrinks = getDetoxByTimeOfDay(imcCategory, 'afternoon');
     const nightDrinks = getDetoxByTimeOfDay(imcCategory, 'night');
@@ -119,6 +115,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
             {timeConfig.map((time, index) => {
               const recipe = dailySelection.recipes[time.key];
               const TimeIcon = time.icon;
+              const recipeImage = getRecipeImage(time.key, imcCategory, index);
               
               return (
                 <motion.div
@@ -126,22 +123,36 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`flex items-center gap-3 p-3 rounded-xl ${time.bgColor} cursor-pointer hover:opacity-80 transition-opacity`}
+                  className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => recipe && setSelectedRecipe(recipe)}
                 >
-                  <div className={`w-8 h-8 rounded-lg bg-background flex items-center justify-center`}>
-                    <TimeIcon className={`w-4 h-4 ${time.color}`} />
+                  {/* Background Image */}
+                  <div className="absolute inset-0">
+                    <img 
+                      src={recipeImage} 
+                      alt={recipe?.name || 'Receita'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">{time.label}</p>
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {recipe?.name || 'Não disponível'}
-                    </p>
-                    {recipe?.calories && (
-                      <p className="text-xs text-muted-foreground">{recipe.calories} kcal</p>
-                    )}
+                  
+                  {/* Content */}
+                  <div className="relative flex items-center gap-3 p-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
+                      <TimeIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white/80">{time.label}</p>
+                      <p className="text-sm font-medium text-white truncate">
+                        {recipe?.name || 'Não disponível'}
+                      </p>
+                      {recipe?.calories && (
+                        <p className="text-xs text-white/70">{recipe.calories} kcal</p>
+                      )}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </motion.div>
               );
             })}
@@ -157,7 +168,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
           <div className="space-y-2">
             {timeConfig.map((time, index) => {
               const drink = dailySelection.drinks[time.key];
-              const TimeIcon = time.icon;
+              const detoxImage = getDetoxImage(time.key, index);
               
               return (
                 <motion.div
@@ -165,19 +176,33 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className={`flex items-center gap-3 p-3 rounded-xl ${time.bgColor} cursor-pointer hover:opacity-80 transition-opacity`}
+                  className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => drink && setSelectedDrink(drink)}
                 >
-                  <div className={`w-8 h-8 rounded-lg bg-background flex items-center justify-center`}>
-                    <GlassWater className={`w-4 h-4 ${time.color}`} />
+                  {/* Background Image */}
+                  <div className="absolute inset-0">
+                    <img 
+                      src={detoxImage} 
+                      alt={drink?.name || 'Detox'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">{time.label}</p>
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {drink?.name || 'Não disponível'}
-                    </p>
+                  
+                  {/* Content */}
+                  <div className="relative flex items-center gap-3 p-3">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
+                      <GlassWater className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-white/80">{time.label}</p>
+                      <p className="text-sm font-medium text-white truncate">
+                        {drink?.name || 'Não disponível'}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </motion.div>
               );
             })}
@@ -185,13 +210,25 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
         </div>
       </div>
 
-
       {/* Recipe Detail Modal */}
       <Dialog open={!!selectedRecipe} onOpenChange={() => setSelectedRecipe(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-display">{selectedRecipe?.name}</DialogTitle>
-          </DialogHeader>
+          {selectedRecipe && (
+            <>
+              {/* Recipe Image */}
+              <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
+                <img 
+                  src={getRecipeImage(selectedRecipe.mealTime, imcCategory, 0)} 
+                  alt={selectedRecipe.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h2 className="text-xl font-display font-bold text-white">{selectedRecipe.name}</h2>
+                </div>
+              </div>
+            </>
+          )}
           
           {selectedRecipe && (
             <div className="space-y-4">
@@ -245,9 +282,22 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       {/* Detox Detail Modal */}
       <Dialog open={!!selectedDrink} onOpenChange={() => setSelectedDrink(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-display">{selectedDrink?.name}</DialogTitle>
-          </DialogHeader>
+          {selectedDrink && (
+            <>
+              {/* Detox Image */}
+              <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
+                <img 
+                  src={getDetoxImage(selectedDrink.timeOfDay, 0)} 
+                  alt={selectedDrink.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h2 className="text-xl font-display font-bold text-white">{selectedDrink.name}</h2>
+                </div>
+              </div>
+            </>
+          )}
           
           {selectedDrink && (
             <div className="space-y-4">
