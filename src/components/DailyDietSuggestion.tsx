@@ -185,23 +185,6 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
         </div>
       </div>
 
-      {/* View All Button */}
-      <div className="flex gap-2 mt-4">
-        <Button 
-          variant="outline" 
-          className="flex-1 text-sm"
-          onClick={() => navigate('/recipes')}
-        >
-          Ver Receitas
-        </Button>
-        <Button 
-          variant="outline" 
-          className="flex-1 text-sm"
-          onClick={() => navigate('/detox')}
-        >
-          Ver Detox
-        </Button>
-      </div>
 
       {/* Recipe Detail Modal */}
       <Dialog open={!!selectedRecipe} onOpenChange={() => setSelectedRecipe(null)}>
