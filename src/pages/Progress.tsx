@@ -3,9 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar, Trophy } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Scale, Droplets, Pill, Calendar, Trophy, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaChart, LineChart, Line } from 'recharts';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import WaterHistoryChart from '@/components/WaterHistoryChart';
@@ -13,6 +13,7 @@ import AchievementsCard from '@/components/AchievementsCard';
 import GoalTracker from '@/components/GoalTracker';
 import ActivityTracker from '@/components/ActivityTracker';
 import PrizeBanner from '@/components/PrizeBanner';
+import ReferralCard from '@/components/ReferralCard';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -121,6 +122,9 @@ const Progress = () => {
 
         {/* Prize Banner */}
         <PrizeBanner />
+
+        {/* Referral Card - Indique e Ganhe */}
+        <ReferralCard />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -255,6 +259,75 @@ const Progress = () => {
                   <div className="h-40 sm:h-48 flex items-center justify-center text-muted-foreground">
                     <p className="text-center text-sm">
                       Adicione seu peso na tela inicial para<br />
+                      acompanhar sua evolução
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+
+            {/* IMC History Chart */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="p-3 sm:p-4 bg-card">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
+                  <h3 className="font-semibold text-foreground text-sm sm:text-base">Histórico de IMC</h3>
+                </div>
+                {progressHistory.length > 0 ? (
+                  <>
+                    <div className="h-40 sm:h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={progressHistory.map(entry => ({
+                          date: format(parseISO(entry.date), 'dd/MM'),
+                          imc: entry.imc,
+                        }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            domain={['dataMin - 1', 'dataMax + 1']}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              background: 'hsl(var(--card))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value: number) => [`${value.toFixed(1)}`, 'IMC']}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="imc" 
+                            stroke="hsl(var(--info))" 
+                            strokeWidth={2}
+                            dot={{ fill: 'hsl(var(--info))', strokeWidth: 2 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      {progressHistory.length === 1 
+                        ? "Atualize seu IMC a cada 7 dias para ver a evolução"
+                        : `${progressHistory.length} registros de IMC`
+                      }
+                    </p>
+                  </>
+                ) : (
+                  <div className="h-40 sm:h-48 flex items-center justify-center text-muted-foreground">
+                    <p className="text-center text-sm">
+                      Registre seu IMC na tela inicial para<br />
                       acompanhar sua evolução
                     </p>
                   </div>

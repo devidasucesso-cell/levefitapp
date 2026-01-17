@@ -13,7 +13,6 @@ import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
 import ProgressSummary from '@/components/ProgressSummary';
-import ReferralCard from '@/components/ReferralCard';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
 
@@ -201,8 +200,6 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Referral Card - Indique e Ganhe */}
-        <ReferralCard />
       </div>
 
       <WaterReminder />
