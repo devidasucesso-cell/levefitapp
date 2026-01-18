@@ -92,7 +92,7 @@ const Recipes = () => {
         {/* Recipes Grid */}
         <div className="space-y-3">
           {recipes.map((recipe, index) => (
-            <RecipeCard key={recipe.id} recipe={recipe} index={index} />
+            <RecipeCard key={recipe.id} recipe={recipe} index={index} category={category} />
           ))}
         </div>
       </div>

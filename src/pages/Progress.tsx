@@ -13,7 +13,6 @@ import AchievementsCard from '@/components/AchievementsCard';
 import GoalTracker from '@/components/GoalTracker';
 import ActivityTracker from '@/components/ActivityTracker';
 import PrizeBanner from '@/components/PrizeBanner';
-import ReferralCard from '@/components/ReferralCard';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -122,9 +121,6 @@ const Progress = () => {
 
         {/* Prize Banner */}
         <PrizeBanner />
-
-        {/* Referral Card - Indique e Ganhe */}
-        <ReferralCard />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

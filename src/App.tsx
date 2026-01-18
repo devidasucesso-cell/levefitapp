@@ -21,6 +21,7 @@ import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import KitSelectionPage from "./pages/KitSelectionPage";
+import Referral from "./pages/Referral";
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,7 @@ const AppRoutes = () => {
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

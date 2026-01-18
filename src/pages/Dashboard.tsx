@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut, Shield, Settings, Check } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield, Settings, Check, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInHours, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import IMCCalculator from '@/components/IMCCalculator';
 import Navigation from '@/components/Navigation';
@@ -15,6 +15,7 @@ import OnboardingTutorial from '@/components/OnboardingTutorial';
 import ProgressSummary from '@/components/ProgressSummary';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
+import { differenceInDays } from 'date-fns';
 
 const getKitDuration = (kitType: string | null): number => {
   switch (kitType) {
@@ -35,6 +36,25 @@ const Dashboard = () => {
   const [showTreatmentReminder, setShowTreatmentReminder] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showCapsuleReminder, setShowCapsuleReminder] = useState(true);
+
+  // Check if capsule was taken in the last 24 hours
+  const shouldShowCapsuleReminder = useMemo(() => {
+    if (capsuleDays.length === 0) return true;
+    
+    // Sort capsule days and get the most recent one
+    const sortedDays = [...capsuleDays].sort().reverse();
+    const lastCapsuleDate = sortedDays[0];
+    
+    if (!lastCapsuleDate) return true;
+    
+    // Calculate hours since last capsule was taken
+    const lastDate = parseISO(lastCapsuleDate);
+    const hoursSinceLast = differenceInHours(new Date(), lastDate);
+    
+    // Show reminder if more than 24 hours have passed
+    return hoursSinceLast >= 24;
+  }, [capsuleDays]);
 
   // Check if user should see onboarding (first time login - never completed onboarding)
   useEffect(() => {
@@ -47,6 +67,7 @@ const Dashboard = () => {
     await markOnboardingComplete();
     setShowOnboarding(false);
   };
+
   useEffect(() => {
     if (profile?.treatment_start_date && profile?.kit_type) {
       const startDate = parseISO(profile.treatment_start_date);
@@ -65,6 +86,11 @@ const Dashboard = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleCapsuleTaken = async () => {
+    await markCapsuleTaken(today);
+    setShowCapsuleReminder(false);
   };
 
   return (
@@ -141,9 +167,9 @@ const Dashboard = () => {
 
       {/* Content */}
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
-        {/* Capsule Reminder - Hidden after taken */}
+        {/* Capsule Reminder - Shows if 24h passed since last capsule */}
         <AnimatePresence>
-          {!capsuleTakenToday && (
+          {shouldShowCapsuleReminder && showCapsuleReminder && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -164,7 +190,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => markCapsuleTaken(today)}
+                    onClick={handleCapsuleTaken}
                     className="gradient-primary text-primary-foreground shadow-glow"
                   >
                     Tomei!
@@ -174,6 +200,33 @@ const Dashboard = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Referral Card - Navigate to dedicated page */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Card 
+            className="p-4 shadow-md bg-gradient-to-br from-amber-500 to-orange-600 cursor-pointer hover:shadow-lg transition-all"
+            onClick={() => navigate('/referral')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/20">
+                  <span className="text-2xl">🎁</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Indique e Ganhe</h3>
+                  <p className="text-sm text-white/80">
+                    Convide amigos e ganhe recompensas
+                  </p>
+                </div>
+              </div>
+              <Gift className="w-6 h-6 text-white" />
+            </div>
+          </Card>
+        </motion.div>
 
         {/* Progress Summary - Moved to top */}
         {profile?.imc !== undefined && profile.imc > 0 && (

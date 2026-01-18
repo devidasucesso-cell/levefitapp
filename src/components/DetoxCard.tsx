@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { getDetoxImage } from '@/data/recipeImages';
 
 interface DetoxCardProps {
   drink: DetoxDrink;
@@ -35,6 +36,8 @@ const getTimeLabel = (timeOfDay: string) => {
 };
 
 const DetoxCard = ({ drink, index }: DetoxCardProps) => {
+  const imageUrl = getDetoxImage(drink.timeOfDay as 'morning' | 'afternoon' | 'night', index);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -43,12 +46,20 @@ const DetoxCard = ({ drink, index }: DetoxCardProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
         >
-          <Card className="p-4 cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-card">
-            <div className="flex items-start gap-3">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl">🍵</span>
+          <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-card">
+            <div className="flex items-stretch">
+              {/* Image */}
+              <div className="w-20 h-20 flex-shrink-0 relative">
+                <img 
+                  src={imageUrl} 
+                  alt={drink.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </div>
-              <div className="flex-1 min-w-0">
+              
+              {/* Content */}
+              <div className="flex-1 p-3 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">{drink.name}</h3>
                 <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                   {getTimeIcon(drink.timeOfDay)}
@@ -61,6 +72,16 @@ const DetoxCard = ({ drink, index }: DetoxCardProps) => {
       </DialogTrigger>
       
       <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        {/* Modal Image */}
+        <div className="w-full h-40 -mt-6 -mx-6 mb-4 relative">
+          <img 
+            src={imageUrl} 
+            alt={drink.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        </div>
+        
         <DialogHeader>
           <DialogTitle className="text-xl font-display">{drink.name}</DialogTitle>
         </DialogHeader>
