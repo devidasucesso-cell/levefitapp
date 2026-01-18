@@ -96,6 +96,13 @@ const steps: OnboardingStep[] = [
     emoji: '⚙️',
   },
   {
+    id: 'referral',
+    title: 'Indique e Ganhe',
+    description: 'Na seção Indique e Ganhe, compartilhe seu código com amigos. Quando eles usarem, vocês dois ganham recompensas exclusivas!',
+    icon: <CheckCircle2 className="w-8 h-8" />,
+    emoji: '🎁',
+  },
+  {
     id: 'finish',
     title: 'Tudo pronto! 🚀',
     description: 'Agora você conhece todas as funcionalidades do LeveFit! Comece calculando seu IMC e explore as receitas personalizadas. Boa jornada!',
@@ -233,8 +240,8 @@ const OnboardingTutorial = ({ onComplete }: OnboardingTutorialProps) => {
               </Button>
             </div>
 
-            {/* Skip link */}
-            {!isLastStep && (
+            {/* Skip link - only for new users (first 3 steps) */}
+            {!isLastStep && currentStep < 3 && (
               <button
                 onClick={handleSkip}
                 className="w-full mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"

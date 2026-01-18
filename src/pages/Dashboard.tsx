@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut, Shield, Settings, Check, Gift } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInHours, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -201,32 +201,6 @@ const Dashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Referral Card - Navigate to dedicated page */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-        >
-          <Card 
-            className="p-4 shadow-md bg-gradient-to-br from-amber-500 to-orange-600 cursor-pointer hover:shadow-lg transition-all"
-            onClick={() => navigate('/referral')}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/20">
-                  <span className="text-2xl">🎁</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Indique e Ganhe</h3>
-                  <p className="text-sm text-white/80">
-                    Convide amigos e ganhe recompensas
-                  </p>
-                </div>
-              </div>
-              <Gift className="w-6 h-6 text-white" />
-            </div>
-          </Card>
-        </motion.div>
 
         {/* Progress Summary - Moved to top */}
         {profile?.imc !== undefined && profile.imc > 0 && (
