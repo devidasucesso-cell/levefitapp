@@ -317,13 +317,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const imcRounded = Math.round(imc * 100) / 100;
     const today = new Date().toISOString().split('T')[0];
 
-    // Update profile first
-    await updateProfile({
-      weight,
-      height,
-      imc: imcRounded,
-      imc_category: imcCategory,
+    // Optimistic update - immediately update local state for instant UI feedback
+    const newProgressEntry = { date: today, weight, imc: imcRounded };
+    setProgressHistory(prev => {
+      const existingIndex = prev.findIndex(e => e.date === today);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = newProgressEntry;
+        return updated;
+      }
+      return [...prev, newProgressEntry].sort((a, b) => a.date.localeCompare(b.date));
     });
+
+    // Optimistic profile update
+    if (profile) {
+      setProfile({
+        ...profile,
+        weight,
+        height,
+        imc: imcRounded,
+        imc_category: imcCategory,
+      });
+    }
+
+    // Update profile in database
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        weight,
+        height,
+        imc: imcRounded,
+        imc_category: imcCategory,
+      })
+      .eq('user_id', user.id);
+
+    if (profileError) {
+      console.error('Error updating profile:', profileError);
+    }
 
     // Automatically add to progress history
     const { error } = await supabase
@@ -337,17 +367,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         onConflict: 'user_id,date'
       });
 
-    if (!error) {
-      // Update local state immediately
-      setProgressHistory(prev => {
-        const existingIndex = prev.findIndex(e => e.date === today);
-        if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex] = { date: today, weight, imc: imcRounded };
-          return updated;
-        }
-        return [...prev, { date: today, weight, imc: imcRounded }];
-      });
+    if (error) {
+      console.error('Error updating progress history:', error);
     }
   };
 

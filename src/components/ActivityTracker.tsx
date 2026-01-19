@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +22,24 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState('exercises');
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  
+  // Local optimistic state for instant UI updates
+  const [localCompletedExercises, setLocalCompletedExercises] = useState<string[]>(completedExercises);
+  const [localCompletedRecipes, setLocalCompletedRecipes] = useState<string[]>(completedRecipes);
+  const [localCompletedDetox, setLocalCompletedDetox] = useState<string[]>(completedDetox);
+
+  // Sync with props when they change from realtime
+  useEffect(() => {
+    setLocalCompletedExercises(completedExercises);
+  }, [completedExercises]);
+
+  useEffect(() => {
+    setLocalCompletedRecipes(completedRecipes);
+  }, [completedRecipes]);
+
+  useEffect(() => {
+    setLocalCompletedDetox(completedDetox);
+  }, [completedDetox]);
 
   // Filter by user's IMC category
   const userCategory = profile?.imc_category || 'normal';
@@ -29,7 +47,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const filteredRecipes = recipes.filter(r => r.category === userCategory);
   const filteredDetox = detoxDrinks.filter(d => d.category === userCategory);
   
-  // Get first 20 exercises for display
+  // Get first 30 for display
   const displayedExercises = exercises.slice(0, 30);
   const displayedRecipes = filteredRecipes.slice(0, 30);
   const displayedDetox = filteredDetox.slice(0, 30);
@@ -37,10 +55,17 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const toggleExercise = async (exerciseId: string, exerciseName: string) => {
     if (!user || isLoading) return;
     
+    const isCompleted = localCompletedExercises.includes(exerciseId);
+    
+    // Optimistic update - immediately update UI
+    if (isCompleted) {
+      setLocalCompletedExercises(prev => prev.filter(id => id !== exerciseId));
+    } else {
+      setLocalCompletedExercises(prev => [...prev, exerciseId]);
+    }
+    
     setIsLoading(exerciseId);
     try {
-      const isCompleted = completedExercises.includes(exerciseId);
-      
       if (isCompleted) {
         const { error } = await supabase
           .from('completed_exercises')
@@ -63,6 +88,12 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
         toast.success('Exercício marcado como feito! 💪');
       }
     } catch (error) {
+      // Revert optimistic update on error
+      if (isCompleted) {
+        setLocalCompletedExercises(prev => [...prev, exerciseId]);
+      } else {
+        setLocalCompletedExercises(prev => prev.filter(id => id !== exerciseId));
+      }
       console.error('Error toggling exercise:', error);
       toast.error('Erro ao atualizar exercício');
     } finally {
@@ -73,10 +104,17 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const toggleRecipe = async (recipeId: string, recipeName: string) => {
     if (!user || isLoading) return;
     
+    const isCompleted = localCompletedRecipes.includes(recipeId);
+    
+    // Optimistic update - immediately update UI
+    if (isCompleted) {
+      setLocalCompletedRecipes(prev => prev.filter(id => id !== recipeId));
+    } else {
+      setLocalCompletedRecipes(prev => [...prev, recipeId]);
+    }
+    
     setIsLoading(recipeId);
     try {
-      const isCompleted = completedRecipes.includes(recipeId);
-      
       if (isCompleted) {
         const { error } = await supabase
           .from('completed_recipes')
@@ -99,6 +137,12 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
         toast.success('Receita preparada! 👨‍🍳');
       }
     } catch (error) {
+      // Revert optimistic update on error
+      if (isCompleted) {
+        setLocalCompletedRecipes(prev => [...prev, recipeId]);
+      } else {
+        setLocalCompletedRecipes(prev => prev.filter(id => id !== recipeId));
+      }
       console.error('Error toggling recipe:', error);
       toast.error('Erro ao atualizar receita');
     } finally {
@@ -109,10 +153,17 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const toggleDetox = async (detoxId: string, detoxName: string) => {
     if (!user || isLoading) return;
     
+    const isCompleted = localCompletedDetox.includes(detoxId);
+    
+    // Optimistic update - immediately update UI
+    if (isCompleted) {
+      setLocalCompletedDetox(prev => prev.filter(id => id !== detoxId));
+    } else {
+      setLocalCompletedDetox(prev => [...prev, detoxId]);
+    }
+    
     setIsLoading(detoxId);
     try {
-      const isCompleted = completedDetox.includes(detoxId);
-      
       if (isCompleted) {
         const { error } = await supabase
           .from('completed_detox')
@@ -135,6 +186,12 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
         toast.success('Detox consumido! 🥤');
       }
     } catch (error) {
+      // Revert optimistic update on error
+      if (isCompleted) {
+        setLocalCompletedDetox(prev => [...prev, detoxId]);
+      } else {
+        setLocalCompletedDetox(prev => prev.filter(id => id !== detoxId));
+      }
       console.error('Error toggling detox:', error);
       toast.error('Erro ao atualizar detox');
     } finally {
@@ -172,7 +229,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
         )}
       </div>
       <span className={cn(
-        "text-sm flex-1 truncate",
+        "text-sm flex-1 truncate transition-all",
         isCompleted ? "text-success font-medium line-through" : "text-foreground"
       )}>
         {name}
@@ -191,7 +248,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
             <span className="hidden sm:inline">Exercícios</span>
             <span className="sm:hidden">Ex</span>
             <span className="ml-1 text-[10px] bg-muted rounded-full px-1.5">
-              {completedExercises.length}
+              {localCompletedExercises.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="recipes" className="text-xs">
@@ -199,7 +256,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
             <span className="hidden sm:inline">Receitas</span>
             <span className="sm:hidden">Rec</span>
             <span className="ml-1 text-[10px] bg-muted rounded-full px-1.5">
-              {completedRecipes.length}
+              {localCompletedRecipes.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="detox" className="text-xs">
@@ -207,7 +264,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
             <span className="hidden sm:inline">Detox</span>
             <span className="sm:hidden">Det</span>
             <span className="ml-1 text-[10px] bg-muted rounded-full px-1.5">
-              {completedDetox.length}
+              {localCompletedDetox.length}
             </span>
           </TabsTrigger>
         </TabsList>
@@ -217,7 +274,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
             renderActivityItem(
               exercise.id,
               exercise.name,
-              completedExercises.includes(exercise.id),
+              localCompletedExercises.includes(exercise.id),
               () => toggleExercise(exercise.id, exercise.name),
               'orange'
             )
@@ -230,7 +287,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
               renderActivityItem(
                 recipe.id,
                 recipe.name,
-                completedRecipes.includes(recipe.id),
+                localCompletedRecipes.includes(recipe.id),
                 () => toggleRecipe(recipe.id, recipe.name),
                 'pink'
               )
@@ -248,7 +305,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
               renderActivityItem(
                 drink.id,
                 drink.name,
-                completedDetox.includes(drink.id),
+                localCompletedDetox.includes(drink.id),
                 () => toggleDetox(drink.id, drink.name),
                 'purple'
               )
