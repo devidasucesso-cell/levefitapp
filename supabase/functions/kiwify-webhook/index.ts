@@ -52,10 +52,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract referral code from tracking parameters
-    const refCode = payload.tracking_parameters?.ref || 
-                    payload.tracking_parameters?.src ||
-                    payload.tracking_parameters?.utm_source;
+    // Extract referral code from tracking parameters - prioritize utm_source
+    const refCode = payload.tracking_parameters?.utm_source || 
+                    payload.tracking_parameters?.ref ||
+                    payload.tracking_parameters?.src;
 
     if (!refCode) {
       console.log('No referral code found in order');

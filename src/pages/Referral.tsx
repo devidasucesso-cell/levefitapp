@@ -6,6 +6,7 @@ import { ArrowLeft, Gift, Copy, Share2, Check, Users, Star, Wallet, Clock, Check
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
+import CreditReleasedDialog from '@/components/CreditReleasedDialog';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
@@ -25,7 +26,10 @@ const Referral = () => {
     loading, 
     referralCode, 
     referralLink,
-    transactions
+    transactions,
+    showCreditDialog,
+    newCreditAmount,
+    dismissCreditDialog
   } = useWallet();
 
   const referralMessage = `🌿 Garanta seu LeveFit com 10% de desconto! Use meu código ${referralCode} na hora da compra. Acesse: ${referralLink}`;
@@ -226,7 +230,7 @@ const Referral = () => {
             <ol className="space-y-4">
               {[
                 { step: 1, title: 'Compartilhe seu link', desc: 'Envie seu link único para amigos e familiares' },
-                { step: 2, title: 'Seu amigo compra', desc: 'Quando ele comprar usando seu link na Kiwify' },
+                { step: 2, title: 'Seu amigo compra', desc: 'Quando ele comprar usando seu link' },
                 { step: 3, title: 'Você ganha R$25', desc: 'O crédito é liberado em sua carteira' },
               ].map((item) => (
                 <li key={item.step} className="flex items-start gap-3">
@@ -284,6 +288,13 @@ const Referral = () => {
 
       <WaterReminder />
       <Navigation />
+      
+      {/* Credit Released Dialog */}
+      <CreditReleasedDialog 
+        open={showCreditDialog} 
+        onOpenChange={dismissCreditDialog}
+        amount={newCreditAmount || 25}
+      />
     </div>
   );
 };
