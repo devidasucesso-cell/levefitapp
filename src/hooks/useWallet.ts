@@ -6,6 +6,7 @@ interface Wallet {
   id: string;
   user_id: string;
   balance: number;
+  referral_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -105,15 +106,15 @@ export const useWallet = () => {
     }
   };
 
-  const generateReferralCode = () => {
-    if (!user?.id) return '';
-    // Create unique referral code using user ID
-    return `REF${user.id.slice(0, 8).toUpperCase()}`;
+  const getReferralCode = () => {
+    // Use the auto-generated LF code from the wallet
+    return wallet?.referral_code || '';
   };
 
   const getReferralLink = () => {
-    const code = generateReferralCode();
-    return `https://kfrfrj.kfrfrj.com.br?ref=${code}`;
+    const code = getReferralCode();
+    if (!code) return '';
+    return `https://leveday.com.br?ref=${code}`;
   };
 
   const approvedReferrals = referrals.filter(r => r.status === 'approved');
@@ -129,7 +130,7 @@ export const useWallet = () => {
     pendingReferrals,
     convertedReferrals,
     loading,
-    referralCode: generateReferralCode(),
+    referralCode: getReferralCode(),
     referralLink: getReferralLink(),
     refetch: fetchWalletData,
   };

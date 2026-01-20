@@ -433,6 +433,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          referral_code: string | null
           updated_at: string
           user_id: string
         }
@@ -440,6 +441,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          referral_code?: string | null
           updated_at?: string
           user_id: string
         }
@@ -447,6 +449,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          referral_code?: string | null
           updated_at?: string
           user_id?: string
         }
