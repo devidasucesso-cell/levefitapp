@@ -116,7 +116,7 @@ export const useWallet = () => {
   const getReferralLink = () => {
     const code = getReferralCode();
     if (!code) return '';
-    return `https://levefit.kiwify.com.br/checkout?utm_source=${code}&utm_medium=social&utm_campaign=indique_e_ganhe`;
+    return `https://leveday.com.br/?ref=${code}`;
   };
 
   const approvedReferrals = referrals.filter(r => r.status === 'approved');
