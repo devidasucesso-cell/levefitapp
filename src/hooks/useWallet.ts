@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -42,6 +42,8 @@ export const useWallet = () => {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newCreditAmount, setNewCreditAmount] = useState<number | null>(null);
+  const [showCreditDialog, setShowCreditDialog] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -114,12 +116,23 @@ export const useWallet = () => {
   const getReferralLink = () => {
     const code = getReferralCode();
     if (!code) return '';
-    return `https://leveday.com.br?ref=${code}`;
+    return `https://levefit.kiwify.com.br/checkout?utm_source=${code}&utm_medium=social&utm_campaign=indique_e_ganhe`;
   };
 
   const approvedReferrals = referrals.filter(r => r.status === 'approved');
   const pendingReferrals = referrals.filter(r => r.status === 'pending');
   const convertedReferrals = referrals.filter(r => r.status === 'converted');
+
+  // Check for new approved referrals and trigger popup
+  const checkNewCredits = useCallback((amount: number) => {
+    setNewCreditAmount(amount);
+    setShowCreditDialog(true);
+  }, []);
+
+  const dismissCreditDialog = useCallback(() => {
+    setShowCreditDialog(false);
+    setNewCreditAmount(null);
+  }, []);
 
   return {
     wallet,
@@ -133,5 +146,9 @@ export const useWallet = () => {
     referralCode: getReferralCode(),
     referralLink: getReferralLink(),
     refetch: fetchWalletData,
+    showCreditDialog,
+    newCreditAmount,
+    checkNewCredits,
+    dismissCreditDialog,
   };
 };
