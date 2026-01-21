@@ -30,10 +30,10 @@ const categoryImages: Record<ExerciseCategory, string> = {
   yoga_pilates: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop',
   natacao_aquatico: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&h=200&fit=crop',
   ciclismo: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=200&fit=crop',
-  esportes: 'https://images.unsplash.com/photo-1461896836934- voices-0c35f?w=400&h=200&fit=crop',
+  esportes: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=group%20playing%20sports%20outdoors%20soccer%20basketball%20active%20sunny%20day&image_size=landscape_16_9',
   funcional: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=200&fit=crop',
   alongamento: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=200&fit=crop',
-  musculacao: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=200&fit=crop',
+  musculacao: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20gym%20interior%20dumbbells%20weights%20strength%20training%20equipment&image_size=landscape_16_9',
   outros: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=200&fit=crop',
 };
 

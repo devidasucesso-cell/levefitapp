@@ -240,7 +240,7 @@ const Referral = () => {
                     Já está tendo resultados com o LeveFit?
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Torne-se um afiliado oficial e receba comissões em dinheiro por cada venda.
+                    Torne-se um afiliado oficial e receba comissões.
                   </p>
                 </div>
 
