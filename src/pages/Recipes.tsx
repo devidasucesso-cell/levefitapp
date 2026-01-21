@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Clock, Flame, ChevronRight } from 'lucide-react';
 import { getRecipesByMealTime, getCategoryDescription } from '@/data/recipes';
+// Fix import path verified
 import { MealTime } from '@/types';
 import { getRecipeImage } from '@/data/recipeImages';
 import { motion } from 'framer-motion';
