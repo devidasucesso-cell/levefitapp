@@ -34,7 +34,7 @@ function base64urlDecode(base64url: string): Uint8Array {
 }
 
 // VAPID keys
-const VAPID_PUBLIC_KEY = 'BGvcZblHyosik-jYhehmJCmLgGXN2YFq45b--Tr3Lgk8xEFzDix4xBrJMjLXSmguJzwGWKtbmmGlkZxCbzttF1s';
+const VAPID_PUBLIC_KEY = 'BC2gGb8zod8oErGPwQt-UMS8_6UZiJTegdi17sMQsb4joMcCvMS0axTjJc8Z7dw-RfWtFnF8v10R2u0N5CkvSPU';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Create VAPID JWT for web push authentication
