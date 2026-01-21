@@ -232,9 +232,9 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
               </motion.div>
               
               {/* Progress indicator */}
-              {!achievement.unlocked && achievement.progress !== undefined && (
-                <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium">
-                  {achievement.progress}/{achievement.total}
+              {!achievement.unlocked && (
+                <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium flex items-center gap-1 bg-background/80 px-1 rounded-full">
+                  <span>🔒</span> 0%
                 </div>
               )}
 
