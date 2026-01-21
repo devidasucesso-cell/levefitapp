@@ -92,14 +92,15 @@ const CodeVerification = () => {
   const handleNoCode = async () => {
     setLoading(true);
     try {
-      await updateProfile({ 
-        code_validated: false,
-        kit_type: 'free'
-      });
+      // User doesn't have a code, proceed as Free user
+      // We ensure code_validated is false (which is default, but good to be explicit logic-wise)
+      await updateProfile({ code_validated: false });
       
       // We might want to ensure profile is ready
       await refreshProfile();
       
+      // If user has not selected a kit yet, we might want to ask them or just default to null/free
+      // For now, redirect to dashboard. Dashboard will handle Free/Premium view
       navigate('/dashboard');
       
       toast({

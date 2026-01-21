@@ -42,7 +42,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin && !isCodeValidated && !profile?.kit_type) {
+  // Code must be validated (unless admin)
+  if (!isAdmin && !isCodeValidated) {
     return <Navigate to="/code-verification" replace />;
   }
 
@@ -104,7 +105,8 @@ const CodeVerificationRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (isCodeValidated || isAdmin || profile?.kit_type) {
+  // If code already validated or is admin, go to dashboard (kit selection handles its own redirect)
+  if (isCodeValidated || isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
