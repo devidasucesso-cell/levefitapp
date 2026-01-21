@@ -317,16 +317,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const imcRounded = Math.round(imc * 100) / 100;
     const today = new Date().toISOString().split('T')[0];
 
-    // Optimistic update - immediately update local state for instant UI feedback
+    // Prepare entries
     const newProgressEntry = { date: today, weight, imc: imcRounded };
-    setProgressHistory(prev => {
-      const existingIndex = prev.findIndex(e => e.date === today);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = newProgressEntry;
-        return updated;
+    let initialEntry: { date: string; weight: number; imc: number } | null = null;
+
+    // Check if we need to backfill initial weight (if no history exists)
+    if (progressHistory.length === 0 && profile?.weight && profile?.created_at) {
+      const createdDate = profile.created_at.split('T')[0];
+      // Only backfill if the creation date is before today
+      if (createdDate < today) {
+        initialEntry = {
+          date: createdDate,
+          weight: profile.weight,
+          imc: profile.imc || 0
+        };
       }
-      return [...prev, newProgressEntry].sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    // Optimistic update - immediately update local state for instant UI feedback
+    setProgressHistory(prev => {
+      let updated = [...prev];
+
+      // Add initial entry if needed and doesn't exist
+      if (initialEntry && !updated.some(e => e.date === initialEntry.date)) {
+        updated.push(initialEntry);
+      }
+
+      const existingIndex = updated.findIndex(e => e.date === today);
+      if (existingIndex >= 0) {
+        updated[existingIndex] = newProgressEntry;
+      } else {
+        updated.push(newProgressEntry);
+      }
+
+      return updated.sort((a, b) => a.date.localeCompare(b.date));
     });
 
     // Optimistic profile update
@@ -356,6 +380,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Automatically add to progress history
+    // First backfill if needed
+    if (initialEntry) {
+      const { error: initialError } = await supabase
+        .from('progress_history')
+        .upsert({
+          user_id: user.id,
+          date: initialEntry.date,
+          weight: initialEntry.weight,
+          imc: initialEntry.imc,
+        }, {
+          onConflict: 'user_id,date'
+        });
+      
+      if (initialError) {
+        console.error('Error backfilling initial progress:', initialError);
+      }
+    }
+
+    // Then add current entry
     const { error } = await supabase
       .from('progress_history')
       .upsert({

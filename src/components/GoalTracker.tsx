@@ -1,100 +1,142 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Pill, Droplets, Dumbbell, ChefHat, GlassWater, Trophy, ChevronRight } from 'lucide-react';
+import { Pill, Droplets, Dumbbell, ChefHat, GlassWater, Trophy, ChevronRight, Lock, CheckCircle2, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useGoalProgress } from '@/hooks/useGoalProgress';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import PrizeBanner from './PrizeBanner';
 
 const GoalTracker = () => {
-  const { 
-    capsuleDays, capsuleTarget,
-    hydrationDays, hydrationTarget,
-    exercisesCompleted, exerciseTarget,
-    recipesCompleted, recipeTarget,
-    detoxCompleted, detoxTarget,
-    totalProgress,
-    isLoading 
-  } = useGoalProgress();
   const navigate = useNavigate();
-
-  const goals = [
-    {
-      id: 'capsule',
-      icon: <Pill className="w-4 h-4" />,
-      name: 'Cápsulas',
-      current: capsuleDays,
-      target: capsuleTarget,
-      color: 'from-green-400 to-emerald-600',
-      bgColor: 'bg-green-500/10',
-      route: '/dashboard',
-    },
-    {
-      id: 'hydration',
-      icon: <Droplets className="w-4 h-4" />,
-      name: 'Hidratação',
-      current: hydrationDays,
-      target: hydrationTarget,
-      color: 'from-blue-400 to-cyan-600',
-      bgColor: 'bg-blue-500/10',
-      route: '/progress',
-    },
-    {
-      id: 'exercise',
-      icon: <Dumbbell className="w-4 h-4" />,
-      name: 'Exercícios',
-      current: exercisesCompleted,
-      target: exerciseTarget,
-      color: 'from-orange-400 to-red-600',
-      bgColor: 'bg-orange-500/10',
-      route: '/exercises',
-    },
-    {
-      id: 'recipe',
-      icon: <ChefHat className="w-4 h-4" />,
-      name: 'Receitas',
-      current: recipesCompleted,
-      target: recipeTarget,
-      color: 'from-pink-400 to-rose-600',
-      bgColor: 'bg-pink-500/10',
-      route: '/recipes',
-    },
-    {
-      id: 'detox',
-      icon: <GlassWater className="w-4 h-4" />,
-      name: 'Detox',
-      current: detoxCompleted,
-      target: detoxTarget,
-      color: 'from-purple-400 to-violet-600',
-      bgColor: 'bg-purple-500/10',
-      route: '/detox',
-    },
-  ];
+  const { 
+    capsuleDays, 
+    hydrationDays, 
+    exercisesCompleted, 
+    recipesCompleted, 
+    detoxCompleted, 
+    totalProgress, 
+    isLoading,
+    targets 
+  } = useGoalProgress();
 
   if (isLoading) {
     return (
       <Card className="p-4 bg-card animate-pulse">
         <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-8 bg-muted rounded"></div>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-muted rounded"></div>
           ))}
         </div>
       </Card>
     );
   }
 
+  // Determine current week/phase
+  const isWeek1Complete = totalProgress >= 30;
+  const isWeek2Complete = totalProgress >= 55;
+  const isWeek3Complete = totalProgress >= 75;
+
+  const weeks = [
+    {
+      id: 1,
+      title: "SEMANA 1 — ADAPTAÇÃO",
+      subtitle: "Criar hábito",
+      status: isWeek1Complete ? 'completed' : 'current',
+      progress: Math.min(totalProgress / 30 * 100, 100),
+      message: "Seu corpo está se adaptando. Continue.",
+      goals: [
+        { 
+          icon: <Pill className="w-4 h-4" />, 
+          text: `Tomar cápsulas (${Math.min(capsuleDays, targets.week1.capsule)}/${targets.week1.capsule})`,
+          completed: capsuleDays >= targets.week1.capsule
+        },
+        { 
+          icon: <Droplets className="w-4 h-4" />, 
+          text: `Registrar água (${Math.min(hydrationDays, targets.week1.hydration)}/${targets.week1.hydration})`,
+          completed: hydrationDays >= targets.week1.hydration
+        },
+        { 
+          icon: <Dumbbell className="w-4 h-4" />, 
+          text: `Exercícios leves (${Math.min(exercisesCompleted, targets.week1.exercise)}/${targets.week1.exercise})`,
+          completed: exercisesCompleted >= targets.week1.exercise
+        }
+      ]
+    },
+    {
+      id: 2,
+      title: "SEMANA 2 — CONSTÂNCIA",
+      subtitle: "Sentir resultado",
+      status: !isWeek1Complete ? 'locked' : isWeek2Complete ? 'completed' : 'current',
+      progress: isWeek1Complete ? Math.min((totalProgress - 30) / 25 * 100, 100) : 0,
+      message: "Seu corpo já começou a responder.",
+      goals: [
+        { 
+          icon: <Pill className="w-4 h-4" />, 
+          text: `Cápsulas (${Math.min(capsuleDays, targets.week2.capsule)}/${targets.week2.capsule})`,
+          completed: capsuleDays >= targets.week2.capsule
+        },
+        { 
+          icon: <Droplets className="w-4 h-4" />, 
+          text: `Água (${Math.min(hydrationDays, targets.week2.hydration)}/${targets.week2.hydration})`,
+          completed: hydrationDays >= targets.week2.hydration
+        },
+        { 
+          icon: <Dumbbell className="w-4 h-4" />, 
+          text: `Exercícios acumulados (${Math.min(exercisesCompleted, targets.week2.exercise)}/${targets.week2.exercise})`,
+          completed: exercisesCompleted >= targets.week2.exercise
+        },
+        { 
+          icon: <ChefHat className="w-4 h-4" />, 
+          text: `Receita ou Detox (${Math.min(recipesCompleted + detoxCompleted, targets.week2.recipeDetox)}/${targets.week2.recipeDetox})`,
+          completed: (recipesCompleted + detoxCompleted) >= targets.week2.recipeDetox
+        }
+      ]
+    },
+    {
+      id: 3,
+      title: "SEMANA 3 — TRANSFORMAÇÃO",
+      subtitle: "Evolução visível",
+      status: !isWeek2Complete ? 'locked' : isWeek3Complete ? 'completed' : 'current',
+      progress: isWeek2Complete ? Math.min((totalProgress - 55) / 20 * 100, 100) : 0,
+      message: "Seu corpo já está em transformação.",
+      goals: [
+        { 
+          icon: <Pill className="w-4 h-4" />, 
+          text: `Cápsulas (${Math.min(capsuleDays, targets.week3.capsule)}/${targets.week3.capsule})`,
+          completed: capsuleDays >= targets.week3.capsule
+        },
+        { 
+          icon: <Droplets className="w-4 h-4" />, 
+          text: `Água (${Math.min(hydrationDays, targets.week3.hydration)}/${targets.week3.hydration})`,
+          completed: hydrationDays >= targets.week3.hydration
+        },
+        { 
+          icon: <Dumbbell className="w-4 h-4" />, 
+          text: `Exercícios total (${Math.min(exercisesCompleted, targets.week3.exercise)}/${targets.week3.exercise})`,
+          completed: exercisesCompleted >= targets.week3.exercise
+        },
+        { 
+          icon: <Trophy className="w-4 h-4" />, 
+          text: "Progresso 75%+",
+          completed: totalProgress >= 75
+        }
+      ]
+    }
+  ];
+
   return (
-    <Card className="p-4 bg-card">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-4 bg-card space-y-6">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
             <Trophy className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground text-sm">Metas do Prêmio</h3>
-            <p className="text-[10px] text-muted-foreground">Complete 75% para ganhar</p>
+            <h3 className="font-semibold text-foreground text-sm">Conquistas por Semana</h3>
+            <p className="text-[10px] text-muted-foreground">Siga o plano ideal</p>
           </div>
         </div>
         <div className="text-right">
@@ -107,58 +149,72 @@ const GoalTracker = () => {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {goals.map((goal, index) => {
-          const percentage = Math.min((goal.current / goal.target) * 100, 100);
-          const isComplete = goal.current >= goal.target;
-
-          return (
-            <motion.div
-              key={goal.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => navigate(goal.route)}
-              className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
-            >
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center",
-                isComplete ? `bg-gradient-to-br ${goal.color}` : goal.bgColor
-              )}>
-                <span className={isComplete ? "text-white" : "text-muted-foreground"}>
-                  {goal.icon}
-                </span>
+      <div className="space-y-4">
+        {weeks.map((week) => (
+          <motion.div
+            key={week.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "rounded-xl border p-4 transition-all",
+              week.status === 'current' ? "bg-accent/5 border-primary/20 shadow-sm" : 
+              week.status === 'completed' ? "bg-success/5 border-success/20" : 
+              "bg-muted/30 border-border opacity-60"
+            )}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className={cn("font-bold text-sm", 
+                  week.status === 'completed' ? "text-success" : 
+                  week.status === 'current' ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {week.title}
+                </h4>
+                <p className="text-xs text-muted-foreground">{week.subtitle}</p>
               </div>
+              {week.status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
+              {week.status === 'completed' && <CheckCircle2 className="w-5 h-5 text-success" />}
+            </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-foreground truncate">{goal.name}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {goal.current}/{goal.target}
+            {/* Progress Bar for the Week */}
+            <div className="space-y-1 mb-4">
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>Progresso da fase</span>
+                <span>{Math.round(week.progress)}%</span>
+              </div>
+              <Progress value={week.progress} className="h-1.5" />
+            </div>
+
+            {/* Goals List */}
+            <div className="space-y-2">
+              {week.goals.map((goal, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-xs">
+                  <div className={cn(
+                    "w-5 h-5 rounded-full flex items-center justify-center border",
+                    goal.completed ? "bg-success text-white border-success" : "bg-background text-muted-foreground border-border"
+                  )}>
+                    {goal.completed ? <CheckCircle2 className="w-3 h-3" /> : goal.icon}
+                  </div>
+                  <span className={cn(goal.completed && "text-muted-foreground line-through")}>
+                    {goal.text}
                   </span>
                 </div>
-                <Progress 
-                  value={percentage} 
-                  className="h-1.5"
-                />
+              ))}
+            </div>
+
+            {/* Motivational Message - Only if current or completed */}
+            {week.status !== 'locked' && (
+              <div className="mt-3 pt-3 border-t border-border/50 text-center">
+                <p className="text-xs italic text-muted-foreground">"{week.message}"</p>
               </div>
-
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            </motion.div>
-          );
-        })}
+            )}
+          </motion.div>
+        ))}
       </div>
-
-      {totalProgress >= 75 && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 pt-3 border-t border-border"
-        >
-          <p className="text-center text-sm text-success font-medium">
-            🎉 Parabéns! Você desbloqueou a promoção!
-          </p>
-        </motion.div>
+      
+      {/* Prize Banner Component - Shown when Week 3 is complete (75%+) */}
+      {isWeek3Complete && (
+        <PrizeBanner />
       )}
     </Card>
   );
