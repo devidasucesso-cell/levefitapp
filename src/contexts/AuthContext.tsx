@@ -208,10 +208,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
+      // Only set session if onAuthStateChange hasn't already fired
+      if (!user && session) {
+        setSession(session);
+        setUser(session.user);
+        
         Promise.all([
           fetchProfile(session.user.id),
           fetchCapsuleDays(session.user.id),
@@ -219,7 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchProgressHistory(session.user.id),
           checkAdminRole(session.user.id),
         ]).finally(() => setIsLoading(false));
-      } else {
+      } else if (!session) {
         setIsLoading(false);
       }
     });
@@ -227,65 +228,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Set up realtime subscriptions
-  useEffect(() => {
-    if (!user) return;
-
-    const profileChannel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchProfile(user.id);
-        }
-      )
-      .subscribe();
-
-    const capsuleChannel = supabase
-      .channel('capsule-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'capsule_days',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchCapsuleDays(user.id);
-        }
-      )
-      .subscribe();
-
-    const progressChannel = supabase
-      .channel('progress-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'progress_history',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchProgressHistory(user.id);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(profileChannel);
-      supabase.removeChannel(capsuleChannel);
-      supabase.removeChannel(progressChannel);
-    };
-  }, [user]);
-
+  // Removed expensive realtime listeners. 
+  // We rely on local optimistic updates and manual refresh when needed.
+  
   const logout = async () => {
     await supabase.auth.signOut();
     setProfile(null);
