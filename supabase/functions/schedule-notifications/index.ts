@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// VAPID keys
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// VAPID keys - MUST match the key used in usePushNotifications.ts
+const VAPID_PUBLIC_KEY = 'BGvcZblHyosik-jYhehmJCmLgGXN2YFq45b--Tr3Lgk8xEFzDix4xBrJMjLXSmguJzwGWKtbmmGlkZxCbzttF1s';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Helper to encode to base64url
@@ -120,13 +120,27 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (error) throw error;
 
-      // Filter users whose capsule time is within 5 min window
+      // Convert UTC to Brazil time (UTC-3) for comparison
+      // User's capsule_time is stored in Brazil timezone
+      const brazilOffset = -3 * 60 * 60 * 1000; // -3 hours in milliseconds
+      const brazilNow = new Date(now.getTime() + brazilOffset);
+      const brazilHour = brazilNow.getUTCHours();
+      const brazilMinute = brazilNow.getUTCMinutes();
+      const currentBrazilMinutes = brazilHour * 60 + brazilMinute;
+      
+      console.log(`Current Brazil time: ${brazilHour}:${brazilMinute} (${currentBrazilMinutes} minutes)`);
+
+      // Filter users whose capsule time is within 2 min window
       const targetUsers = settings?.filter(s => {
         if (!s.capsule_time) return false;
-        const [h, m] = s.capsule_time.split(':').map(Number);
-        const settingMinutes = h * 60 + m;
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        return Math.abs(settingMinutes - currentMinutes) <= 2;
+        const timeParts = s.capsule_time.split(':').map(Number);
+        const settingMinutes = timeParts[0] * 60 + timeParts[1];
+        const diff = Math.abs(settingMinutes - currentBrazilMinutes);
+        
+        console.log(`User ${s.user_id}: capsule_time=${s.capsule_time}, setting=${settingMinutes}, brazil=${currentBrazilMinutes}, diff=${diff}`);
+        
+        // Handle midnight wrap-around
+        return diff <= 2 || diff >= (24 * 60 - 2);
       }) || [];
 
       totalUsers = targetUsers.length;

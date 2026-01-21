@@ -218,11 +218,16 @@ const handler = async (req: Request): Promise<Response> => {
       };
     } else if (type === 'capsule') {
       const now = new Date();
-      const currentHour = now.getUTCHours(); // Use UTC for server
-      const currentMinute = now.getUTCMinutes();
-      const currentMinutes = currentHour * 60 + currentMinute;
+      
+      // Convert UTC to Brazil time (UTC-3) for comparison
+      // User's capsule_time is stored in Brazil timezone
+      const brazilOffset = -3 * 60 * 60 * 1000; // -3 hours in milliseconds
+      const brazilNow = new Date(now.getTime() + brazilOffset);
+      const brazilHour = brazilNow.getUTCHours();
+      const brazilMinute = brazilNow.getUTCMinutes();
+      const currentBrazilMinutes = brazilHour * 60 + brazilMinute;
 
-      console.log(`Current UTC time: ${currentHour}:${currentMinute} (${currentMinutes} minutes)`);
+      console.log(`Current Brazil time: ${brazilHour}:${brazilMinute} (${currentBrazilMinutes} minutes)`);
 
       const { data: usersToNotify, error: usersError } = await supabase
         .from('notification_settings')
@@ -238,20 +243,16 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Found ${usersToNotify?.length || 0} users with capsule reminder enabled`);
 
       // Filter users whose capsule time is within 2 min window
-      // capsule_time is stored as "HH:MM:SS" in the database
+      // capsule_time is stored as "HH:MM:SS" in Brazil timezone
       const filtered = usersToNotify?.filter(s => {
         if (!s.capsule_time) return false;
         // Handle both "HH:MM" and "HH:MM:SS" formats
         const timeParts = s.capsule_time.split(':').map(Number);
-        const h = timeParts[0];
-        const m = timeParts[1];
-        const settingMinutes = h * 60 + m;
+        const settingMinutes = timeParts[0] * 60 + timeParts[1];
         
-        // Adjust for Brazil timezone (UTC-3)
-        const brazilMinutes = (currentMinutes + (24 * 60) - 180) % (24 * 60);
-        const diff = Math.abs(settingMinutes - brazilMinutes);
+        const diff = Math.abs(settingMinutes - currentBrazilMinutes);
         
-        console.log(`User ${s.user_id}: capsule_time=${s.capsule_time}, settingMin=${settingMinutes}, brazilMin=${brazilMinutes}, diff=${diff}`);
+        console.log(`User ${s.user_id}: capsule_time=${s.capsule_time}, setting=${settingMinutes}, brazil=${currentBrazilMinutes}, diff=${diff}`);
         
         return diff <= 2 || diff >= (24 * 60 - 2); // Handle midnight wrap-around
       }) || [];

@@ -137,6 +137,19 @@ export const usePushNotifications = () => {
       return false;
     }
 
+    // Check iOS-specific requirements
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (isiOS && !isStandalone) {
+      toast({
+        title: 'Instale o app primeiro',
+        description: 'No iPhone/iPad, instale o app na tela inicial (Safari → Compartilhar → Adicionar à Tela de Início) para receber notificações.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     try {
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission as PermissionStatus);
@@ -365,6 +378,14 @@ export const usePushNotifications = () => {
 
   // Get a user-friendly permission status message
   const getPermissionMessage = useCallback(() => {
+    // Check iOS-specific message
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (isiOS && !isStandalone) {
+      return 'Instale o app na tela inicial para receber notificações';
+    }
+    
     switch (permissionStatus) {
       case 'granted':
         return isSubscribed 
