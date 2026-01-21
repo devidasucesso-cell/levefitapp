@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const kits = [
+  { id: 'free', label: 'Plano Gratuito', description: 'Acesso limitado ao app' },
   { id: '1_pote', label: '1 Pote', description: '30 dias de tratamento' },
   { id: '3_potes', label: '3 Potes', description: '90 dias de tratamento' },
   { id: '5_potes', label: '5 Potes', description: '150 dias de tratamento' },
