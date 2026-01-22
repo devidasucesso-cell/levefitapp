@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // VAPID keys - MUST match the key used in usePushNotifications.ts
-const VAPID_PUBLIC_KEY = 'BKc8xqaDTei1MxJfz-0ENQzUoJEPof7R4EszA68XxDb8m8Xs9xW5FwTz__e8L55NbqBJpn_R_qcLjMBqLJpdXHM';
+const VAPID_PUBLIC_KEY = 'BC2gGb8zod8oErGPwQt-UMS8_6UZiJTegdi17sMQsb4joMcCvMS0axTjJc8Z7dw-RfWtFnF8v10R2u0N5CkvSPU';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Helper to encode to base64url
@@ -165,84 +165,6 @@ const handler = async (req: Request): Promise<Response> => {
           if (success) successCount++;
         }
       }
-    } else if (type === 'journey_daily') {
-        // New Logic: Process Daily Journey Notifications based on user creation date
-        console.log('Processing journey notifications...');
-        const { data: activeUsers, error: usersError } = await supabase
-          .from('profiles')
-          .select('user_id, created_at, name')
-          .not('created_at', 'is', null);
-    
-        if (!usersError && activeUsers) {
-          let journeyCount = 0;
-          
-          for (const user of activeUsers) {
-            if (!user.created_at) continue;
-            
-            // Calculate days since start (diffDays = 1 means first day)
-            const startDate = new Date(user.created_at);
-            const diffTime = Math.abs(now.getTime() - startDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            let notification = null;
-    
-            // Journey Timeline Logic - Exact Match for Day
-            switch (diffDays) {
-              case 1:
-                notification = { title: '🎉 Bem-vinda ao LeveFit!', body: 'Seu processo começa hoje 💚', tag: 'journey-day-1' };
-                break;
-              case 3:
-                notification = { title: '💊 Dia 3!', body: 'Seu corpo já está se adaptando ✨', tag: 'journey-day-3' };
-                break;
-              case 5:
-                notification = { title: '🏅 Primeira conquista!', body: 'Continue firme 💚', tag: 'journey-day-5' };
-                break;
-              case 7:
-                notification = { title: '✅ Semana 1 concluída!', body: 'Ótimo começo 👏', tag: 'journey-day-7' };
-                break;
-              case 10:
-                notification = { title: '💚 Dia 10!', body: 'Constância gera resultado.', tag: 'journey-day-10' };
-                break;
-              case 14:
-                notification = { title: '🌱 2 semanas completas!', body: 'Seu corpo responde.', tag: 'journey-day-14' };
-                break;
-              case 18:
-                notification = { title: '👀 Falta pouco…', body: 'Continue registrando no app.', tag: 'journey-day-18' };
-                break;
-              case 21:
-                notification = { title: '🔓 Dia 21!', body: 'Você está muito perto 🎁', tag: 'journey-day-21' };
-                break;
-              case 23:
-                notification = { title: '🎯 Quase lá!', body: 'Complete suas conquistas.', tag: 'journey-day-23' };
-                break;
-              case 25:
-                notification = { title: '🎁 Benefício desbloqueado!', body: 'Não interrompa seus resultados. 🔥', tag: 'journey-day-25', url: '/progress' };
-                break;
-            }
-    
-            if (notification) {
-              const { data: subs } = await supabase
-                .from('push_subscriptions')
-                .select('*')
-                .eq('user_id', user.user_id);
-    
-              for (const sub of subs || []) {
-                const success = await sendPush(
-                  { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-                  {
-                    title: notification.title,
-                    body: notification.body,
-                    tag: notification.tag,
-                    url: notification.url || '/dashboard'
-                  }
-                );
-                if (success) journeyCount++;
-              }
-            }
-          }
-          console.log(`Sent ${journeyCount} journey notifications`);
-          successCount += journeyCount;
-        }
     } else if (type === 'water') {
       // Find users who need water reminders based on their interval
       const { data: settings, error } = await supabase

@@ -59,46 +59,82 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
 
   const achievements: Achievement[] = useMemo(() => [
     {
-      id: 'week-1',
-      name: 'Semana 1',
-      description: 'Concluída',
+      id: 'first-capsule',
+      name: 'Primeiro Passo',
+      description: 'Tomou sua primeira cápsula',
+      icon: <Pill className="w-5 h-5" />,
+      unlocked: capsuleDays >= 1,
+      color: 'from-green-400 to-green-600',
+    },
+    {
+      id: 'week-capsule',
+      name: 'Semana Completa',
+      description: '7 dias tomando a cápsula',
       icon: <Star className="w-5 h-5" />,
       unlocked: capsuleDays >= 7,
       progress: Math.min(capsuleDays, 7),
       total: 7,
-      color: 'from-green-400 to-green-600',
+      color: 'from-yellow-400 to-orange-500',
     },
     {
-      id: 'week-2',
-      name: 'Semana 2',
-      description: 'Concluída',
-      icon: <Star className="w-5 h-5" />,
-      unlocked: capsuleDays >= 14,
-      progress: Math.min(capsuleDays, 14),
-      total: 14,
-      color: 'from-blue-400 to-blue-600',
-    },
-    {
-      id: 'week-3',
-      name: 'Semana 3',
-      description: 'Concluída',
-      icon: <Star className="w-5 h-5" />,
-      unlocked: capsuleDays >= 21,
-      progress: Math.min(capsuleDays, 21),
-      total: 21,
-      color: 'from-purple-400 to-purple-600',
-    },
-    {
-      id: 'week-4',
-      name: 'Semana 4',
-      description: 'Concluída',
+      id: 'month-capsule',
+      name: 'Mês de Dedicação',
+      description: '30 dias tomando a cápsula',
       icon: <Trophy className="w-5 h-5" />,
       unlocked: capsuleDays >= 30,
       progress: Math.min(capsuleDays, 30),
       total: 30,
+      color: 'from-purple-400 to-purple-600',
+    },
+    {
+      id: 'hydration-start',
+      name: 'Hidratação Iniciada',
+      description: 'Primeiro dia batendo meta de água',
+      icon: <Droplets className="w-5 h-5" />,
+      unlocked: totalWaterDays >= 1,
+      color: 'from-blue-400 to-blue-600',
+    },
+    {
+      id: 'hydration-week',
+      name: 'Semana Hidratada',
+      description: '7 dias batendo a meta de água',
+      icon: <Zap className="w-5 h-5" />,
+      unlocked: totalWaterDays >= 7,
+      progress: Math.min(totalWaterDays, 7),
+      total: 7,
+      color: 'from-cyan-400 to-cyan-600',
+    },
+    {
+      id: 'consistency',
+      name: 'Consistência',
+      description: '15 dias de cápsula',
+      icon: <Target className="w-5 h-5" />,
+      unlocked: capsuleDays >= 15,
+      progress: Math.min(capsuleDays, 15),
+      total: 15,
+      color: 'from-pink-400 to-pink-600',
+    },
+    {
+      id: 'master',
+      name: 'Mestre LeveFit',
+      description: '60 dias de tratamento',
+      icon: <Award className="w-5 h-5" />,
+      unlocked: capsuleDays >= 60,
+      progress: Math.min(capsuleDays, 60),
+      total: 60,
       color: 'from-amber-400 to-amber-600',
     },
-  ], [capsuleDays]);
+    {
+      id: 'fire',
+      name: 'Em Chamas',
+      description: '3 dias seguidos de hidratação',
+      icon: <Flame className="w-5 h-5" />,
+      unlocked: waterStreak >= 3,
+      progress: Math.min(waterStreak, 3),
+      total: 3,
+      color: 'from-red-400 to-red-600',
+    },
+  ], [capsuleDays, totalWaterDays, waterStreak]);
 
   // Check for newly unlocked achievements (only those not shown before in DB)
   useEffect(() => {
@@ -196,9 +232,9 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
               </motion.div>
               
               {/* Progress indicator */}
-              {!achievement.unlocked && (
-                <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium flex items-center gap-1 bg-background/80 px-1 rounded-full">
-                  <span>🔒</span> 0%
+              {!achievement.unlocked && achievement.progress !== undefined && (
+                <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium">
+                  {achievement.progress}/{achievement.total}
                 </div>
               )}
 

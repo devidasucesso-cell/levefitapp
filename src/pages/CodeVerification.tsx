@@ -1,217 +1,194 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Lock, ArrowRight, Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { KeyRound, Loader2, LogOut, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const CodeVerification = () => {
-  const { user, refreshProfile, updateProfile } = useAuth();
-  const [code, setCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [hasCode, setHasCode] = useState<boolean | null>(null); // New state for "Do you have a code?"
+  const { logout, profile, user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [code, setCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleVerify = async () => {
-    if (!code) return;
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setLoading(true);
+    if (!code.trim()) {
+      toast({
+        title: "Código obrigatório",
+        description: "Por favor, insira o código de acesso.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      // Check if code exists and is unused
-      // First, try to find the code to give better error messages
-      const { data: codeData, error: fetchError } = await supabase
-        .from('access_codes')
-        .select('*')
-        .eq('code', code)
-        .maybeSingle();
+      // Use atomic RPC function to prevent race conditions
+      const { data, error } = await supabase.rpc('claim_access_code', {
+        code_input: code.toUpperCase().trim(),
+        claiming_user_id: user.id
+      });
 
-      if (fetchError) throw fetchError;
-
-      if (!codeData) {
-        toast({
-          title: 'Código inválido',
-          description: 'Verifique se digitou corretamente.',
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
+      if (error) {
+        throw error;
       }
 
-      if (codeData.is_used) {
+      const result = data as { success: boolean; error?: string; code_id?: string };
+
+      if (!result.success) {
+        let errorTitle = "Erro";
+        let errorDescription = "Ocorreu um erro ao verificar o código.";
+
+        switch (result.error) {
+          case 'CODE_NOT_FOUND':
+            errorTitle = "Código inválido";
+            errorDescription = "O código inserido não existe.";
+            break;
+          case 'CODE_ALREADY_USED':
+            errorTitle = "Código já utilizado";
+            errorDescription = "Este código já foi usado por outro usuário.";
+            break;
+          case 'CODE_LOCKED':
+            errorTitle = "Código em processamento";
+            errorDescription = "Este código está sendo processado. Tente novamente em alguns segundos.";
+            break;
+        }
+
         toast({
-          title: 'Código já utilizado',
-          description: 'Este código já foi resgatado.',
-          variant: 'destructive',
+          title: errorTitle,
+          description: errorDescription,
+          variant: "destructive",
         });
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
-
-      // Try to claim the code
-      const { error: updateError } = await supabase
-        .from('access_codes')
-        .update({ 
-          is_used: true, 
-          used_by: user?.id,
-          used_at: new Date().toISOString()
-        })
-        .eq('code', code)
-        .eq('is_used', false); // Optimistic lock
-
-      if (updateError) throw updateError;
-
-      // Update profile to mark code as validated
-      await updateProfile({ code_validated: true });
-      
-      // Refresh profile to update context
-      await refreshProfile();
 
       toast({
-        title: 'Código validado! 🎉',
-        description: 'Bem-vindo ao LeveFit Premium.',
+        title: "Código validado!",
+        description: "Seu acesso foi liberado com sucesso.",
       });
-      
-      navigate('/kit-selection');
-    } catch (error) {
+
+      // Refresh profile then navigate to kit selection
+      await refreshProfile();
+      navigate('/kit-selection', { state: { fromCodeVerification: true }, replace: true });
+
+    } catch (error: unknown) {
       console.error('Error verifying code:', error);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível validar o código. Tente novamente.',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Ocorreu um erro ao verificar o código. Tente novamente.",
+        variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleNoCode = async () => {
-    setLoading(true);
-    try {
-      // User doesn't have a code, proceed as Free user
-      // We ensure code_validated is false (which is default, but good to be explicit logic-wise)
-      await updateProfile({ code_validated: false });
-      
-      // We might want to ensure profile is ready
-      await refreshProfile();
-      
-      // If user has not selected a kit yet, we might want to ask them or just default to null/free
-      // For now, redirect to dashboard. Dashboard will handle Free/Premium view
-      navigate('/dashboard');
-      
-      toast({
-        title: 'Acesso Gratuito Iniciado',
-        description: 'Você tem acesso limitado ao app.',
-      });
-    } catch (error) {
-      console.error('Error entering as free user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Step 1: Ask if user has code
-  if (hasCode === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md"
-        >
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold font-display text-foreground">Código de Acesso</h1>
-            <p className="text-muted-foreground mt-2">
-              Você possui um código de acesso Premium?
-            </p>
-          </div>
-
-          <Card className="p-6 space-y-4 bg-card border-2 border-border/50">
-            <Button 
-              className="w-full h-14 text-lg gradient-primary text-primary-foreground shadow-lg hover:scale-[1.02] transition-transform"
-              onClick={() => setHasCode(true)}
-            >
-              <CheckCircle2 className="w-5 h-5 mr-2" />
-              Sim, tenho um código
-            </Button>
-            
-            <Button 
-              variant="outline"
-              className="w-full h-14 text-lg border-2 hover:bg-secondary/50"
-              onClick={handleNoCode}
-              disabled={loading}
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Não, quero entrar sem código"}
-            </Button>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Step 2: Enter code (if hasCode is true)
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Validar Acesso</h1>
-          <p className="text-muted-foreground mt-2">
-            Digite seu código de acesso exclusivo para liberar o app.
-          </p>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full mb-4 shadow-lg"
+          >
+            <KeyRound className="w-10 h-10 text-white" />
+          </motion.div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            LeveFit
+          </h1>
         </div>
 
-        <Card className="p-6 bg-card border-2 border-border/50">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground ml-1">
-                Código de acesso
-              </label>
-              <Input
-                type="text"
-                placeholder="Ex: LEVE2024"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="text-center text-2xl font-mono tracking-widest h-14 uppercase"
-              />
-            </div>
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+          <CardContent className="p-6 space-y-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-center space-y-2"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full">
+                <CheckCircle className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-foreground">
+                Ativar Acesso
+              </h2>
+              <p className="text-muted-foreground">
+                Olá{profile?.name ? `, ${profile.name}` : ''}! Insira o código de acesso fornecido para liberar o uso do aplicativo.
+              </p>
+            </motion.div>
 
-            <Button
-              onClick={handleVerify}
-              disabled={!code || loading}
-              className="w-full h-12 text-lg gradient-primary text-primary-foreground shadow-glow"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  Validar Código
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </>
-              )}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              className="w-full text-sm text-muted-foreground"
-              onClick={() => setHasCode(null)}
-            >
-              Voltar
-            </Button>
-          </div>
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Código de Acesso</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  placeholder="Digite seu código"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="text-center text-lg tracking-widest font-mono uppercase"
+                  maxLength={20}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Ativar Código
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={logout}
+                className="w-full"
+                disabled={isLoading}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       </motion.div>
     </div>

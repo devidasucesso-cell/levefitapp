@@ -12,15 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/AuthContext';
-import PremiumLock from './PremiumLock';
 
 interface DailyDietSuggestionProps {
   imcCategory: IMCCategory;
 }
 
 const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
-  const { isCodeValidated } = useAuth();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedDrink, setSelectedDrink] = useState<DetoxDrink | null>(null);
 
@@ -93,15 +90,8 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
     },
   ];
 
-  // If user is FREE (not validated), they can't see the daily plan details
-  // They can see the card structure but clicking opens PremiumLock
-  const handleItemClick = (type: 'recipe' | 'drink', item: any) => {
-    if (type === 'recipe') setSelectedRecipe(item);
-    if (type === 'drink') setSelectedDrink(item);
-  };
-
   return (
-    <Card className="p-4 shadow-md bg-card overflow-hidden relative">
+    <Card className="p-4 shadow-md bg-card overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -114,7 +104,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
         </div>
       </div>
 
-      <div className="space-y-4 relative">
+      <div className="space-y-4">
         {/* Receitas Section */}
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -134,16 +124,17 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => recipe && handleItemClick('recipe', recipe)}
+                  onClick={() => recipe && setSelectedRecipe(recipe)}
                 >
                   {/* Background Image */}
                   <div className="absolute inset-0">
                     <img 
                       src={recipeImage} 
                       alt={recipe?.name || 'Receita'}
-                      className="w-full h-full object-cover filter brightness-[0.6]"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
                   </div>
                   
                   {/* Content */}
@@ -154,9 +145,9 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-white/80">{time.label}</p>
                       <p className="text-sm font-medium text-white truncate">
-                        {!isCodeValidated ? 'Conteúdo Exclusivo Premium' : (recipe?.name || 'Não disponível')}
+                        {recipe?.name || 'Não disponível'}
                       </p>
-                      {isCodeValidated && recipe?.calories && (
+                      {recipe?.calories && (
                         <p className="text-xs text-white/70">{recipe.calories} kcal</p>
                       )}
                     </div>
@@ -186,16 +177,17 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
                   className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => drink && handleItemClick('drink', drink)}
+                  onClick={() => drink && setSelectedDrink(drink)}
                 >
                   {/* Background Image */}
                   <div className="absolute inset-0">
                     <img 
                       src={detoxImage} 
                       alt={drink?.name || 'Detox'}
-                      className="w-full h-full object-cover filter brightness-[0.6]"
+                      className="w-full h-full object-cover"
                       loading="lazy"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
                   </div>
                   
                   {/* Content */}
@@ -206,7 +198,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-white/80">{time.label}</p>
                       <p className="text-sm font-medium text-white truncate">
-                        {!isCodeValidated ? 'Conteúdo Exclusivo Premium' : (drink?.name || 'Não disponível')}
+                        {drink?.name || 'Não disponível'}
                       </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
@@ -221,74 +213,68 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       {/* Recipe Detail Modal */}
       <Dialog open={!!selectedRecipe} onOpenChange={() => setSelectedRecipe(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          {!isCodeValidated ? (
-             <PremiumLock message="Mude sua rotina com o LeveFit, adquira já o seu" />
-          ) : (
+          {selectedRecipe && (
             <>
-              <DialogHeader>
-                <DialogTitle>{selectedRecipe?.name}</DialogTitle>
-              </DialogHeader>
-              
-              {selectedRecipe && (
-                <div className="space-y-6">
-                  {/* Recipe Image */}
-                  <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
-                    <img 
-                      src={getRecipeImage(selectedRecipe.mealTime, imcCategory, 0)} 
-                      alt={selectedRecipe.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h2 className="text-xl font-display font-bold text-white">{selectedRecipe.name}</h2>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-secondary">
-                      {selectedRecipe.mealTime === 'morning' && <Sun className="w-4 h-4 text-warning" />}
-                      {selectedRecipe.mealTime === 'afternoon' && <CloudSun className="w-4 h-4 text-primary" />}
-                      {selectedRecipe.mealTime === 'night' && <Moon className="w-4 h-4 text-info" />}
-                      {getMealTimeLabel(selectedRecipe.mealTime)}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {selectedRecipe.prepTime}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Flame className="w-4 h-4" />
-                      {selectedRecipe.calories} kcal
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2 text-foreground">Ingredientes:</h4>
-                    <ul className="space-y-1">
-                      {selectedRecipe.ingredients.map((ingredient, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          {ingredient}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2 text-foreground">Modo de preparo:</h4>
-                    <ol className="space-y-2">
-                      {selectedRecipe.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                          <span className="w-6 h-6 rounded-full gradient-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                            {i + 1}
-                          </span>
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
+              {/* Recipe Image */}
+              <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
+                <img 
+                  src={getRecipeImage(selectedRecipe.mealTime, imcCategory, 0)} 
+                  alt={selectedRecipe.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h2 className="text-xl font-display font-bold text-white">{selectedRecipe.name}</h2>
                 </div>
-              )}
+              </div>
             </>
+          )}
+          
+          {selectedRecipe && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-secondary">
+                  {selectedRecipe.mealTime === 'morning' && <Sun className="w-4 h-4 text-warning" />}
+                  {selectedRecipe.mealTime === 'afternoon' && <CloudSun className="w-4 h-4 text-primary" />}
+                  {selectedRecipe.mealTime === 'night' && <Moon className="w-4 h-4 text-info" />}
+                  {getMealTimeLabel(selectedRecipe.mealTime)}
+                </span>
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  {selectedRecipe.prepTime}
+                </span>
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Flame className="w-4 h-4" />
+                  {selectedRecipe.calories} kcal
+                </span>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Ingredientes:</h4>
+                <ul className="space-y-1">
+                  {selectedRecipe.ingredients.map((ingredient, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      {ingredient}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Modo de preparo:</h4>
+                <ol className="space-y-2">
+                  {selectedRecipe.instructions.map((step, i) => (
+                    <li key={i} className="flex gap-3 text-sm text-muted-foreground">
+                      <span className="w-6 h-6 rounded-full gradient-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -296,78 +282,72 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       {/* Detox Detail Modal */}
       <Dialog open={!!selectedDrink} onOpenChange={() => setSelectedDrink(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          {!isCodeValidated ? (
-             <PremiumLock message="Mude sua rotina com o LeveFit, adquira já o seu" />
-          ) : (
+          {selectedDrink && (
             <>
-              <DialogHeader>
-                <DialogTitle>{selectedDrink?.name}</DialogTitle>
-              </DialogHeader>
-              
-              {selectedDrink && (
-                <div className="space-y-6">
-                  {/* Detox Image */}
-                  <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
-                    <img 
-                      src={getDetoxImage(selectedDrink.timeOfDay, 0)} 
-                      alt={selectedDrink.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h2 className="text-xl font-display font-bold text-white">{selectedDrink.name}</h2>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary w-fit">
-                    {selectedDrink.timeOfDay === 'morning' && <Sun className="w-4 h-4 text-warning" />}
-                    {selectedDrink.timeOfDay === 'afternoon' && <CloudSun className="w-4 h-4 text-primary" />}
-                    {selectedDrink.timeOfDay === 'night' && <Moon className="w-4 h-4 text-info" />}
-                    <span className="text-sm">{getMealTimeLabel(selectedDrink.timeOfDay)}</span>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2 text-foreground">Ingredientes:</h4>
-                    <ul className="space-y-1">
-                      {selectedDrink.ingredients.map((ingredient, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                          {ingredient}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2 text-foreground">Modo de preparo:</h4>
-                    <ol className="space-y-2">
-                      {selectedDrink.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                          <span className="w-6 h-6 rounded-full gradient-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                            {i + 1}
-                          </span>
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      Benefícios:
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDrink.benefits.map((benefit, i) => (
-                        <span key={i} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                          {benefit}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+              {/* Detox Image */}
+              <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
+                <img 
+                  src={getDetoxImage(selectedDrink.timeOfDay, 0)} 
+                  alt={selectedDrink.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h2 className="text-xl font-display font-bold text-white">{selectedDrink.name}</h2>
                 </div>
-              )}
+              </div>
             </>
+          )}
+          
+          {selectedDrink && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary w-fit">
+                {selectedDrink.timeOfDay === 'morning' && <Sun className="w-4 h-4 text-warning" />}
+                {selectedDrink.timeOfDay === 'afternoon' && <CloudSun className="w-4 h-4 text-primary" />}
+                {selectedDrink.timeOfDay === 'night' && <Moon className="w-4 h-4 text-info" />}
+                <span className="text-sm">{getMealTimeLabel(selectedDrink.timeOfDay)}</span>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Ingredientes:</h4>
+                <ul className="space-y-1">
+                  {selectedDrink.ingredients.map((ingredient, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      {ingredient}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2 text-foreground">Modo de preparo:</h4>
+                <ol className="space-y-2">
+                  {selectedDrink.instructions.map((step, i) => (
+                    <li key={i} className="flex gap-3 text-sm text-muted-foreground">
+                      <span className="w-6 h-6 rounded-full gradient-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  Benefícios:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDrink.benefits.map((benefit, i) => (
+                    <span key={i} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
+                      {benefit}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

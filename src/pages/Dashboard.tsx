@@ -94,9 +94,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8 md:pl-64">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="gradient-hero p-4 sm:p-6 pb-6 sm:pb-8 rounded-b-3xl shadow-lg safe-area-top md:rounded-3xl md:m-4 md:shadow-xl">
+      <div className="gradient-hero p-4 sm:p-6 pb-6 sm:pb-8 rounded-b-3xl shadow-lg safe-area-top">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary-foreground/20 flex items-center justify-center">
@@ -132,7 +132,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mt-3 sm:mt-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 sm:mt-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -166,72 +166,66 @@ const Dashboard = () => {
       </div>
 
       {/* Content */}
-      <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 md:mt-0 max-w-5xl mx-auto md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-        
-        {/* Left Column (Desktop) */}
-        <div className="space-y-4">
-          {/* Capsule Reminder - Shows if 24h passed since last capsule */}
-          <AnimatePresence>
-            {shouldShowCapsuleReminder && showCapsuleReminder && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="p-4 shadow-md bg-card">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center gradient-primary shadow-glow">
-                        <Pill className="w-6 h-6 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Lembrete LeveFit</h3>
-                        <p className="text-sm text-muted-foreground">
-                          2 cápsulas/dia, antes das refeições
-                        </p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleCapsuleTaken}
-                      className="gradient-primary text-primary-foreground shadow-glow"
-                    >
-                      Tomei!
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Progress Summary */}
-          {profile?.imc !== undefined && profile.imc > 0 && (
-            <ProgressSummary />
-          )}
-
-          {/* IMC Calculator */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <IMCCalculator />
-          </motion.div>
-        </div>
-
-        {/* Right Column (Desktop) */}
-        <div className="space-y-4">
-          {/* Daily Diet Suggestion */}
-          {profile?.imc !== undefined && profile.imc > 0 && profile?.imc_category && (
+      <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
+        {/* Capsule Reminder - Shows if 24h passed since last capsule */}
+        <AnimatePresence>
+          {shouldShowCapsuleReminder && showCapsuleReminder && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <DailyDietSuggestion imcCategory={profile.imc_category as IMCCategory} />
+              <Card className="p-4 shadow-md bg-card">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center gradient-primary shadow-glow">
+                      <Pill className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Lembrete LeveFit</h3>
+                      <p className="text-sm text-muted-foreground">
+                        2 cápsulas/dia, antes das refeições
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleCapsuleTaken}
+                    className="gradient-primary text-primary-foreground shadow-glow"
+                  >
+                    Tomei!
+                  </Button>
+                </div>
+              </Card>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
+
+
+        {/* Progress Summary - Moved to top */}
+        {profile?.imc !== undefined && profile.imc > 0 && (
+          <ProgressSummary />
+        )}
+
+        {/* IMC Calculator (now "Registro de IMC") */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <IMCCalculator />
+        </motion.div>
+
+        {/* Daily Diet Suggestion */}
+        {profile?.imc !== undefined && profile.imc > 0 && profile?.imc_category && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <DailyDietSuggestion imcCategory={profile.imc_category as IMCCategory} />
+          </motion.div>
+        )}
 
       </div>
 
@@ -242,11 +236,7 @@ const Dashboard = () => {
           onClose={() => setShowTreatmentReminder(false)} 
         />
       )}
-      
-      {/* Navigation - Hidden on desktop if using sidebar, or adjusted */}
-      <div className="md:hidden">
-        <Navigation />
-      </div>
+      <Navigation />
       
       {/* Onboarding Tutorial */}
       <AnimatePresence>

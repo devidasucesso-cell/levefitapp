@@ -1,4 +1,4 @@
-// Service Worker for Push Notifications
+// Firebase Messaging Service Worker for Push Notifications
 // This service worker handles background push notifications
 
 // Handle push events - this works even when the app is closed

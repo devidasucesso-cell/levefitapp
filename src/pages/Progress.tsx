@@ -146,7 +146,8 @@ const Progress = () => {
             <GoalTracker />
             <ActivityTracker 
               completedExercises={completedExercises}
-              currentWeek={useGoalProgress().totalProgress < 30 ? 1 : useGoalProgress().totalProgress < 55 ? 2 : 3}
+              completedRecipes={completedRecipes}
+              completedDetox={completedDetox}
             />
           </TabsContent>
 

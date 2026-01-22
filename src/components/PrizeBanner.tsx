@@ -66,14 +66,16 @@ const PrizeBanner = () => {
             ⏰ Oferta válida por 48 horas
           </p>
 
-          <motion.button
+          <motion.a
+            href="https://pay.kiwify.com.br/seu-link-aqui" 
+            target="_blank"
+            rel="noopener noreferrer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.location.href = '/settings'}
-            className="block w-full bg-white text-orange-600 font-bold text-center py-2.5 rounded-lg shadow-lg hover:bg-gray-50 transition-colors text-sm uppercase tracking-wide cursor-pointer"
+            className="block w-full bg-white text-orange-600 font-bold text-center py-2.5 rounded-lg shadow-lg hover:bg-gray-50 transition-colors text-sm uppercase tracking-wide"
           >
             Quero meu pote grátis
-          </motion.button>
+          </motion.a>
         </div>
       </Card>
     </motion.div>

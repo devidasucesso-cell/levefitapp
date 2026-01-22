@@ -128,20 +128,20 @@ const GoalTracker = () => {
   ];
 
   return (
-    <Card className="p-4 bg-card space-y-6 md:p-6 md:space-y-8">
+    <Card className="p-4 bg-card space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 md:gap-4">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center md:w-12 md:h-12 md:rounded-2xl">
-            <Trophy className="w-4 h-4 text-white md:w-6 md:h-6" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+            <Trophy className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground text-sm md:text-lg">Conquistas por Semana</h3>
-            <p className="text-[10px] text-muted-foreground md:text-sm">Siga o plano ideal</p>
+            <h3 className="font-semibold text-foreground text-sm">Conquistas por Semana</h3>
+            <p className="text-[10px] text-muted-foreground">Siga o plano ideal</p>
           </div>
         </div>
         <div className="text-right">
           <span className={cn(
-            "text-lg font-bold md:text-2xl",
+            "text-lg font-bold",
             totalProgress >= 75 ? "text-success" : "text-foreground"
           )}>
             {totalProgress}%
@@ -149,14 +149,14 @@ const GoalTracker = () => {
         </div>
       </div>
 
-      <div className="space-y-4 md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
+      <div className="space-y-4">
         {weeks.map((week) => (
           <motion.div
             key={week.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "rounded-xl border p-4 transition-all md:p-5 md:flex md:flex-col",
+              "rounded-xl border p-4 transition-all",
               week.status === 'current' ? "bg-accent/5 border-primary/20 shadow-sm" : 
               week.status === 'completed' ? "bg-success/5 border-success/20" : 
               "bg-muted/30 border-border opacity-60"
@@ -164,13 +164,13 @@ const GoalTracker = () => {
           >
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h4 className={cn("font-bold text-sm md:text-base", 
+                <h4 className={cn("font-bold text-sm", 
                   week.status === 'completed' ? "text-success" : 
                   week.status === 'current' ? "text-primary" : "text-muted-foreground"
                 )}>
                   {week.title}
                 </h4>
-                <p className="text-xs text-muted-foreground md:text-sm">{week.subtitle}</p>
+                <p className="text-xs text-muted-foreground">{week.subtitle}</p>
               </div>
               {week.status === 'locked' && <Lock className="w-4 h-4 text-muted-foreground" />}
               {week.status === 'completed' && <CheckCircle2 className="w-5 h-5 text-success" />}
@@ -178,7 +178,7 @@ const GoalTracker = () => {
 
             {/* Progress Bar for the Week */}
             <div className="space-y-1 mb-4">
-              <div className="flex justify-between text-[10px] text-muted-foreground md:text-xs">
+              <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>Progresso da fase</span>
                 <span>{Math.round(week.progress)}%</span>
               </div>
@@ -186,11 +186,11 @@ const GoalTracker = () => {
             </div>
 
             {/* Goals List */}
-            <div className="space-y-2 flex-1">
+            <div className="space-y-2">
               {week.goals.map((goal, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-xs md:text-sm">
+                <div key={idx} className="flex items-center gap-2 text-xs">
                   <div className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center border flex-shrink-0",
+                    "w-5 h-5 rounded-full flex items-center justify-center border",
                     goal.completed ? "bg-success text-white border-success" : "bg-background text-muted-foreground border-border"
                   )}>
                     {goal.completed ? <CheckCircle2 className="w-3 h-3" /> : goal.icon}
@@ -205,7 +205,7 @@ const GoalTracker = () => {
             {/* Motivational Message - Only if current or completed */}
             {week.status !== 'locked' && (
               <div className="mt-3 pt-3 border-t border-border/50 text-center">
-                <p className="text-xs italic text-muted-foreground md:text-sm">"{week.message}"</p>
+                <p className="text-xs italic text-muted-foreground">"{week.message}"</p>
               </div>
             )}
           </motion.div>

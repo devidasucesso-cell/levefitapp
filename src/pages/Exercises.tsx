@@ -10,9 +10,6 @@ import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 import { ExerciseCategory } from '@/types';
 import { Card } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import PremiumLock from '@/components/PremiumLock';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 type Difficulty = 'easy' | 'moderate' | 'intense';
 
@@ -30,29 +27,23 @@ const categoryImages: Record<ExerciseCategory, string> = {
   yoga_pilates: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop',
   natacao_aquatico: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&h=200&fit=crop',
   ciclismo: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=200&fit=crop',
-  esportes: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=group%20playing%20sports%20outdoors%20soccer%20basketball%20active%20sunny%20day&image_size=landscape_16_9',
+  esportes: 'https://images.unsplash.com/photo-1461896836934- voices-0c35f?w=400&h=200&fit=crop',
   funcional: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=200&fit=crop',
   alongamento: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=200&fit=crop',
-  musculacao: 'https://coreva-normal.trae.ai/api/ide/v1/text_to_image?prompt=modern%20gym%20interior%20dumbbells%20weights%20strength%20training%20equipment&image_size=landscape_16_9',
+  musculacao: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=200&fit=crop',
   outros: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=200&fit=crop',
 };
 
 const Exercises = () => {
   const navigate = useNavigate();
-  const { isCodeValidated } = useAuth();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
   const [expandedCategory, setExpandedCategory] = useState<ExerciseCategory | null>(null);
-  const [showPremiumLock, setShowPremiumLock] = useState(false);
   
   const categories = useMemo(() => getCategoriesForDifficulty(selectedDifficulty), [selectedDifficulty]);
   
   const config = difficultyConfig[selectedDifficulty];
 
   const handleDifficultyChange = (difficulty: Difficulty) => {
-    if (!isCodeValidated && difficulty !== 'easy') {
-      setShowPremiumLock(true);
-      return;
-    }
     setSelectedDifficulty(difficulty);
     setExpandedCategory(null);
   };
@@ -64,7 +55,7 @@ const Exercises = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className={cn("p-6 pb-8 rounded-b-3xl transition-colors duration-300", config.color)}>
+      <div className={cn("p-6 pb-8 rounded-b-3xl", config.color)}>
         <div className="flex items-center gap-3 mb-4">
           <Button 
             variant="ghost" 
@@ -91,25 +82,18 @@ const Exercises = () => {
           {(Object.keys(difficultyConfig) as Difficulty[]).map((difficulty) => {
             const dConfig = difficultyConfig[difficulty];
             const isSelected = selectedDifficulty === difficulty;
-            const isLocked = !isCodeValidated && difficulty !== 'easy';
             
             return (
               <Button
                 key={difficulty}
                 onClick={() => handleDifficultyChange(difficulty)}
                 className={cn(
-                  "flex-1 h-12 transition-all font-semibold relative overflow-hidden",
-                  isSelected ? dConfig.color : "bg-card hover:bg-secondary text-foreground",
-                  isLocked && "opacity-70"
+                  "flex-1 h-12 transition-all font-semibold",
+                  isSelected ? dConfig.color : "bg-card hover:bg-secondary text-foreground"
                 )}
                 variant={isSelected ? "default" : "outline"}
               >
                 {dConfig.label}
-                {isLocked && (
-                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                    <span className="text-lg">🔒</span>
-                  </div>
-                )}
               </Button>
             );
           })}
@@ -176,19 +160,13 @@ const Exercises = () => {
                       className="overflow-hidden"
                     >
                       <div className="pt-3 space-y-3">
-                        {exercises.map((exercise, exerciseIndex) => {
-                           // Logic for locking specific exercises if needed
-                           // Currently user asked to lock by difficulty category, which is handled above
-                           // But if we wanted to lock individual exercises beyond "Easy", we could do it here
-                           
-                           return (
-                             <ExerciseCard 
-                               key={exercise.id} 
-                               exercise={exercise} 
-                               index={exerciseIndex} 
-                             />
-                           );
-                        })}
+                        {exercises.map((exercise, exerciseIndex) => (
+                          <ExerciseCard 
+                            key={exercise.id} 
+                            exercise={exercise} 
+                            index={exerciseIndex} 
+                          />
+                        ))}
                       </div>
                     </motion.div>
                   )}
@@ -204,12 +182,6 @@ const Exercises = () => {
           </div>
         )}
       </div>
-
-      <Dialog open={showPremiumLock} onOpenChange={setShowPremiumLock}>
-        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-sm">
-           <PremiumLock message="Mude sua rotina hoje" buttonText="Quero mudar minha rotina" />
-        </DialogContent>
-      </Dialog>
 
       <WaterReminder />
       <Navigation />

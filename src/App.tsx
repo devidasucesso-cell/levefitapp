@@ -22,7 +22,6 @@ import NotFound from "./pages/NotFound";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import KitSelectionPage from "./pages/KitSelectionPage";
 import Referral from "./pages/Referral";
-import JourneyPopup from "@/components/JourneyPopup";
 
 const queryClient = new QueryClient();
 
@@ -52,12 +51,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/kit-selection" replace />;
   }
 
-  return (
-    <>
-      {children}
-      <JourneyPopup />
-    </>
-  );
+  return <>{children}</>;
 };
 
 const KitSelectionRoute = ({ children }: { children: React.ReactNode }) => {

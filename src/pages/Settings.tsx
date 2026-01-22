@@ -336,6 +336,39 @@ const Settings = () => {
                 </p>
               </div>
             )}
+            
+            {isSubscribed && (
+              <div className="pt-3 mt-3 border-t border-border space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestNotification}
+                  disabled={testLoading}
+                  className="w-full"
+                >
+                  {testLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Enviar Notificação de Teste
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDailySummaryTest}
+                  disabled={summaryLoading}
+                  className="w-full text-muted-foreground"
+                >
+                  {summaryLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Bell className="w-4 h-4 mr-2" />
+                  )}
+                  Testar Resumo Diário
+                </Button>
+              </div>
+            )}
           </Card>
         </motion.div>
 
@@ -538,7 +571,7 @@ const Settings = () => {
               className="w-full h-12 border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold transition-all"
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
-              Quero garantir meu tratamento
+              Comprar meu Kit
               <ExternalLink className="w-4 h-4 ml-2" />
             </Button>
           </a>
