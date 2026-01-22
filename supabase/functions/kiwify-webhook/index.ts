@@ -23,6 +23,38 @@ interface KiwifyWebhookPayload {
   approved_date?: string;
 }
 
+// Helper function to convert ArrayBuffer to hex string
+function bufferToHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Helper function to verify HMAC signature
+async function verifySignature(payload: string, signature: string, secret: string): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-1' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+    const expectedSignature = bufferToHex(signatureBuffer);
+    
+    // Kiwify sends signature as plain hex or with sha1= prefix
+    const providedSignature = signature.replace(/^sha1=/, '').toLowerCase();
+    
+    return expectedSignature === providedSignature;
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -32,15 +64,40 @@ Deno.serve(async (req) => {
   try {
     const webhookSecret = Deno.env.get('KIWIFY_WEBHOOK_SECRET');
     
-    // Verify webhook signature if secret is configured
-    const signature = req.headers.get('x-kiwify-signature');
-    if (webhookSecret && signature) {
-      // Kiwify sends signature in format: sha256=<hash>
-      // For now, we'll do basic validation - in production, implement HMAC verification
-      console.log('Webhook signature received:', signature ? 'present' : 'missing');
+    // SECURITY: Require webhook secret to be configured
+    if (!webhookSecret) {
+      console.error('KIWIFY_WEBHOOK_SECRET not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Webhook not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    const payload: KiwifyWebhookPayload = await req.json();
+    // Get raw body for signature verification
+    const rawBody = await req.text();
+    
+    // SECURITY: Verify HMAC signature
+    const signature = req.headers.get('x-kiwify-signature');
+    if (!signature) {
+      console.error('Missing x-kiwify-signature header');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing signature' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const isValidSignature = await verifySignature(rawBody, signature, webhookSecret);
+    if (!isValidSignature) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid signature' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    console.log('Webhook signature verified successfully');
+
+    const payload: KiwifyWebhookPayload = JSON.parse(rawBody);
     console.log('Kiwify webhook received:', JSON.stringify(payload, null, 2));
 
     // Only process approved orders
