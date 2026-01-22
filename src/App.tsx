@@ -13,6 +13,7 @@ import Exercises from "./pages/Exercises";
 import Progress from "./pages/Progress";
 import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
+import PushDiagnostics from "./pages/PushDiagnostics";
 import Admin from "./pages/Admin";
 import PendingApproval from "./pages/PendingApproval";
 import CodeVerification from "./pages/CodeVerification";
@@ -127,6 +128,7 @@ const AppRoutes = () => {
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/push-diagnostics" element={<ProtectedRoute><PushDiagnostics /></ProtectedRoute>} />
       <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

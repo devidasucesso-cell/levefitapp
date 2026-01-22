@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator, Bug } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -366,6 +366,15 @@ const Settings = () => {
                     <Bell className="w-4 h-4 mr-2" />
                   )}
                   Testar Resumo Diário
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/push-diagnostics')}
+                  className="w-full text-muted-foreground"
+                >
+                  <Bug className="w-4 h-4 mr-2" />
+                  Diagnóstico Avançado
                 </Button>
               </div>
             )}
