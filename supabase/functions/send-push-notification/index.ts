@@ -261,8 +261,8 @@ const handler = async (req: Request): Promise<Response> => {
 
       targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
-        title: '💊 Hora da sua cápsula!',
-        body: 'Não esqueça de tomar sua cápsula LeveFit hoje.',
+        title: '💊 Tome Caps!',
+        body: 'Hora de tomar sua cápsula LeveFit. Não esqueça!',
         icon: '/pwa-192x192.png',
         tag: 'levefit-capsule-' + Date.now(),
         url: '/calendar'
@@ -293,8 +293,8 @@ const handler = async (req: Request): Promise<Response> => {
 
       targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
-        title: '💧 Hora de beber água!',
-        body: 'Mantenha-se hidratado para melhores resultados.',
+        title: '💧 Tome Água!',
+        body: 'Hora de se hidratar. Beba um copo de água agora!',
         icon: '/pwa-192x192.png',
         tag: 'levefit-water-' + Date.now(),
         url: '/dashboard'

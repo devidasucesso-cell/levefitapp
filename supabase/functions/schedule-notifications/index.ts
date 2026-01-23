@@ -156,8 +156,8 @@ const handler = async (req: Request): Promise<Response> => {
           const success = await sendPush(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
             {
-              title: '💊 Hora do LeveFit!',
-              body: 'Não esqueça de tomar sua cápsula hoje para melhores resultados!',
+              title: '💊 Tome Caps!',
+              body: 'Hora de tomar sua cápsula LeveFit. Não esqueça!',
               tag: 'levefit-capsule-' + Date.now(),
               url: '/calendar'
             }
@@ -204,8 +204,8 @@ const handler = async (req: Request): Promise<Response> => {
           const success = await sendPush(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
             {
-              title: '💧 Hora de beber água!',
-              body: 'Mantenha-se hidratado para potencializar os resultados do LeveFit.',
+              title: '💧 Tome Água!',
+              body: 'Hora de se hidratar. Beba um copo de água agora!',
               tag: 'levefit-water-' + Date.now(),
               url: '/dashboard'
             }
