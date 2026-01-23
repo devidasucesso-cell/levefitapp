@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, Leaf, Loader2, CheckCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, Leaf, Loader2, CheckCircle, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+// Password validation schema - same as signup
+const passwordSchema = z.string()
+  .min(8, 'A senha deve ter pelo menos 8 caracteres')
+  .regex(/[a-zA-Z]/, 'A senha deve conter pelo menos uma letra')
+  .regex(/[0-9]/, 'A senha deve conter pelo menos um número');
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -50,6 +57,16 @@ const ResetPassword = () => {
     checkSession();
   }, [navigate, toast]);
 
+  // Password strength indicators - same as signup
+  const passwordChecks = {
+    minLength: password.length >= 8,
+    hasLetter: /[a-zA-Z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    matches: password === confirmPassword && confirmPassword.length > 0,
+  };
+
+  const isPasswordValid = passwordChecks.minLength && passwordChecks.hasLetter && passwordChecks.hasNumber;
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -62,10 +79,12 @@ const ResetPassword = () => {
       return;
     }
 
-    if (password.length < 6) {
+    // Use the same password validation as signup
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
       toast({
-        title: 'Erro',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
+        title: 'Senha fraca',
+        description: passwordResult.error.errors[0].message,
         variant: 'destructive',
       });
       return;
@@ -168,12 +187,12 @@ const ResetPassword = () => {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                   <button
                     type="button"
@@ -184,6 +203,24 @@ const ResetPassword = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Password strength indicators - same as signup */}
+              {password && (
+                <div className="space-y-1 text-xs">
+                  <div className={`flex items-center gap-1 ${passwordChecks.minLength ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {passwordChecks.minLength ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    Mínimo 8 caracteres
+                  </div>
+                  <div className={`flex items-center gap-1 ${passwordChecks.hasLetter ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {passwordChecks.hasLetter ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    Pelo menos uma letra
+                  </div>
+                  <div className={`flex items-center gap-1 ${passwordChecks.hasNumber ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {passwordChecks.hasNumber ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    Pelo menos um número
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
@@ -197,9 +234,15 @@ const ResetPassword = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                 </div>
+                {confirmPassword && (
+                  <div className={`flex items-center gap-1 text-xs ${passwordChecks.matches ? 'text-green-600' : 'text-red-500'}`}>
+                    {passwordChecks.matches ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    {passwordChecks.matches ? 'Senhas coincidem' : 'Senhas não coincidem'}
+                  </div>
+                )}
               </div>
 
               <Button
