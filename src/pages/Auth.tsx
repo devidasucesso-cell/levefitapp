@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import MFAChallenge from '@/components/MFAChallenge';
 
 // Password validation schema
 const passwordSchema = z.string()
@@ -35,6 +36,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showMFAChallenge, setShowMFAChallenge] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   
   // Login state
@@ -82,7 +84,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword,
       });
@@ -101,6 +103,16 @@ const Auth = () => {
             variant: 'destructive',
           });
         }
+      } else if (data?.session) {
+        // Check if user has MFA factors
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const verifiedFactors = factorsData?.totp?.filter(f => f.status === 'verified') || [];
+        
+        if (verifiedFactors.length > 0) {
+          // User has MFA, show challenge
+          setShowMFAChallenge(true);
+        }
+        // If no MFA, navigation happens via useEffect
       }
     } catch (error) {
       toast({
@@ -111,6 +123,16 @@ const Auth = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMFASuccess = () => {
+    setShowMFAChallenge(false);
+    navigate('/dashboard');
+  };
+
+  const handleMFACancel = async () => {
+    await supabase.auth.signOut();
+    setShowMFAChallenge(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -269,6 +291,13 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // MFA Challenge View
+  if (showMFAChallenge) {
+    return (
+      <MFAChallenge onSuccess={handleMFASuccess} onCancel={handleMFACancel} />
+    );
+  }
 
   // Forgot Password View
   if (showForgotPassword) {
