@@ -81,13 +81,13 @@ export const usePushNotifications = () => {
             console.log('Subscription verified - DB and browser match');
             setIsSubscribed(true);
           } else if (subscription) {
-            // Browser has a different subscription
-            console.log('Browser subscription differs from DB');
-            setIsSubscribed(false);
+            // Browser has a different subscription - auto-recreate silently
+            console.log('Browser subscription differs from DB - auto-recreating...');
+            await autoRecreateSubscription();
           } else {
-            // No browser subscription
-            console.log('No browser subscription found');
-            setIsSubscribed(false);
+            // No browser subscription but DB has one - try to recreate
+            console.log('No browser subscription found but DB has one - auto-recreating...');
+            await autoRecreateSubscription();
           }
         } catch (swError) {
           console.error('Service worker check failed:', swError);
@@ -99,6 +99,68 @@ export const usePushNotifications = () => {
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
+      setIsSubscribed(false);
+    }
+  };
+
+  // Auto-recreate subscription silently when mismatch detected
+  const autoRecreateSubscription = async () => {
+    if (!user || !('serviceWorker' in navigator)) return;
+    
+    try {
+      console.log('Auto-recreating subscription with current VAPID key...');
+      
+      // Get service worker registration
+      const registration = await navigator.serviceWorker.ready;
+      
+      // Unsubscribe existing browser subscription
+      const existingSub = await registration.pushManager.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
+        console.log('Old browser subscription removed');
+      }
+      
+      // Delete from DB
+      await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+      console.log('Old DB subscription removed');
+      
+      // Create new subscription with current VAPID key
+      const newSubscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      console.log('New browser subscription created');
+      
+      // Extract keys
+      const p256dhKey = newSubscription.getKey('p256dh');
+      const authKey = newSubscription.getKey('auth');
+      
+      if (!p256dhKey || !authKey) {
+        throw new Error('Failed to get subscription keys');
+      }
+      
+      const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhKey)));
+      const auth = btoa(String.fromCharCode(...new Uint8Array(authKey)));
+      
+      // Save to DB
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .insert({
+          user_id: user.id,
+          endpoint: newSubscription.endpoint,
+          p256dh,
+          auth,
+        });
+      
+      if (error) throw error;
+      
+      console.log('Subscription auto-recreated successfully!');
+      setIsSubscribed(true);
+    } catch (error) {
+      console.error('Auto-recreate subscription failed:', error);
       setIsSubscribed(false);
     }
   };
