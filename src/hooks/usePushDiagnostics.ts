@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-const VAPID_PUBLIC_KEY = 'BC2gGb8zod8oErGPwQt-UMS8_6UZiJTegdi17sMQsb4joMcCvMS0axTjJc8Z7dw-RfWtFnF8v10R2u0N5CkvSPU';
+const VAPID_PUBLIC_KEY = 'BC9cm85BFHtf-yMSubfrA1Ity9v91Q7_4R2mvhT41ABOd6tGmH90JViwCdvrOMgcP9tWPzJ5brhOeC5ukAlAvoE';
 
 export interface LogEntry {
   timestamp: Date;
