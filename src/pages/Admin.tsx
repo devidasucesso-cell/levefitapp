@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -417,10 +417,19 @@ const Admin = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
             <Shield className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-bold text-foreground">Painel Admin</h1>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/admin/audit-logs')}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Logs
+          </Button>
         </div>
       </header>
 
