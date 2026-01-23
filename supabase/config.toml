@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.expire-wallet-credits]
 verify_jwt = false
+
+[functions.milestone-notifications]
+verify_jwt = false
