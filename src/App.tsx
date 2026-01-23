@@ -15,6 +15,7 @@ import CalendarPage from "./pages/CalendarPage";
 import Settings from "./pages/Settings";
 import PushDiagnostics from "./pages/PushDiagnostics";
 import Admin from "./pages/Admin";
+import AuditLogs from "./pages/AuditLogs";
 import PendingApproval from "./pages/PendingApproval";
 import CodeVerification from "./pages/CodeVerification";
 import ResetPassword from "./pages/ResetPassword";
@@ -121,6 +122,7 @@ const AppRoutes = () => {
       <Route path="/kit-selection" element={<KitSelectionRoute><KitSelectionPage /></KitSelectionRoute>} />
       <Route path="/pending-approval" element={<Navigate to="/dashboard" replace />} />
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+      <Route path="/admin/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/recipes" element={<ProtectedRoute><Recipes /></ProtectedRoute>} />
       <Route path="/detox" element={<ProtectedRoute><Detox /></ProtectedRoute>} />
