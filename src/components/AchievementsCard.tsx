@@ -1,11 +1,12 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Trophy, Droplets, Pill, Flame, Star, Award, Target, Zap, Sparkles, X } from 'lucide-react';
+import { Trophy, Droplets, Pill, Star, Award, Target, Zap, Sparkles, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
 
 interface Achievement {
   id: string;
@@ -62,7 +63,7 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
       id: 'first-capsule',
       name: 'Primeiro Passo',
       description: 'Tomou sua primeira cápsula',
-      icon: <Pill className="w-5 h-5" />,
+      icon: <Pill className="w-4 h-4" />,
       unlocked: capsuleDays >= 1,
       color: 'from-green-400 to-green-600',
     },
@@ -70,65 +71,57 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
       id: 'week-capsule',
       name: 'Semana Completa',
       description: '7 dias tomando a cápsula',
-      icon: <Star className="w-5 h-5" />,
+      icon: <Star className="w-4 h-4" />,
       unlocked: capsuleDays >= 7,
       progress: Math.min(capsuleDays, 7),
       total: 7,
       color: 'from-yellow-400 to-orange-500',
     },
     {
-      id: 'month-capsule',
-      name: 'Mês de Dedicação',
-      description: '30 dias tomando a cápsula',
-      icon: <Trophy className="w-5 h-5" />,
-      unlocked: capsuleDays >= 30,
-      progress: Math.min(capsuleDays, 30),
-      total: 30,
-      color: 'from-purple-400 to-purple-600',
-    },
-    {
-      id: 'hydration-start',
-      name: 'Hidratação Iniciada',
-      description: 'Primeiro dia batendo meta de água',
-      icon: <Droplets className="w-5 h-5" />,
-      unlocked: totalWaterDays >= 1,
-      color: 'from-blue-400 to-blue-600',
-    },
-    {
-      id: 'hydration-week',
-      name: 'Semana Hidratada',
-      description: '7 dias batendo a meta de água',
-      icon: <Zap className="w-5 h-5" />,
-      unlocked: totalWaterDays >= 7,
-      progress: Math.min(totalWaterDays, 7),
-      total: 7,
-      color: 'from-cyan-400 to-cyan-600',
-    },
-    {
       id: 'consistency',
       name: 'Consistência',
       description: '15 dias de cápsula',
-      icon: <Target className="w-5 h-5" />,
+      icon: <Target className="w-4 h-4" />,
       unlocked: capsuleDays >= 15,
       progress: Math.min(capsuleDays, 15),
       total: 15,
       color: 'from-pink-400 to-pink-600',
     },
     {
+      id: 'month-capsule',
+      name: 'Mês de Dedicação',
+      description: '30 dias tomando a cápsula',
+      icon: <Trophy className="w-4 h-4" />,
+      unlocked: capsuleDays >= 30,
+      progress: Math.min(capsuleDays, 30),
+      total: 30,
+      color: 'from-purple-400 to-purple-600',
+    },
+    {
       id: 'master',
       name: 'Mestre LeveFit',
       description: '60 dias de tratamento',
-      icon: <Award className="w-5 h-5" />,
+      icon: <Award className="w-4 h-4" />,
       unlocked: capsuleDays >= 60,
       progress: Math.min(capsuleDays, 60),
       total: 60,
       color: 'from-amber-400 to-amber-600',
     },
     {
+      id: 'hydration-week',
+      name: 'Semana Hidratada',
+      description: '7 dias batendo a meta de água',
+      icon: <Droplets className="w-4 h-4" />,
+      unlocked: totalWaterDays >= 7,
+      progress: Math.min(totalWaterDays, 7),
+      total: 7,
+      color: 'from-cyan-400 to-cyan-600',
+    },
+    {
       id: 'fire',
       name: 'Em Chamas',
       description: '3 dias seguidos de hidratação',
-      icon: <Flame className="w-5 h-5" />,
+      icon: <Zap className="w-4 h-4" />,
       unlocked: waterStreak >= 3,
       progress: Math.min(waterStreak, 3),
       total: 3,
@@ -136,20 +129,17 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
     },
   ], [capsuleDays, totalWaterDays, waterStreak]);
 
-  // Check for newly unlocked achievements (only those not shown before in DB)
+  // Check for newly unlocked achievements
   useEffect(() => {
     if (isLoadingShown || !user) return;
 
     const checkNewUnlocks = async () => {
       const unlockedAchievements = achievements.filter(a => a.unlocked);
-      
-      // Find achievements that are unlocked but haven't been shown yet
       const newUnlocks = unlockedAchievements.filter(a => !shownAchievements.includes(a.id));
       
       if (newUnlocks.length > 0) {
         const achievementToShow = newUnlocks[0];
         
-        // Save to database that this achievement was shown
         try {
           await supabase
             .from('shown_achievements')
@@ -158,14 +148,10 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
               achievement_id: achievementToShow.id,
             });
 
-          // Update local state
           setShownAchievements(prev => [...prev, achievementToShow.id]);
-          
-          // Show celebration
           setNewlyUnlocked(achievementToShow);
           setShowCelebration(true);
           
-          // Trigger confetti
           confetti({
             particleCount: 100,
             spread: 70,
@@ -173,7 +159,6 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
             colors: ['#22c55e', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6'],
           });
         } catch (error) {
-          // If insert fails (e.g., already exists), just ignore
           console.error('Error saving shown achievement:', error);
         }
       }
@@ -192,7 +177,7 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
   return (
     <>
       <Card className="p-3 sm:p-4 bg-card">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
               <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -204,64 +189,59 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          {achievements.map((achievement, index) => (
-            <motion.div
+        {/* Simple list of achievements */}
+        <div className="space-y-2">
+          {achievements.map((achievement) => (
+            <div
               key={achievement.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              className="relative group"
+              className={cn(
+                "flex items-center gap-3 p-2 rounded-lg transition-all",
+                achievement.unlocked 
+                  ? "bg-success/10 border border-success/30" 
+                  : "bg-muted/30"
+              )}
             >
-              <motion.div
-                className={cn(
-                  "w-full aspect-square rounded-lg sm:rounded-xl flex items-center justify-center transition-all",
-                  achievement.unlocked
-                    ? `bg-gradient-to-br ${achievement.color} shadow-lg`
-                    : "bg-muted/50 opacity-40"
-                )}
-                whileHover={achievement.unlocked ? { scale: 1.1 } : {}}
-                whileTap={achievement.unlocked ? { scale: 0.95 } : {}}
-              >
-                <span className={cn(
-                  "scale-75 sm:scale-100",
-                  achievement.unlocked ? "text-white" : "text-muted-foreground"
-                )}>
+              {/* Icon */}
+              <div className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                achievement.unlocked
+                  ? `bg-gradient-to-br ${achievement.color}`
+                  : "bg-muted"
+              )}>
+                <span className={achievement.unlocked ? "text-white" : "text-muted-foreground"}>
                   {achievement.icon}
                 </span>
-              </motion.div>
-              
-              {/* Progress indicator */}
-              {!achievement.unlocked && achievement.progress !== undefined && (
-                <div className="absolute -bottom-0.5 sm:-bottom-1 left-1/2 -translate-x-1/2 text-[8px] sm:text-[10px] text-muted-foreground font-medium">
-                  {achievement.progress}/{achievement.total}
-                </div>
-              )}
+              </div>
 
-              {/* Tooltip - hidden on mobile, visible on hover for desktop */}
-              <div className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 min-w-[120px]">
-                <p className="text-xs font-medium text-foreground text-center">{achievement.name}</p>
-                <p className="text-[10px] text-muted-foreground text-center">{achievement.description}</p>
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-sm font-medium truncate",
+                    achievement.unlocked ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {achievement.name}
+                  </span>
+                  {achievement.unlocked && (
+                    <Check className="w-3 h-3 text-success flex-shrink-0" />
+                  )}
+                </div>
+                
+                {/* Progress bar for incomplete achievements */}
+                {!achievement.unlocked && achievement.progress !== undefined && achievement.total && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Progress 
+                      value={(achievement.progress / achievement.total) * 100} 
+                      className="h-1.5 flex-1"
+                    />
+                    <span className="text-[10px] text-muted-foreground">
+                      {achievement.progress}/{achievement.total}
+                    </span>
+                  </div>
+                )}
               </div>
-            </motion.div>
+            </div>
           ))}
-        </div>
-        
-        {/* Mobile achievement names - horizontal scroll */}
-        <div className="mt-3 sm:hidden overflow-x-auto -mx-3 px-3">
-          <div className="flex gap-2 pb-1">
-            {achievements.filter(a => a.unlocked).slice(0, 4).map((achievement) => (
-              <div 
-                key={achievement.id}
-                className="flex-shrink-0 px-2 py-1 bg-secondary rounded-full"
-              >
-                <span className="text-[10px] text-foreground font-medium">{achievement.name}</span>
-              </div>
-            ))}
-            {achievements.filter(a => a.unlocked).length === 0 && (
-              <span className="text-[10px] text-muted-foreground">Complete desafios para desbloquear conquistas!</span>
-            )}
-          </div>
         </div>
       </Card>
 
@@ -328,11 +308,10 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
                   onClick={closeCelebration}
                   className="w-full py-3 px-6 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl"
                 >
-                  Continuar 🎉
+                  Continuar
                 </motion.button>
               </motion.div>
               
-              {/* Close button */}
               <button
                 onClick={closeCelebration}
                 className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors"
