@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dumbbell, ChefHat, GlassWater, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dumbbell, ChefHat, GlassWater, Lock, ChevronDown, ChevronUp, Droplets, Pill } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,8 @@ import { recipes } from '@/data/recipes';
 import { detoxDrinks } from '@/data/detoxDrinks';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { differenceInWeeks, parseISO } from 'date-fns';
+import { differenceInWeeks, parseISO, startOfWeek, endOfWeek, addWeeks, isWithinInterval, format } from 'date-fns';
+import { useWaterStreak } from '@/hooks/useWaterStreak';
 
 interface ActivityTrackerProps {
   completedExercises: string[];
@@ -24,6 +25,8 @@ interface WeekPhase {
   exerciseIds: string[];
   recipeIds: string[];
   detoxIds: string[];
+  waterDaysGoal: number;
+  capsuleDaysGoal: number;
 }
 
 // Define specific activities for each week/phase using real IDs from data files
@@ -32,90 +35,83 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 1, 
       title: 'Exercícios Leves', 
-      // Easy exercises - caminhada, alongamento, yoga básico
       exerciseIds: ['easy-1', 'easy-2', 'easy-3'],
-      // Normal recipes - café da manhã equilibrado
       recipeIds: ['n-1', 'n-2'],
-      // Normal drinks - manhã
       detoxIds: ['nm-d1'],
+      waterDaysGoal: 3,
+      capsuleDaysGoal: 5,
     },
     { 
       week: 2, 
       title: 'Adaptação', 
-      // More easy exercises
       exerciseIds: ['easy-4', 'easy-5', 'easy-6', 'easy-7'],
-      // Normal recipes - variados
       recipeIds: ['n-3', 'n-4', 'n-5'],
-      // Normal drinks - manhã e tarde
       detoxIds: ['nm-d2', 'nm-d3'],
+      waterDaysGoal: 4,
+      capsuleDaysGoal: 6,
     },
     { 
       week: 3, 
       title: 'Progresso Inicial', 
-      // More easy exercises - variedade
       exerciseIds: ['easy-8', 'easy-9', 'easy-10', 'easy-11', 'easy-12'],
-      // Normal recipes - almoços
       recipeIds: ['n-11', 'n-12', 'n-13'],
-      // Normal drinks - tarde
       detoxIds: ['nm-d11', 'nm-d12'],
+      waterDaysGoal: 5,
+      capsuleDaysGoal: 6,
     },
     { 
       week: 4, 
       title: 'Consolidação', 
-      // Mix of easy and some moderate exercises
       exerciseIds: ['easy-13', 'easy-14', 'easy-15', 'mod-1', 'mod-2'],
-      // Normal recipes - almoços e jantares
       recipeIds: ['n-14', 'n-15', 'n-16', 'n-21'],
-      // Normal drinks - variados
       detoxIds: ['nm-d13', 'nm-d14', 'nm-d21'],
+      waterDaysGoal: 5,
+      capsuleDaysGoal: 7,
     },
     { 
       week: 5, 
       title: 'Intensificação', 
-      // Moderate exercises
       exerciseIds: ['mod-3', 'mod-4', 'mod-5', 'mod-6', 'mod-7', 'mod-8'],
-      // Normal recipes - mais complexas
       recipeIds: ['n-17', 'n-18', 'n-19', 'n-22'],
-      // Normal drinks - tarde e noite
       detoxIds: ['nm-d15', 'nm-d16', 'nm-d22'],
+      waterDaysGoal: 6,
+      capsuleDaysGoal: 7,
     },
     { 
       week: 6, 
       title: 'Desafio Moderado', 
-      // More moderate exercises
       exerciseIds: ['mod-9', 'mod-10', 'mod-11', 'mod-12', 'mod-13', 'mod-14'],
-      // Normal recipes - jantares leves
       recipeIds: ['n-23', 'n-24', 'n-25', 'n-26', 'n-27'],
-      // Normal drinks - noturnas relaxantes
       detoxIds: ['nm-d23', 'nm-d24', 'nm-d25', 'nm-d26'],
+      waterDaysGoal: 6,
+      capsuleDaysGoal: 7,
     },
     { 
       week: 7, 
       title: 'Superação', 
-      // Moderate to intense exercises
       exerciseIds: ['mod-15', 'mod-16', 'mod-17', 'mod-18', 'int-1', 'int-2', 'int-3'],
-      // Normal recipes - variadas
       recipeIds: ['n-28', 'n-29', 'n-30', 'n-31', 'n-32'],
-      // Normal drinks - variadas
       detoxIds: ['nm-d27', 'nm-d28', 'nm-d29', 'nm-d30'],
+      waterDaysGoal: 7,
+      capsuleDaysGoal: 7,
     },
     { 
       week: 8, 
       title: 'Transformação', 
-      // Intense exercises
       exerciseIds: ['int-4', 'int-5', 'int-6', 'int-7', 'int-8', 'int-9', 'int-10'],
-      // Normal recipes - finais
       recipeIds: ['n-33', 'n-34', 'n-35', 'n-36', 'n-49', 'n-50'],
-      // Normal drinks - especiais
       detoxIds: ['nm-d1', 'nm-d2', 'nm-d11', 'nm-d21', 'nm-d22'],
+      waterDaysGoal: 7,
+      capsuleDaysGoal: 7,
     },
   ];
 };
 
 const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox }: ActivityTrackerProps) => {
-  const { user, profile } = useAuth();
+  const { user, profile, capsuleDays } = useAuth();
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const { waterHistory } = useWaterStreak();
   
   const phases = useMemo(() => getPhases(), []);
   
@@ -126,6 +122,40 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
     const weeksElapsed = differenceInWeeks(new Date(), startDate);
     return Math.min(Math.max(weeksElapsed + 1, 1), 8);
   }, [profile?.treatment_start_date]);
+
+  // Get the start date of each week based on treatment start
+  const getWeekDateRange = (weekNumber: number) => {
+    if (!profile?.treatment_start_date) return null;
+    const treatmentStart = parseISO(profile.treatment_start_date);
+    const weekStart = addWeeks(treatmentStart, weekNumber - 1);
+    const weekEnd = addWeeks(treatmentStart, weekNumber);
+    return { start: weekStart, end: weekEnd };
+  };
+
+  // Count capsule days within a specific week
+  const getCapsuleDaysInWeek = (weekNumber: number) => {
+    const range = getWeekDateRange(weekNumber);
+    if (!range) return 0;
+    
+    return capsuleDays.filter(dateStr => {
+      const date = parseISO(dateStr);
+      return isWithinInterval(date, { start: range.start, end: range.end });
+    }).length;
+  };
+
+  // Count water days (days that met the goal) within a specific week
+  const getWaterDaysInWeek = (weekNumber: number) => {
+    const range = getWeekDateRange(weekNumber);
+    if (!range || !waterHistory) return 0;
+    
+    const waterGoal = profile?.water_goal || 2000;
+    
+    return waterHistory.filter(entry => {
+      const date = parseISO(entry.date);
+      return isWithinInterval(date, { start: range.start, end: range.end }) && 
+             entry.total_intake >= waterGoal;
+    }).length;
+  };
 
   // Get activity details by ID
   const getExerciseById = (id: string) => exercises.find(e => e.id === id);
@@ -138,13 +168,20 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
     const recipeProgress = phase.recipeIds.filter(id => completedRecipes.includes(id)).length;
     const detoxProgress = phase.detoxIds.filter(id => completedDetox.includes(id)).length;
     
-    const totalGoal = phase.exerciseIds.length + phase.recipeIds.length + phase.detoxIds.length;
-    const totalProgress = exerciseProgress + recipeProgress + detoxProgress;
+    // Get water and capsule progress for this specific week
+    const capsuleProgress = Math.min(getCapsuleDaysInWeek(phase.week), phase.capsuleDaysGoal);
+    const waterProgress = Math.min(getWaterDaysInWeek(phase.week), phase.waterDaysGoal);
+    
+    const totalGoal = phase.exerciseIds.length + phase.recipeIds.length + phase.detoxIds.length + 
+                      phase.waterDaysGoal + phase.capsuleDaysGoal;
+    const totalProgress = exerciseProgress + recipeProgress + detoxProgress + capsuleProgress + waterProgress;
     
     return {
       exercises: { current: exerciseProgress, goal: phase.exerciseIds.length },
       recipes: { current: recipeProgress, goal: phase.recipeIds.length },
       detox: { current: detoxProgress, goal: phase.detoxIds.length },
+      water: { current: waterProgress, goal: phase.waterDaysGoal },
+      capsules: { current: capsuleProgress, goal: phase.capsuleDaysGoal },
       percentage: totalGoal > 0 ? Math.round((totalProgress / totalGoal) * 100) : 0,
       isComplete: totalProgress >= totalGoal,
     };
@@ -377,6 +414,58 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                       className="overflow-hidden"
                     >
                       <div className="px-3 pb-3 pt-1 border-t border-border/50 space-y-4">
+                        {/* Capsules section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Pill className="w-4 h-4 text-primary" />
+                            <span className="text-xs font-medium text-foreground">
+                              Cápsulas ({progress.capsules.current}/{progress.capsules.goal} dias)
+                            </span>
+                          </div>
+                          <div className="ml-6">
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min((progress.capsules.current / progress.capsules.goal) * 100, 100)}%` }}
+                                transition={{ duration: 0.5 }}
+                                className={cn(
+                                  "h-full rounded-full",
+                                  progress.capsules.current >= progress.capsules.goal ? "bg-success" : "bg-primary"
+                                )}
+                              />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Tome suas cápsulas diariamente na tela inicial
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Water section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Droplets className="w-4 h-4 text-info" />
+                            <span className="text-xs font-medium text-foreground">
+                              Hidratação ({progress.water.current}/{progress.water.goal} dias)
+                            </span>
+                          </div>
+                          <div className="ml-6">
+                            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min((progress.water.current / progress.water.goal) * 100, 100)}%` }}
+                                transition={{ duration: 0.5 }}
+                                className={cn(
+                                  "h-full rounded-full",
+                                  progress.water.current >= progress.water.goal ? "bg-success" : "bg-info"
+                                )}
+                              />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Atinja sua meta de água ({profile?.water_goal || 2000}ml) diariamente
+                            </p>
+                          </div>
+                        </div>
+
                         {/* Exercises section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
@@ -464,7 +553,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                         {/* Detox section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <GlassWater className="w-4 h-4 text-blue-500" />
+                            <GlassWater className="w-4 h-4 text-emerald-500" />
                             <span className="text-xs font-medium text-foreground">
                               Detox ({progress.detox.current}/{progress.detox.goal})
                             </span>
