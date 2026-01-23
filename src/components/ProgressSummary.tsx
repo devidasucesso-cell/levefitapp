@@ -1,12 +1,14 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Droplets, Pill, Target, Flame, Award, Sparkles, X, Scale } from 'lucide-react';
+import { TrendingUp, TrendingDown, Droplets, Pill, Target, Flame, Award, Sparkles, X, Scale, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWaterStreak } from '@/hooks/useWaterStreak';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 const WEIGHT_LOSS_ACHIEVEMENT_ID = 'weight_loss_1kg';
 
@@ -16,6 +18,7 @@ const ProgressSummary = () => {
   
   const [showWeightCelebration, setShowWeightCelebration] = useState(false);
   const [hasCheckedCelebration, setHasCheckedCelebration] = useState(false);
+  const [showChart, setShowChart] = useState(false);
 
   const stats = useMemo(() => {
     const pesoInicial = progressHistory.length > 0 
@@ -104,6 +107,19 @@ const ProgressSummary = () => {
   const isLosingWeight = stats.hasVariation && stats.pesoVariation < -0.5;
   const isGainingWeight = stats.hasVariation && stats.pesoVariation > 0.5;
 
+  // Prepare chart data
+  const chartData = useMemo(() => {
+    if (progressHistory.length === 0) return [];
+    
+    return progressHistory.map((entry) => ({
+      date: format(parseISO(entry.date), 'dd/MM', { locale: ptBR }),
+      peso: Number(entry.weight),
+      fullDate: format(parseISO(entry.date), "dd 'de' MMM", { locale: ptBR }),
+    }));
+  }, [progressHistory]);
+
+  const hasChartData = chartData.length >= 2;
+
   return (
     <>
       <motion.div
@@ -187,6 +203,95 @@ const ProgressSummary = () => {
               <p className="text-[10px] text-muted-foreground">atingida</p>
             </div>
           </div>
+
+          {/* Weight Chart Section */}
+          {hasChartData && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <button
+                onClick={() => setShowChart(!showChart)}
+                className="w-full flex items-center justify-between text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-primary" />
+                  <span>Evolução do Peso</span>
+                </div>
+                {showChart ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+              
+              <AnimatePresence>
+                {showChart && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="h-32 sm:h-40 mt-3">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                          <XAxis 
+                            dataKey="date" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <YAxis 
+                            domain={['dataMin - 1', 'dataMax + 1']}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                            tickFormatter={(value) => `${value}kg`}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                            }}
+                            labelFormatter={(label, payload) => {
+                              if (payload && payload[0]) {
+                                return payload[0].payload.fullDate;
+                              }
+                              return label;
+                            }}
+                            formatter={(value: number) => [`${value.toFixed(1)}kg`, 'Peso']}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="peso"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={2}
+                            dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
+                            activeDot={{ r: 5, fill: 'hsl(var(--primary))' }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Chart legend */}
+                    <div className="flex items-center justify-center gap-4 mt-2 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                        <span>Peso registrado</span>
+                      </div>
+                      {isLosingWeight && (
+                        <div className="flex items-center gap-1 text-success">
+                          <TrendingDown className="w-3 h-3" />
+                          <span>Em queda</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Motivation message */}
           <div className="mt-3 pt-3 border-t border-border/50">
