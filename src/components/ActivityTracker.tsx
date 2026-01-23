@@ -30,12 +30,15 @@ interface WeekPhase {
 }
 
 // Define specific activities for each week/phase using real IDs from data files
+// Focusing on practical exercises: walking, running, stairs, functional exercises
+// Excluding: pilates, hidroginástica, yoga, natação
 const getPhases = (): WeekPhase[] => {
   return [
     { 
       week: 1, 
       title: 'Exercícios Leves', 
-      exerciseIds: ['easy-1', 'easy-2', 'easy-3'],
+      // Caminhada Leve, Alongamento Matinal, Dança Livre
+      exerciseIds: ['easy-1', 'easy-2', 'easy-4'],
       recipeIds: ['n-1', 'n-2'],
       detoxIds: ['nm-d1'],
       waterDaysGoal: 3,
@@ -44,7 +47,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 2, 
       title: 'Adaptação', 
-      exerciseIds: ['easy-4', 'easy-5', 'easy-6', 'easy-7'],
+      // Subir Escadas, Polichinelos Suaves, Caminhada na Praia, Passeio com Cachorro
+      exerciseIds: ['easy-5', 'easy-6', 'easy-14', 'easy-16'],
       recipeIds: ['n-3', 'n-4', 'n-5'],
       detoxIds: ['nm-d2', 'nm-d3'],
       waterDaysGoal: 4,
@@ -53,7 +57,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 3, 
       title: 'Progresso Inicial', 
-      exerciseIds: ['easy-8', 'easy-9', 'easy-10', 'easy-11', 'easy-12'],
+      // Caminhada no Shopping, Marcha Estacionária, Alongamento de Escritório, Caminhada Indoor, Flexão na Parede
+      exerciseIds: ['easy-19', 'easy-11', 'easy-12', 'easy-27', 'easy-22'],
       recipeIds: ['n-11', 'n-12', 'n-13'],
       detoxIds: ['nm-d11', 'nm-d12'],
       waterDaysGoal: 5,
@@ -62,7 +67,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 4, 
       title: 'Consolidação', 
-      exerciseIds: ['easy-13', 'easy-14', 'easy-15', 'mod-1', 'mod-2'],
+      // Agachamento com Apoio, Elevação de Panturrilha, Exercício com Faixa Elástica, Corrida Leve, Caminhada Rápida
+      exerciseIds: ['easy-23', 'easy-25', 'easy-33', 'mod-1', 'mod-7'],
       recipeIds: ['n-14', 'n-15', 'n-16', 'n-21'],
       detoxIds: ['nm-d13', 'nm-d14', 'nm-d21'],
       waterDaysGoal: 5,
@@ -71,7 +77,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 5, 
       title: 'Intensificação', 
-      exerciseIds: ['mod-3', 'mod-4', 'mod-5', 'mod-6', 'mod-7', 'mod-8'],
+      // Pular Corda, Circuito Funcional, Escada Aeróbica, Kickboxing Básico, Dança Aeróbica, Jump
+      exerciseIds: ['mod-3', 'mod-2', 'mod-8', 'mod-9', 'mod-6', 'mod-23'],
       recipeIds: ['n-17', 'n-18', 'n-19', 'n-22'],
       detoxIds: ['nm-d15', 'nm-d16', 'nm-d22'],
       waterDaysGoal: 6,
@@ -80,7 +87,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 6, 
       title: 'Desafio Moderado', 
-      exerciseIds: ['mod-9', 'mod-10', 'mod-11', 'mod-12', 'mod-13', 'mod-14'],
+      // Zumba, Boxe Fitness, TRX Básico, Kettlebell Swing, Medicine Ball, Trilha Leve
+      exerciseIds: ['mod-10', 'mod-22', 'mod-25', 'mod-26', 'mod-27', 'mod-17'],
       recipeIds: ['n-23', 'n-24', 'n-25', 'n-26', 'n-27'],
       detoxIds: ['nm-d23', 'nm-d24', 'nm-d25', 'nm-d26'],
       waterDaysGoal: 6,
@@ -89,7 +97,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 7, 
       title: 'Superação', 
-      exerciseIds: ['mod-15', 'mod-16', 'mod-17', 'mod-18', 'int-1', 'int-2', 'int-3'],
+      // Futsal, Basquete, Tênis, HIIT Cardio, Burpees, Corrida Intensa, Sprint Intervals
+      exerciseIds: ['mod-20', 'mod-19', 'mod-18', 'int-1', 'int-2', 'int-3', 'int-8'],
       recipeIds: ['n-28', 'n-29', 'n-30', 'n-31', 'n-32'],
       detoxIds: ['nm-d27', 'nm-d28', 'nm-d29', 'nm-d30'],
       waterDaysGoal: 7,
@@ -98,7 +107,8 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 8, 
       title: 'Transformação', 
-      exerciseIds: ['int-4', 'int-5', 'int-6', 'int-7', 'int-8', 'int-9', 'int-10'],
+      // CrossFit WOD, Tabata Training, Mountain Climbers, Box Jump, Battle Ropes, Thrusters, Clean and Jerk
+      exerciseIds: ['int-4', 'int-5', 'int-6', 'int-7', 'int-16', 'int-9', 'int-10'],
       recipeIds: ['n-33', 'n-34', 'n-35', 'n-36', 'n-49', 'n-50'],
       detoxIds: ['nm-d1', 'nm-d2', 'nm-d11', 'nm-d21', 'nm-d22'],
       waterDaysGoal: 7,

@@ -10,7 +10,7 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import WaterHistoryChart from '@/components/WaterHistoryChart';
 import AchievementsCard from '@/components/AchievementsCard';
-import GoalTracker from '@/components/GoalTracker';
+
 import ActivityTracker from '@/components/ActivityTracker';
 import PrizeBanner from '@/components/PrizeBanner';
 import { useNavigate } from 'react-router-dom';
@@ -143,7 +143,6 @@ const Progress = () => {
           </TabsList>
 
           <TabsContent value="goals" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
-            <GoalTracker />
             <ActivityTracker 
               completedExercises={completedExercises}
               completedRecipes={completedRecipes}
