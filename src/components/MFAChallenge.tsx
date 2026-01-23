@@ -14,23 +14,26 @@ interface MFAChallengeProps {
 const MFAChallenge: React.FC<MFAChallengeProps> = ({ onSuccess, onCancel }) => {
   const { isLoading, challengeAndVerify } = useMFA();
   const [code, setCode] = useState('');
-
-  useEffect(() => {
-    if (code.length === 6) {
-      handleVerify();
-    }
-  }, [code]);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleVerify = async () => {
-    if (code.length !== 6) return;
+    if (code.length !== 6 || isVerifying) return;
     
+    setIsVerifying(true);
     const success = await challengeAndVerify(code);
     if (success) {
       onSuccess();
     } else {
       setCode('');
     }
+    setIsVerifying(false);
   };
+
+  useEffect(() => {
+    if (code.length === 6 && !isVerifying) {
+      handleVerify();
+    }
+  }, [code]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
