@@ -247,6 +247,45 @@ const Referral = () => {
           </Card>
         </motion.div>
 
+        {/* Rules and Terms */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="p-6 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 dark:border-amber-800/50">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              ⚠️ Regras e Condições
+            </h3>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 font-bold">•</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Créditos intransferíveis:</strong> Os créditos não podem ser transferidos para outra pessoa ou conta.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 font-bold">•</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Limite mensal:</strong> Máximo de 5 indicações válidas por mês (R$125).
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 font-bold">•</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Uso exclusivo:</strong> Os créditos só podem ser utilizados na loja oficial de produtos LeveFit.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Validade de 90 dias:</strong> Os créditos expiram após 90 dias. Após esse período, o saldo da carteira é zerado automaticamente.
+                </span>
+              </li>
+            </ul>
+          </Card>
+        </motion.div>
+
         {/* Referrals List */}
         {referrals.length > 0 && (
           <motion.div
