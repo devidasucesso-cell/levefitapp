@@ -56,6 +56,7 @@ self.addEventListener('push', function(event) {
       tag: notificationData.tag,
       requireInteraction: notificationData.requireInteraction,
       vibrate: notificationData.vibrate,
+      silent: false, // Use system sound
       actions: notificationData.actions,
       data: notificationData.data,
       // Ensure notification shows even when app is in focus
