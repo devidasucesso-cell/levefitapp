@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Leaf, Pill, Droplets, LogOut, Shield, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInHours, parseISO } from 'date-fns';
+import { format, differenceInHours, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import IMCCalculator from '@/components/IMCCalculator';
 import Navigation from '@/components/Navigation';
@@ -12,10 +12,11 @@ import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
+import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import ProgressSummary from '@/components/ProgressSummary';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
-import { differenceInDays } from 'date-fns';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 const getKitDuration = (kitType: string | null): number => {
   switch (kitType) {
@@ -27,8 +28,10 @@ const getKitDuration = (kitType: string | null): number => {
 };
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown } = useAuth();
   const navigate = useNavigate();
+  const { isSupported, isSubscribed, subscribeUser } = usePushNotifications();
+  
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
   const capsuleTakenToday = isCapsuleTaken(today);
@@ -37,6 +40,12 @@ const Dashboard = () => {
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCapsuleReminder, setShowCapsuleReminder] = useState(true);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [pushPromptLoading, setPushPromptLoading] = useState(false);
+  
+  // Check for iOS and standalone mode
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
   // Check if capsule was taken in the last 24 hours
   const shouldShowCapsuleReminder = useMemo(() => {
@@ -63,9 +72,43 @@ const Dashboard = () => {
     }
   }, [profile?.kit_type, profile?.onboarding_completed]);
 
+  // Check if user should see push notification prompt
+  useEffect(() => {
+    if (
+      profile?.onboarding_completed === true &&
+      profile?.push_prompt_shown === false &&
+      !isSubscribed &&
+      isSupported
+    ) {
+      // Small delay to not overwhelm user right after onboarding
+      const timer = setTimeout(() => {
+        setShowPushPrompt(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [profile?.onboarding_completed, profile?.push_prompt_shown, isSubscribed, isSupported]);
+
   const handleOnboardingComplete = async () => {
     await markOnboardingComplete();
     setShowOnboarding(false);
+  };
+
+  const handlePushPromptActivate = async () => {
+    setPushPromptLoading(true);
+    try {
+      const success = await subscribeUser();
+      if (success) {
+        await markPushPromptShown();
+        setShowPushPrompt(false);
+      }
+    } finally {
+      setPushPromptLoading(false);
+    }
+  };
+
+  const handlePushPromptDismiss = async () => {
+    await markPushPromptShown();
+    setShowPushPrompt(false);
   };
 
   useEffect(() => {
@@ -242,6 +285,19 @@ const Dashboard = () => {
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingTutorial onComplete={handleOnboardingComplete} />
+        )}
+      </AnimatePresence>
+      
+      {/* Push Notification Prompt */}
+      <AnimatePresence>
+        {showPushPrompt && !showOnboarding && (
+          <PushNotificationPrompt
+            onActivate={handlePushPromptActivate}
+            onDismiss={handlePushPromptDismiss}
+            isLoading={pushPromptLoading}
+            isIOS={isIOS}
+            isStandalone={isStandalone}
+          />
         )}
       </AnimatePresence>
     </div>

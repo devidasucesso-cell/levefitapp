@@ -25,6 +25,7 @@ interface Profile {
   treatment_start_date: string | null;
   code_validated: boolean;
   onboarding_completed: boolean;
+  push_prompt_shown: boolean;
 }
 
 interface AuthContextType {
@@ -50,6 +51,7 @@ interface AuthContextType {
   addProgressEntry: (entry: SimpleProgressEntry) => Promise<void>;
   refreshProfile: () => Promise<void>;
   markOnboardingComplete: () => Promise<void>;
+  markPushPromptShown: () => Promise<void>;
 }
 
 const defaultNotificationSettings: NotificationSettings = {
@@ -112,6 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         treatment_start_date: data.treatment_start_date ?? null,
         code_validated: data.code_validated ?? false,
         onboarding_completed: data.onboarding_completed ?? false,
+        push_prompt_shown: data.push_prompt_shown ?? false,
       });
     }
   };
@@ -540,6 +543,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const markPushPromptShown = async () => {
+    if (!user || !profile) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ push_prompt_shown: true })
+      .eq('user_id', user.id);
+
+    if (!error) {
+      setProfile({ ...profile, push_prompt_shown: true });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -565,6 +581,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         addProgressEntry,
         refreshProfile,
         markOnboardingComplete,
+        markPushPromptShown,
       }}
     >
       {children}

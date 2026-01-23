@@ -254,6 +254,7 @@ export type Database = {
           kit_type: string | null
           name: string
           onboarding_completed: boolean | null
+          push_prompt_shown: boolean | null
           treatment_start_date: string | null
           updated_at: string
           user_id: string
@@ -272,6 +273,7 @@ export type Database = {
           kit_type?: string | null
           name: string
           onboarding_completed?: boolean | null
+          push_prompt_shown?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
           user_id: string
@@ -290,6 +292,7 @@ export type Database = {
           kit_type?: string | null
           name?: string
           onboarding_completed?: boolean | null
+          push_prompt_shown?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
           user_id?: string
