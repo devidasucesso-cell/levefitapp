@@ -26,73 +26,88 @@ interface WeekPhase {
   detoxIds: string[];
 }
 
-// Define specific activities for each week/phase
+// Define specific activities for each week/phase using real IDs from data files
 const getPhases = (): WeekPhase[] => {
-  // Get exercises by difficulty
-  const easyExercises = exercises.filter(e => e.difficulty === 'easy').map(e => e.id);
-  const moderateExercises = exercises.filter(e => e.difficulty === 'moderate').map(e => e.id);
-  const intenseExercises = exercises.filter(e => e.difficulty === 'intense').map(e => e.id);
-  
-  // Get all recipes and detox drinks
-  const allRecipes = recipes.map(r => r.id);
-  const allDetox = detoxDrinks.map(d => d.id);
-
   return [
     { 
       week: 1, 
       title: 'Exercícios Leves', 
-      exerciseIds: easyExercises.slice(0, 3),
-      recipeIds: allRecipes.slice(0, 2),
-      detoxIds: allDetox.slice(0, 1),
+      // Easy exercises - caminhada, alongamento, yoga básico
+      exerciseIds: ['easy-1', 'easy-2', 'easy-3'],
+      // Normal recipes - café da manhã equilibrado
+      recipeIds: ['n-1', 'n-2'],
+      // Normal drinks - manhã
+      detoxIds: ['nm-d1'],
     },
     { 
       week: 2, 
       title: 'Adaptação', 
-      exerciseIds: easyExercises.slice(3, 7),
-      recipeIds: allRecipes.slice(2, 5),
-      detoxIds: allDetox.slice(1, 3),
+      // More easy exercises
+      exerciseIds: ['easy-4', 'easy-5', 'easy-6', 'easy-7'],
+      // Normal recipes - variados
+      recipeIds: ['n-3', 'n-4', 'n-5'],
+      // Normal drinks - manhã e tarde
+      detoxIds: ['nm-d2', 'nm-d3'],
     },
     { 
       week: 3, 
       title: 'Progresso Inicial', 
-      exerciseIds: easyExercises.slice(7, 12),
-      recipeIds: allRecipes.slice(5, 8),
-      detoxIds: allDetox.slice(3, 5),
+      // More easy exercises - variedade
+      exerciseIds: ['easy-8', 'easy-9', 'easy-10', 'easy-11', 'easy-12'],
+      // Normal recipes - almoços
+      recipeIds: ['n-11', 'n-12', 'n-13'],
+      // Normal drinks - tarde
+      detoxIds: ['nm-d11', 'nm-d12'],
     },
     { 
       week: 4, 
       title: 'Consolidação', 
-      exerciseIds: [...easyExercises.slice(12, 15), ...moderateExercises.slice(0, 2)],
-      recipeIds: allRecipes.slice(8, 12),
-      detoxIds: allDetox.slice(5, 8),
+      // Mix of easy and some moderate exercises
+      exerciseIds: ['easy-13', 'easy-14', 'easy-15', 'mod-1', 'mod-2'],
+      // Normal recipes - almoços e jantares
+      recipeIds: ['n-14', 'n-15', 'n-16', 'n-21'],
+      // Normal drinks - variados
+      detoxIds: ['nm-d13', 'nm-d14', 'nm-d21'],
     },
     { 
       week: 5, 
       title: 'Intensificação', 
-      exerciseIds: moderateExercises.slice(2, 8),
-      recipeIds: allRecipes.slice(12, 16),
-      detoxIds: allDetox.slice(8, 11),
+      // Moderate exercises
+      exerciseIds: ['mod-3', 'mod-4', 'mod-5', 'mod-6', 'mod-7', 'mod-8'],
+      // Normal recipes - mais complexas
+      recipeIds: ['n-17', 'n-18', 'n-19', 'n-22'],
+      // Normal drinks - tarde e noite
+      detoxIds: ['nm-d15', 'nm-d16', 'nm-d22'],
     },
     { 
       week: 6, 
       title: 'Desafio Moderado', 
-      exerciseIds: moderateExercises.slice(8, 14),
-      recipeIds: allRecipes.slice(16, 21),
-      detoxIds: allDetox.slice(11, 15),
+      // More moderate exercises
+      exerciseIds: ['mod-9', 'mod-10', 'mod-11', 'mod-12', 'mod-13', 'mod-14'],
+      // Normal recipes - jantares leves
+      recipeIds: ['n-23', 'n-24', 'n-25', 'n-26', 'n-27'],
+      // Normal drinks - noturnas relaxantes
+      detoxIds: ['nm-d23', 'nm-d24', 'nm-d25', 'nm-d26'],
     },
     { 
       week: 7, 
       title: 'Superação', 
-      exerciseIds: [...moderateExercises.slice(14, 18), ...intenseExercises.slice(0, 3)],
-      recipeIds: allRecipes.slice(21, 26),
-      detoxIds: allDetox.slice(15, 19),
+      // Moderate to intense exercises
+      exerciseIds: ['mod-15', 'mod-16', 'mod-17', 'mod-18', 'int-1', 'int-2', 'int-3'],
+      // Normal recipes - variadas
+      recipeIds: ['n-28', 'n-29', 'n-30', 'n-31', 'n-32'],
+      // Normal drinks - variadas
+      detoxIds: ['nm-d27', 'nm-d28', 'nm-d29', 'nm-d30'],
     },
     { 
       week: 8, 
       title: 'Transformação', 
-      exerciseIds: intenseExercises.slice(3, 10),
-      recipeIds: allRecipes.slice(26, 32),
-      detoxIds: allDetox.slice(19, 24),
+      // Intense exercises
+      exerciseIds: ['int-4', 'int-5', 'int-6', 'int-7', 'int-8', 'int-9', 'int-10'],
+      // Normal recipes - finais
+      recipeIds: ['n-33', 'n-34', 'n-35', 'n-36', 'n-49', 'n-50'],
+      // Normal drinks - especiais
+      detoxIds: ['nm-d1', 'nm-d2', 'nm-d11', 'nm-d21', 'nm-d22'],
     },
   ];
 };
@@ -449,7 +464,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                         {/* Detox section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <GlassWater className="w-4 h-4 text-purple-500" />
+                            <GlassWater className="w-4 h-4 text-blue-500" />
                             <span className="text-xs font-medium text-foreground">
                               Detox ({progress.detox.current}/{progress.detox.goal})
                             </span>
