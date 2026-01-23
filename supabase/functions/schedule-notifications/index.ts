@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // VAPID keys - MUST match the key used in usePushNotifications.ts
-const VAPID_PUBLIC_KEY = 'BC2gGb8zod8oErGPwQt-UMS8_6UZiJTegdi17sMQsb4joMcCvMS0axTjJc8Z7dw-RfWtFnF8v10R2u0N5CkvSPU';
+const VAPID_PUBLIC_KEY = 'BC9cm85BFHtf-yMSubfrA1Ity9v91Q7_4R2mvhT41ABOd6tGmH90JViwCdvrOMgcP9tWPzJ5brhOeC5ukAlAvoE';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 
 // Helper to encode to base64url
