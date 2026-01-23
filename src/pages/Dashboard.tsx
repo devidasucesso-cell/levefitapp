@@ -13,6 +13,7 @@ import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
+import NotificationReminderBanner from '@/components/NotificationReminderBanner';
 import ProgressSummary from '@/components/ProgressSummary';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
@@ -41,6 +42,7 @@ const Dashboard = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCapsuleReminder, setShowCapsuleReminder] = useState(true);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [showNotificationBanner, setShowNotificationBanner] = useState(false);
   const [pushPromptLoading, setPushPromptLoading] = useState(false);
   
   // Check for iOS and standalone mode
@@ -72,7 +74,7 @@ const Dashboard = () => {
     }
   }, [profile?.kit_type, profile?.onboarding_completed]);
 
-  // Check if user should see push notification prompt
+  // Check if user should see push notification prompt (full screen)
   useEffect(() => {
     if (
       profile?.onboarding_completed === true &&
@@ -88,6 +90,23 @@ const Dashboard = () => {
     }
   }, [profile?.onboarding_completed, profile?.push_prompt_shown, isSubscribed, isSupported]);
 
+  // Check if user should see the notification banner (after dismissing prompt)
+  useEffect(() => {
+    if (
+      profile?.onboarding_completed === true &&
+      profile?.push_prompt_shown === true && // Already saw the prompt
+      !isSubscribed &&
+      isSupported &&
+      !showPushPrompt
+    ) {
+      // Check if banner was dismissed in this session
+      const bannerDismissed = sessionStorage.getItem('notification_banner_dismissed');
+      if (!bannerDismissed) {
+        setShowNotificationBanner(true);
+      }
+    }
+  }, [profile?.onboarding_completed, profile?.push_prompt_shown, isSubscribed, isSupported, showPushPrompt]);
+
   const handleOnboardingComplete = async () => {
     await markOnboardingComplete();
     setShowOnboarding(false);
@@ -100,6 +119,7 @@ const Dashboard = () => {
       if (success) {
         await markPushPromptShown();
         setShowPushPrompt(false);
+        setShowNotificationBanner(false);
       }
     } finally {
       setPushPromptLoading(false);
@@ -109,6 +129,23 @@ const Dashboard = () => {
   const handlePushPromptDismiss = async () => {
     await markPushPromptShown();
     setShowPushPrompt(false);
+  };
+
+  const handleBannerActivate = async () => {
+    setPushPromptLoading(true);
+    try {
+      const success = await subscribeUser();
+      if (success) {
+        setShowNotificationBanner(false);
+      }
+    } finally {
+      setPushPromptLoading(false);
+    }
+  };
+
+  const handleBannerDismiss = () => {
+    sessionStorage.setItem('notification_banner_dismissed', 'true');
+    setShowNotificationBanner(false);
   };
 
   useEffect(() => {
@@ -210,6 +247,18 @@ const Dashboard = () => {
 
       {/* Content */}
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
+        {/* Notification Reminder Banner - Shows for users who haven't enabled push */}
+        <AnimatePresence>
+          {showNotificationBanner && (
+            <NotificationReminderBanner
+              onActivate={handleBannerActivate}
+              onDismiss={handleBannerDismiss}
+              isIOS={isIOS}
+              isStandalone={isStandalone}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Capsule Reminder - Shows if 24h passed since last capsule */}
         <AnimatePresence>
           {shouldShowCapsuleReminder && showCapsuleReminder && (
