@@ -338,7 +338,7 @@ const Settings = () => {
               </div>
             )}
             
-            {isSubscribed && (
+            {isSubscribed && isAdmin && (
               <div className="pt-3 mt-3 border-t border-border space-y-2">
                 <Button
                   variant="outline"
