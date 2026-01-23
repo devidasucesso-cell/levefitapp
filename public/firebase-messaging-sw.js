@@ -13,6 +13,7 @@ self.addEventListener('push', function(event) {
     tag: 'levefit-notification-' + Date.now(),
     requireInteraction: true,
     vibrate: [200, 100, 200],
+    silent: false, // Enable sound
     actions: [
       { action: 'open', title: 'Abrir App' },
       { action: 'dismiss', title: 'Dispensar' }
