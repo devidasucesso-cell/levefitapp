@@ -21,7 +21,8 @@ const ProgressSummary = () => {
       ? progressHistory[progressHistory.length - 1].weight 
       : profile?.weight || 0;
 
-    const pesoVariation = pesoAtual - pesoInicial;
+    const pesoVariation = progressHistory.length > 1 ? pesoAtual - pesoInicial : 0;
+    const hasVariation = progressHistory.length > 1;
     
     // Days since start
     const daysSinceStart = profile?.created_at 
@@ -34,7 +35,9 @@ const ProgressSummary = () => {
       : 0;
 
     return {
+      pesoAtual,
       pesoVariation,
+      hasVariation,
       daysSinceStart,
       capsuleConsistency,
       totalCapsuleDays: capsuleDays.length,
@@ -43,8 +46,8 @@ const ProgressSummary = () => {
     };
   }, [profile, progressHistory, capsuleDays, currentStreak, totalDaysMetGoal]);
 
-  const isLosingWeight = stats.pesoVariation < -0.5;
-  const isGainingWeight = stats.pesoVariation > 0.5;
+  const isLosingWeight = stats.hasVariation && stats.pesoVariation < -0.5;
+  const isGainingWeight = stats.hasVariation && stats.pesoVariation > 0.5;
 
   return (
     <motion.div
@@ -68,7 +71,7 @@ const ProgressSummary = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          {/* Weight Variation */}
+          {/* Current Weight & Variation */}
           <div className="bg-background/60 rounded-lg p-2 sm:p-3">
             <div className="flex items-center gap-1 mb-1">
               {isLosingWeight ? (
@@ -76,15 +79,20 @@ const ProgressSummary = () => {
               ) : isGainingWeight ? (
                 <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-destructive" />
               ) : (
-                <Target className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                <Target className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               )}
               <span className="text-[10px] sm:text-xs text-muted-foreground">Peso</span>
             </div>
-            <p className={`text-sm sm:text-lg font-bold ${
-              isLosingWeight ? 'text-success' : isGainingWeight ? 'text-destructive' : 'text-foreground'
-            }`}>
-              {stats.pesoVariation > 0 ? '+' : ''}{stats.pesoVariation.toFixed(1)}kg
+            <p className="text-sm sm:text-lg font-bold text-foreground">
+              {stats.pesoAtual > 0 ? `${stats.pesoAtual.toFixed(1)}kg` : '--'}
             </p>
+            {stats.hasVariation && (
+              <p className={`text-[10px] ${
+                isLosingWeight ? 'text-success' : isGainingWeight ? 'text-destructive' : 'text-muted-foreground'
+              }`}>
+                {stats.pesoVariation > 0 ? '+' : ''}{stats.pesoVariation.toFixed(1)}kg
+              </p>
+            )}
           </div>
 
           {/* Capsule Days */}
