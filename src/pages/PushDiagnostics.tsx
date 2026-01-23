@@ -15,7 +15,8 @@ import {
   Copy,
   Trash2,
   Smartphone,
-  Monitor
+  Monitor,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,6 +94,7 @@ const PushDiagnostics = () => {
     requestPermission,
     createSubscription,
     deleteSubscription,
+    recreateSubscription,
     sendTestNotification,
     refreshAll,
   } = usePushDiagnostics();
@@ -331,13 +333,26 @@ const PushDiagnostics = () => {
               
               {browserSubscription?.exists && dbSubscription && !subscriptionsSynced && (
                 <div className="bg-destructive/10 text-destructive text-xs p-2 rounded">
-                  ⚠️ Endpoints diferentes! Clique em "Nova Subscription" para corrigir.
+                  ⚠️ Endpoints diferentes! Clique em "Recriar Subscription" para corrigir.
                 </div>
               )}
               
+              {/* Recreate Button - Highlighted */}
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                onClick={recreateSubscription} 
+                disabled={isLoading}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Recriar Subscription
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Use após mudanças nas chaves VAPID para atualizar a subscription
+              </p>
+              
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button size="sm" onClick={createSubscription} disabled={isLoading}>
-                  Nova Subscription
+                <Button size="sm" variant="outline" onClick={createSubscription} disabled={isLoading}>
+                  Nova
                 </Button>
                 <Button size="sm" variant="destructive" onClick={deleteSubscription} disabled={isLoading}>
                   Deletar

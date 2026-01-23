@@ -430,6 +430,81 @@ export const usePushDiagnostics = () => {
     }
   }, [user, addLog, checkBrowserSubscription, checkDBSubscription]);
 
+  const recreateSubscription = useCallback(async () => {
+    if (!user) {
+      addLog('error', 'Usuário não logado');
+      return;
+    }
+
+    addLog('info', '=== Recriando subscription (VAPID refresh) ===');
+    setIsLoading(true);
+    
+    try {
+      // Step 1: Delete existing browser subscription
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {
+          await existingSub.unsubscribe();
+          addLog('success', '1. Subscription antiga removida do navegador');
+        } else {
+          addLog('info', '1. Nenhuma subscription anterior no navegador');
+        }
+      }
+      
+      // Step 2: Delete from DB
+      await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+      addLog('success', '2. Subscription antiga removida do banco');
+      
+      // Step 3: Create new subscription with current VAPID key
+      const registration = await navigator.serviceWorker.ready;
+      const newSubscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      addLog('success', '3. Nova subscription criada no navegador');
+      
+      // Step 4: Extract keys
+      const p256dhKey = newSubscription.getKey('p256dh');
+      const authKey = newSubscription.getKey('auth');
+      
+      if (!p256dhKey || !authKey) {
+        throw new Error('Falha ao obter chaves da nova subscription');
+      }
+      
+      const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhKey)));
+      const auth = btoa(String.fromCharCode(...new Uint8Array(authKey)));
+      
+      // Step 5: Save to DB
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .insert({
+          user_id: user.id,
+          endpoint: newSubscription.endpoint,
+          p256dh,
+          auth,
+        });
+      
+      if (error) throw error;
+      
+      addLog('success', '4. Nova subscription salva no banco');
+      addLog('success', '=== Subscription recriada com sucesso! ===');
+      
+      // Refresh state
+      await checkBrowserSubscription();
+      await checkDBSubscription();
+      compareSubscriptions();
+      
+    } catch (error) {
+      addLog('error', 'Falha ao recriar subscription', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, addLog, checkBrowserSubscription, checkDBSubscription, compareSubscriptions]);
+
   const sendTestNotification = useCallback(async (type: 'test' | 'capsule' | 'water' | 'daily_summary') => {
     if (!user) {
       addLog('error', 'Usuário não logado');
@@ -509,6 +584,7 @@ export const usePushDiagnostics = () => {
     requestPermission,
     createSubscription,
     deleteSubscription,
+    recreateSubscription,
     sendTestNotification,
     refreshAll,
   };
