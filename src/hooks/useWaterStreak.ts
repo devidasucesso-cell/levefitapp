@@ -7,6 +7,7 @@ interface WaterStreakData {
   currentStreak: number;
   totalDaysMetGoal: number;
   isLoading: boolean;
+  waterHistory: { date: string; total_intake: number }[];
 }
 
 export const useWaterStreak = (): WaterStreakData => {
@@ -104,5 +105,6 @@ export const useWaterStreak = (): WaterStreakData => {
     currentStreak,
     totalDaysMetGoal,
     isLoading,
+    waterHistory: history,
   };
 };
