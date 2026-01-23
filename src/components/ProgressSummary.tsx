@@ -10,13 +10,28 @@ import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
-const WEIGHT_LOSS_ACHIEVEMENT_ID = 'weight_loss_1kg';
+// Weight loss milestones configuration
+const WEIGHT_MILESTONES = [
+  { kg: 1, id: 'weight_loss_1kg', title: '-1kg Conquistado!', emoji: '🎉', message: 'Você perdeu 1kg! O primeiro passo está dado.' },
+  { kg: 2, id: 'weight_loss_2kg', title: '-2kg Conquistado!', emoji: '🔥', message: 'Você perdeu 2kg! Seu esforço está dando resultado.' },
+  { kg: 3, id: 'weight_loss_3kg', title: '-3kg Conquistado!', emoji: '💪', message: 'Você perdeu 3kg! Continue assim, você está arrasando!' },
+  { kg: 5, id: 'weight_loss_5kg', title: '-5kg Conquistado!', emoji: '🏆', message: 'Incrível! 5kg perdidos! Você é uma inspiração!' },
+  { kg: 10, id: 'weight_loss_10kg', title: '-10kg Conquistado!', emoji: '👑', message: 'EXTRAORDINÁRIO! 10kg perdidos! Você é um campeão!' },
+];
+
+interface CelebrationData {
+  kg: number;
+  title: string;
+  emoji: string;
+  message: string;
+}
 
 const ProgressSummary = () => {
   const { profile, capsuleDays, progressHistory, user } = useAuth();
   const { currentStreak, totalDaysMetGoal } = useWaterStreak();
   
   const [showWeightCelebration, setShowWeightCelebration] = useState(false);
+  const [currentCelebration, setCurrentCelebration] = useState<CelebrationData | null>(null);
   const [hasCheckedCelebration, setHasCheckedCelebration] = useState(false);
   const [showChart, setShowChart] = useState(false);
 
@@ -31,7 +46,7 @@ const ProgressSummary = () => {
 
     const pesoVariation = progressHistory.length > 1 ? pesoAtual - pesoInicial : 0;
     const hasVariation = progressHistory.length > 1;
-    const lostMoreThan1kg = pesoVariation <= -1;
+    const weightLost = Math.abs(Math.min(0, pesoVariation)); // Positive number of kg lost
     
     // Days since start
     const daysSinceStart = profile?.created_at 
@@ -47,7 +62,7 @@ const ProgressSummary = () => {
       pesoAtual,
       pesoVariation,
       hasVariation,
-      lostMoreThan1kg,
+      weightLost,
       daysSinceStart,
       capsuleConsistency,
       totalCapsuleDays: capsuleDays.length,
@@ -56,49 +71,61 @@ const ProgressSummary = () => {
     };
   }, [profile, progressHistory, capsuleDays, currentStreak, totalDaysMetGoal]);
 
-  // Check for weight loss celebration
+  // Check for weight loss milestones
   useEffect(() => {
-    if (!user || hasCheckedCelebration || !stats.lostMoreThan1kg) return;
+    if (!user || hasCheckedCelebration || stats.weightLost < 1) return;
 
-    const checkWeightLossCelebration = async () => {
+    const checkWeightMilestones = async () => {
       try {
-        // Check if this celebration was already shown
-        const { data: existing } = await supabase
+        // Get all shown weight achievements for this user
+        const { data: shownAchievements } = await supabase
           .from('shown_achievements')
-          .select('id')
+          .select('achievement_id')
           .eq('user_id', user.id)
-          .eq('achievement_id', WEIGHT_LOSS_ACHIEVEMENT_ID)
-          .maybeSingle();
+          .like('achievement_id', 'weight_loss_%');
 
-        if (!existing) {
+        const shownIds = shownAchievements?.map(a => a.achievement_id) || [];
+
+        // Find the highest milestone reached that hasn't been celebrated
+        const reachedMilestones = WEIGHT_MILESTONES.filter(m => stats.weightLost >= m.kg);
+        const newMilestone = reachedMilestones.reverse().find(m => !shownIds.includes(m.id));
+
+        if (newMilestone) {
           // Mark as shown
           await supabase
             .from('shown_achievements')
             .insert({
               user_id: user.id,
-              achievement_id: WEIGHT_LOSS_ACHIEVEMENT_ID,
+              achievement_id: newMilestone.id,
             });
 
-          // Show celebration
+          // Set celebration data and show
+          setCurrentCelebration({
+            kg: newMilestone.kg,
+            title: newMilestone.title,
+            emoji: newMilestone.emoji,
+            message: newMilestone.message,
+          });
           setShowWeightCelebration(true);
           
-          // Trigger confetti
+          // Trigger confetti - more particles for bigger milestones
+          const particleCount = 100 + (newMilestone.kg * 20);
           confetti({
-            particleCount: 150,
-            spread: 100,
+            particleCount,
+            spread: 100 + (newMilestone.kg * 5),
             origin: { y: 0.6 },
             colors: ['#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#f59e0b'],
           });
         }
       } catch (error) {
-        console.error('Error checking weight loss celebration:', error);
+        console.error('Error checking weight milestones:', error);
       } finally {
         setHasCheckedCelebration(true);
       }
     };
 
-    checkWeightLossCelebration();
-  }, [user, stats.lostMoreThan1kg, hasCheckedCelebration]);
+    checkWeightMilestones();
+  }, [user, stats.weightLost, hasCheckedCelebration]);
 
   const closeCelebration = () => {
     setShowWeightCelebration(false);
@@ -312,7 +339,7 @@ const ProgressSummary = () => {
 
       {/* Weight Loss Celebration Modal */}
       <AnimatePresence>
-        {showWeightCelebration && (
+        {showWeightCelebration && currentCelebration && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -347,7 +374,7 @@ const ProgressSummary = () => {
                 }}
                 className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-2xl bg-gradient-to-br from-success to-emerald-400 flex items-center justify-center mb-4"
               >
-                <Scale className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                <span className="text-4xl sm:text-5xl">{currentCelebration.emoji}</span>
               </motion.div>
               
               <motion.div
@@ -362,16 +389,16 @@ const ProgressSummary = () => {
                 </div>
                 
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-                  -1kg Conquistado! 🎉
+                  {currentCelebration.title}
                 </h2>
                 
                 <p className="text-muted-foreground mb-4">
-                  Você perdeu mais de 1kg desde o início! Seu esforço está valendo a pena. Continue assim!
+                  {currentCelebration.message}
                 </p>
 
                 <div className="flex items-center justify-center gap-2 text-success font-semibold text-lg">
                   <TrendingDown className="w-5 h-5" />
-                  <span>{Math.abs(stats.pesoVariation).toFixed(1)}kg perdidos</span>
+                  <span>{stats.weightLost.toFixed(1)}kg perdidos no total</span>
                 </div>
               </motion.div>
               
