@@ -242,6 +242,8 @@ export const usePushNotifications = () => {
   }, [isSupported, toast]);
 
   const subscribeUser = useCallback(async () => {
+    console.log('[Push] subscribeUser called, user:', user?.id);
+    
     if (!user) {
       toast({
         title: 'Erro',
@@ -255,26 +257,34 @@ export const usePushNotifications = () => {
 
     try {
       // Request notification permission
+      console.log('[Push] Requesting permission...');
       const hasPermission = await requestNotificationPermission();
+      console.log('[Push] Permission result:', hasPermission);
+      
       if (!hasPermission) {
         setIsLoading(false);
         return false;
       }
 
       // Register service worker
+      console.log('[Push] Registering service worker...');
       const registration = await registerServiceWorker();
+      console.log('[Push] Service worker registered:', registration.scope);
 
       // Always unsubscribe first to ensure we use the latest VAPID key
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
+        console.log('[Push] Unsubscribing from existing subscription...');
         await existingSubscription.unsubscribe();
       }
       
       // Create new subscription with current VAPID key
+      console.log('[Push] Creating new subscription with VAPID key...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
+      console.log('[Push] Subscription created:', subscription.endpoint);
 
       // Extract keys from subscription
       const p256dhKey = subscription.getKey('p256dh');
@@ -286,12 +296,17 @@ export const usePushNotifications = () => {
 
       const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhKey)));
       const auth = btoa(String.fromCharCode(...new Uint8Array(authKey)));
+      console.log('[Push] Keys extracted, saving to DB...');
 
       // First, delete any existing subscription for this user
-      await supabase
+      const { error: deleteError } = await supabase
         .from('push_subscriptions')
         .delete()
         .eq('user_id', user.id);
+      
+      if (deleteError) {
+        console.log('[Push] Delete error (might be ok):', deleteError);
+      }
 
       // Then insert the new subscription
       const { error } = await supabase
@@ -303,8 +318,12 @@ export const usePushNotifications = () => {
           auth,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Push] Insert error:', error);
+        throw error;
+      }
 
+      console.log('[Push] Subscription saved successfully!');
       setIsSubscribed(true);
       toast({
         title: 'Notificações ativadas! 🔔',
@@ -313,7 +332,7 @@ export const usePushNotifications = () => {
 
       return true;
     } catch (error) {
-      console.error('Error subscribing to push:', error);
+      console.error('[Push] Error subscribing to push:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível ativar as notificações. Tente novamente.',
