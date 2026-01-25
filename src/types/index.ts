@@ -57,6 +57,7 @@ export interface Exercise {
   description: string;
   steps: string[];
   image?: string;
+  recommendedFor?: IMCCategory[]; // Categorias de IMC para as quais o exercício é recomendado
 }
 
 export interface ProgressEntry {
