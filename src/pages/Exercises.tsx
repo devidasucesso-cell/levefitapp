@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Star, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { getExercisesByDifficultyAndCategory, getCategoriesForDifficulty, exerciseCategoryLabels } from '@/data/exercises';
+import { getRecommendedExercisesForDifficultyAndCategory, getCategoriesForDifficultyAndIMC, getCategoriesForDifficulty, exerciseCategoryLabels, getIMCExerciseRecommendation, getExercisesByDifficultyAndCategory } from '@/data/exercises';
 import ExerciseCard from '@/components/ExerciseCard';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
-import { ExerciseCategory } from '@/types';
+import { ExerciseCategory, IMCCategory } from '@/types';
 import { Card } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Difficulty = 'easy' | 'moderate' | 'intense';
 
@@ -27,7 +28,7 @@ const categoryImages: Record<ExerciseCategory, string> = {
   yoga_pilates: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=200&fit=crop',
   natacao_aquatico: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&h=200&fit=crop',
   ciclismo: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=200&fit=crop',
-  esportes: 'https://images.unsplash.com/photo-1461896836934- voices-0c35f?w=400&h=200&fit=crop',
+  esportes: 'https://images.unsplash.com/photo-1461896836934-0c35f?w=400&h=200&fit=crop',
   funcional: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=200&fit=crop',
   alongamento: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=200&fit=crop',
   musculacao: 'https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=200&fit=crop',
@@ -36,10 +37,21 @@ const categoryImages: Record<ExerciseCategory, string> = {
 
 const Exercises = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
   const [expandedCategory, setExpandedCategory] = useState<ExerciseCategory | null>(null);
   
-  const categories = useMemo(() => getCategoriesForDifficulty(selectedDifficulty), [selectedDifficulty]);
+  const imcCategory = (profile?.imc_category as IMCCategory) || 'normal';
+  const recommendation = getIMCExerciseRecommendation(imcCategory);
+  
+  // Categorias recomendadas para o IMC do usuário
+  const recommendedCategories = useMemo(() => 
+    getCategoriesForDifficultyAndIMC(selectedDifficulty, imcCategory), 
+    [selectedDifficulty, imcCategory]
+  );
+  
+  // Todas as categorias para a dificuldade (para mostrar outras opções)
+  const allCategories = useMemo(() => getCategoriesForDifficulty(selectedDifficulty), [selectedDifficulty]);
   
   const config = difficultyConfig[selectedDifficulty];
 
@@ -73,6 +85,21 @@ const Exercises = () => {
       </div>
 
       <div className="p-4 -mt-4 space-y-4">
+        {/* Dica personalizada por IMC */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-lg bg-primary/5 border border-primary/10"
+        >
+          <div className="flex items-start gap-2">
+            <Star className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">{recommendation.title}</p>
+              <p className="text-xs text-muted-foreground">{recommendation.tip}</p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Difficulty Selector */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -82,18 +109,22 @@ const Exercises = () => {
           {(Object.keys(difficultyConfig) as Difficulty[]).map((difficulty) => {
             const dConfig = difficultyConfig[difficulty];
             const isSelected = selectedDifficulty === difficulty;
+            const hasRecommended = getCategoriesForDifficultyAndIMC(difficulty, imcCategory).length > 0;
             
             return (
               <Button
                 key={difficulty}
                 onClick={() => handleDifficultyChange(difficulty)}
                 className={cn(
-                  "flex-1 h-12 transition-all font-semibold",
+                  "flex-1 h-12 transition-all font-semibold relative",
                   isSelected ? dConfig.color : "bg-card hover:bg-secondary text-foreground"
                 )}
                 variant={isSelected ? "default" : "outline"}
               >
                 {dConfig.label}
+                {hasRecommended && !isSelected && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary" />
+                )}
               </Button>
             );
           })}
@@ -101,9 +132,11 @@ const Exercises = () => {
 
         {/* Categories List - Vertical */}
         <div className="space-y-3">
-          {categories.map((category, index) => {
+          {allCategories.map((category, index) => {
             const categoryInfo = exerciseCategoryLabels[category];
             const exercises = getExercisesByDifficultyAndCategory(selectedDifficulty, category);
+            const recommendedExercises = getRecommendedExercisesForDifficultyAndCategory(imcCategory, selectedDifficulty, category);
+            const isRecommended = recommendedCategories.includes(category);
             const isExpanded = expandedCategory === category;
             const imageUrl = categoryImages[category];
             
@@ -117,7 +150,8 @@ const Exercises = () => {
                 <Card 
                   className={cn(
                     "overflow-hidden cursor-pointer transition-all",
-                    isExpanded && "ring-2 ring-primary"
+                    isExpanded && "ring-2 ring-primary",
+                    isRecommended && "border-primary/30"
                   )}
                   onClick={() => toggleCategory(category)}
                 >
@@ -134,8 +168,19 @@ const Exercises = () => {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{categoryInfo.icon}</span>
                         <div>
-                          <h3 className="text-white font-semibold text-lg">{categoryInfo.label}</h3>
-                          <p className="text-white/70 text-sm">{exercises.length} exercícios</p>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-white font-semibold text-lg">{categoryInfo.label}</h3>
+                            {isRecommended && (
+                              <span className="text-xs bg-primary/80 text-primary-foreground px-2 py-0.5 rounded-full">
+                                Ideal para você
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-white/70 text-sm">
+                            {isRecommended 
+                              ? `${recommendedExercises.length} recomendados de ${exercises.length}` 
+                              : `${exercises.length} exercícios`}
+                          </p>
                         </div>
                       </div>
                       <div className="text-white">
@@ -176,7 +221,7 @@ const Exercises = () => {
           })}
         </div>
         
-        {categories.length === 0 && (
+        {allCategories.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             Nenhuma categoria encontrada para esta dificuldade.
           </div>
