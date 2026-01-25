@@ -11,6 +11,7 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
+import DailyExerciseSuggestion from '@/components/DailyExerciseSuggestion';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import NotificationReminderBanner from '@/components/NotificationReminderBanner';
@@ -18,6 +19,7 @@ import ProgressSummary from '@/components/ProgressSummary';
 import { useNavigate } from 'react-router-dom';
 import { IMCCategory } from '@/types';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { supabase } from '@/integrations/supabase/client';
 
 const getKitDuration = (kitType: string | null): number => {
   switch (kitType) {
@@ -29,7 +31,7 @@ const getKitDuration = (kitType: string | null): number => {
 };
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown, user } = useAuth();
   const navigate = useNavigate();
   const { isSupported, isSubscribed, subscribeUser } = usePushNotifications();
   
@@ -44,6 +46,7 @@ const Dashboard = () => {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [showNotificationBanner, setShowNotificationBanner] = useState(false);
   const [pushPromptLoading, setPushPromptLoading] = useState(false);
+  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   
   // Check for iOS and standalone mode
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -66,6 +69,32 @@ const Dashboard = () => {
     // Show reminder if more than 24 hours have passed
     return hoursSinceLast >= 24;
   }, [capsuleDays]);
+
+  // Fetch completed exercises
+  useEffect(() => {
+    const fetchCompletedExercises = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('completed_exercises')
+        .select('exercise_id')
+        .eq('user_id', user.id);
+      
+      if (data) {
+        setCompletedExercises(data.map(e => e.exercise_id));
+      }
+    };
+    
+    fetchCompletedExercises();
+  }, [user]);
+
+  const handleExerciseCompleted = (exerciseId: string) => {
+    setCompletedExercises(prev => 
+      prev.includes(exerciseId) 
+        ? prev.filter(id => id !== exerciseId)
+        : [...prev, exerciseId]
+    );
+  };
 
   // Check if user should see onboarding (first time login - never completed onboarding)
   useEffect(() => {
@@ -316,6 +345,21 @@ const Dashboard = () => {
             transition={{ delay: 0.2 }}
           >
             <DailyDietSuggestion imcCategory={profile.imc_category as IMCCategory} />
+          </motion.div>
+        )}
+
+        {/* Daily Exercise Suggestion */}
+        {profile?.imc !== undefined && profile.imc > 0 && profile?.imc_category && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <DailyExerciseSuggestion 
+              imcCategory={profile.imc_category as IMCCategory}
+              completedExercises={completedExercises}
+              onExerciseCompleted={handleExerciseCompleted}
+            />
           </motion.div>
         )}
 
