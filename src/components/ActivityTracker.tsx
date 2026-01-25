@@ -521,7 +521,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                         {/* Exercises section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Dumbbell className="w-4 h-4 text-orange-500" />
+                            <Dumbbell className="w-4 h-4 text-primary" />
                             <span className="text-xs font-medium text-foreground">
                               Exercícios ({progress.exercises.current}/{progress.exercises.goal})
                             </span>
@@ -532,6 +532,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                               if (!exercise) return null;
                               const isCompleted = completedExercises.includes(id);
                               const isLoading = loading === id;
+                              const isRecommended = exercise.recommendedFor?.includes(imcCategory);
                               
                               return (
                                 <div 
@@ -548,11 +549,14 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`exercise-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1",
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
                                       isCompleted ? "text-muted-foreground line-through" : "text-foreground"
                                     )}
                                   >
                                     {exercise.name}
+                                    {isRecommended && !isCompleted && (
+                                      <Star className="w-3 h-3 text-primary fill-primary" />
+                                    )}
                                   </label>
                                 </div>
                               );
@@ -563,7 +567,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                         {/* Recipes section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <ChefHat className="w-4 h-4 text-pink-500" />
+                            <ChefHat className="w-4 h-4 text-accent-foreground" />
                             <span className="text-xs font-medium text-foreground">
                               Receitas ({progress.recipes.current}/{progress.recipes.goal})
                             </span>
@@ -574,6 +578,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                               if (!recipe) return null;
                               const isCompleted = completedRecipes.includes(id);
                               const isLoading = loading === id;
+                              const isRecommended = recipe.category === imcCategory;
                               
                               return (
                                 <div 
@@ -590,11 +595,14 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`recipe-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1",
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
                                       isCompleted ? "text-muted-foreground line-through" : "text-foreground"
                                     )}
                                   >
                                     {recipe.name}
+                                    {isRecommended && !isCompleted && (
+                                      <Star className="w-3 h-3 text-primary fill-primary" />
+                                    )}
                                   </label>
                                 </div>
                               );
@@ -605,7 +613,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                         {/* Detox section */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <GlassWater className="w-4 h-4 text-emerald-500" />
+                            <GlassWater className="w-4 h-4 text-success" />
                             <span className="text-xs font-medium text-foreground">
                               Detox ({progress.detox.current}/{progress.detox.goal})
                             </span>
@@ -616,6 +624,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                               if (!detox) return null;
                               const isCompleted = completedDetox.includes(id);
                               const isLoading = loading === id;
+                              const isRecommended = detox.category === imcCategory;
                               
                               return (
                                 <div 
@@ -632,11 +641,14 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`detox-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1",
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
                                       isCompleted ? "text-muted-foreground line-through" : "text-foreground"
                                     )}
                                   >
                                     {detox.name}
+                                    {isRecommended && !isCompleted && (
+                                      <Star className="w-3 h-3 text-primary fill-primary" />
+                                    )}
                                   </label>
                                 </div>
                               );
