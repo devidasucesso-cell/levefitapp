@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dumbbell, ChefHat, GlassWater, Lock, ChevronDown, ChevronUp, Droplets, Pill } from 'lucide-react';
+import { Dumbbell, ChefHat, GlassWater, Lock, ChevronDown, ChevronUp, Droplets, Pill, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { exercises } from '@/data/exercises';
+import { exercises, getRecommendedExercises, getIMCExerciseRecommendation } from '@/data/exercises';
 import { recipes } from '@/data/recipes';
 import { detoxDrinks } from '@/data/detoxDrinks';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInWeeks, parseISO, startOfWeek, endOfWeek, addWeeks, isWithinInterval, format } from 'date-fns';
 import { useWaterStreak } from '@/hooks/useWaterStreak';
+import { IMCCategory } from '@/types';
 
 interface ActivityTrackerProps {
   completedExercises: string[];
@@ -29,16 +30,37 @@ interface WeekPhase {
   capsuleDaysGoal: number;
 }
 
-// Define specific activities for each week/phase using real IDs from data files
-// Focusing on practical exercises: walking, running, stairs, functional exercises
-// Excluding: pilates, hidroginástica, yoga, natação
-const getPhases = (): WeekPhase[] => {
+// Define specific activities for each week/phase, filtered by IMC category
+// Week 1-2: Easy exercises only
+// Week 3-4: Easy + some moderate
+// Week 5-6: Moderate focus
+// Week 7-8: Moderate + intense (if IMC allows)
+const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
+  // Get exercises recommended for this IMC category
+  const recommendedExercises = getRecommendedExercises(imcCategory);
+  
+  // Separate by difficulty
+  const easyExercises = recommendedExercises.filter(e => e.difficulty === 'easy');
+  const moderateExercises = recommendedExercises.filter(e => e.difficulty === 'moderate');
+  const intenseExercises = recommendedExercises.filter(e => e.difficulty === 'intense');
+  
+  // Helper to get exercise IDs by count
+  const getExerciseIds = (pool: typeof easyExercises, startIndex: number, count: number) => {
+    const ids: string[] = [];
+    for (let i = 0; i < count && (startIndex + i) < pool.length; i++) {
+      ids.push(pool[startIndex + i].id);
+    }
+    return ids;
+  };
+  
+  // For obese users, stay with easy exercises longer and limit intensity
+  const isHighIMC = imcCategory === 'obese' || imcCategory === 'overweight';
+  
   return [
     { 
       week: 1, 
-      title: 'Exercícios Leves', 
-      // Caminhada Leve, Alongamento Matinal, Dança Livre
-      exerciseIds: ['easy-1', 'easy-2', 'easy-4'],
+      title: 'Adaptação', 
+      exerciseIds: getExerciseIds(easyExercises, 0, 3),
       recipeIds: ['n-1', 'n-2'],
       detoxIds: ['nm-d1'],
       waterDaysGoal: 3,
@@ -46,9 +68,8 @@ const getPhases = (): WeekPhase[] => {
     },
     { 
       week: 2, 
-      title: 'Adaptação', 
-      // Subir Escadas, Polichinelos Suaves, Caminhada na Praia, Passeio com Cachorro
-      exerciseIds: ['easy-5', 'easy-6', 'easy-14', 'easy-16'],
+      title: 'Começando Bem', 
+      exerciseIds: getExerciseIds(easyExercises, 3, 4),
       recipeIds: ['n-3', 'n-4', 'n-5'],
       detoxIds: ['nm-d2', 'nm-d3'],
       waterDaysGoal: 4,
@@ -57,8 +78,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 3, 
       title: 'Progresso Inicial', 
-      // Caminhada no Shopping, Marcha Estacionária, Alongamento de Escritório, Caminhada Indoor, Flexão na Parede
-      exerciseIds: ['easy-19', 'easy-11', 'easy-12', 'easy-27', 'easy-22'],
+      exerciseIds: isHighIMC 
+        ? getExerciseIds(easyExercises, 7, 5)
+        : [...getExerciseIds(easyExercises, 7, 3), ...getExerciseIds(moderateExercises, 0, 2)],
       recipeIds: ['n-11', 'n-12', 'n-13'],
       detoxIds: ['nm-d11', 'nm-d12'],
       waterDaysGoal: 5,
@@ -67,8 +89,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 4, 
       title: 'Consolidação', 
-      // Agachamento com Apoio, Elevação de Panturrilha, Exercício com Faixa Elástica, Corrida Leve, Caminhada Rápida
-      exerciseIds: ['easy-23', 'easy-25', 'easy-33', 'mod-1', 'mod-7'],
+      exerciseIds: isHighIMC
+        ? [...getExerciseIds(easyExercises, 12, 3), ...getExerciseIds(moderateExercises, 0, 2)]
+        : [...getExerciseIds(easyExercises, 10, 2), ...getExerciseIds(moderateExercises, 2, 3)],
       recipeIds: ['n-14', 'n-15', 'n-16', 'n-21'],
       detoxIds: ['nm-d13', 'nm-d14', 'nm-d21'],
       waterDaysGoal: 5,
@@ -77,8 +100,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 5, 
       title: 'Intensificação', 
-      // Pular Corda, Circuito Funcional, Escada Aeróbica, Kickboxing Básico, Dança Aeróbica, Jump
-      exerciseIds: ['mod-3', 'mod-2', 'mod-8', 'mod-9', 'mod-6', 'mod-23'],
+      exerciseIds: isHighIMC
+        ? [...getExerciseIds(easyExercises, 15, 2), ...getExerciseIds(moderateExercises, 2, 4)]
+        : getExerciseIds(moderateExercises, 5, 6),
       recipeIds: ['n-17', 'n-18', 'n-19', 'n-22'],
       detoxIds: ['nm-d15', 'nm-d16', 'nm-d22'],
       waterDaysGoal: 6,
@@ -87,8 +111,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 6, 
       title: 'Desafio Moderado', 
-      // Zumba, Boxe Fitness, TRX Básico, Kettlebell Swing, Medicine Ball, Trilha Leve
-      exerciseIds: ['mod-10', 'mod-22', 'mod-25', 'mod-26', 'mod-27', 'mod-17'],
+      exerciseIds: isHighIMC
+        ? getExerciseIds(moderateExercises, 6, 6)
+        : [...getExerciseIds(moderateExercises, 11, 4), ...getExerciseIds(intenseExercises, 0, 2)],
       recipeIds: ['n-23', 'n-24', 'n-25', 'n-26', 'n-27'],
       detoxIds: ['nm-d23', 'nm-d24', 'nm-d25', 'nm-d26'],
       waterDaysGoal: 6,
@@ -97,8 +122,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 7, 
       title: 'Superação', 
-      // Futsal, Basquete, Tênis, HIIT Cardio, Burpees, Corrida Intensa, Sprint Intervals
-      exerciseIds: ['mod-20', 'mod-19', 'mod-18', 'int-1', 'int-2', 'int-3', 'int-8'],
+      exerciseIds: isHighIMC
+        ? getExerciseIds(moderateExercises, 12, 7)
+        : [...getExerciseIds(moderateExercises, 15, 3), ...getExerciseIds(intenseExercises, 2, 4)],
       recipeIds: ['n-28', 'n-29', 'n-30', 'n-31', 'n-32'],
       detoxIds: ['nm-d27', 'nm-d28', 'nm-d29', 'nm-d30'],
       waterDaysGoal: 7,
@@ -107,8 +133,9 @@ const getPhases = (): WeekPhase[] => {
     { 
       week: 8, 
       title: 'Transformação', 
-      // CrossFit WOD, Tabata Training, Mountain Climbers, Box Jump, Battle Ropes, Thrusters, Clean and Jerk
-      exerciseIds: ['int-4', 'int-5', 'int-6', 'int-7', 'int-16', 'int-9', 'int-10'],
+      exerciseIds: isHighIMC
+        ? [...getExerciseIds(moderateExercises, 19, 4), ...getExerciseIds(intenseExercises, 0, 3)]
+        : getExerciseIds(intenseExercises, 6, 7),
       recipeIds: ['n-33', 'n-34', 'n-35', 'n-36', 'n-49', 'n-50'],
       detoxIds: ['nm-d1', 'nm-d2', 'nm-d11', 'nm-d21', 'nm-d22'],
       waterDaysGoal: 7,
@@ -123,7 +150,9 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const [loading, setLoading] = useState<string | null>(null);
   const { waterHistory } = useWaterStreak();
   
-  const phases = useMemo(() => getPhases(), []);
+  const imcCategory = (profile?.imc_category as IMCCategory) || 'normal';
+  const imcRecommendation = getIMCExerciseRecommendation(imcCategory);
+  const phases = useMemo(() => getPhases(imcCategory), [imcCategory]);
   
   // Calculate current week based on treatment start date
   const currentWeek = useMemo(() => {
@@ -302,7 +331,20 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
 
   return (
     <Card className="p-4 bg-card">
-      <h3 className="font-semibold text-foreground text-sm mb-4">Progresso das Fases</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-foreground text-sm">Progresso das Fases</h3>
+      </div>
+      
+      {/* IMC-based recommendation tip */}
+      <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+        <div className="flex items-start gap-2">
+          <Star className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs font-medium text-foreground">{imcRecommendation.title}</p>
+            <p className="text-xs text-muted-foreground">{imcRecommendation.tip}</p>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-3">
         {phases.map((phase) => {
