@@ -549,8 +549,8 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`exercise-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
-                                      isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1 transition-all duration-300",
+                                      isCompleted ? "text-success line-through decoration-success decoration-2" : "text-foreground"
                                     )}
                                   >
                                     {exercise.name}
@@ -595,8 +595,8 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`recipe-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
-                                      isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1 transition-all duration-300",
+                                      isCompleted ? "text-success line-through decoration-success decoration-2" : "text-foreground"
                                     )}
                                   >
                                     {recipe.name}
@@ -641,8 +641,8 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                   <label 
                                     htmlFor={`detox-${id}`}
                                     className={cn(
-                                      "text-xs cursor-pointer flex-1 flex items-center gap-1",
-                                      isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1 transition-all duration-300",
+                                      isCompleted ? "text-success line-through decoration-success decoration-2" : "text-foreground"
                                     )}
                                   >
                                     {detox.name}
