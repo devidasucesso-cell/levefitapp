@@ -30,6 +30,27 @@ interface WeekPhase {
   capsuleDaysGoal: number;
 }
 
+// Helper to get recipe/detox IDs based on IMC category
+const getRecipePrefix = (imcCategory: IMCCategory): string => {
+  switch (imcCategory) {
+    case 'underweight': return 'uw';
+    case 'normal': return 'n';
+    case 'overweight': return 'ow';
+    case 'obese': return 'ob';
+    default: return 'n';
+  }
+};
+
+const getDetoxPrefix = (imcCategory: IMCCategory): string => {
+  switch (imcCategory) {
+    case 'underweight': return 'uw-d';
+    case 'normal': return 'nm-d';
+    case 'overweight': return 'ow-d';
+    case 'obese': return 'ob-d';
+    default: return 'nm-d';
+  }
+};
+
 // Define specific activities for each week/phase, filtered by IMC category
 // Week 1-2: Easy exercises only
 // Week 3-4: Easy + some moderate
@@ -52,6 +73,10 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
     }
     return ids;
   };
+
+  // Get prefixes based on IMC category
+  const recipePrefix = getRecipePrefix(imcCategory);
+  const detoxPrefix = getDetoxPrefix(imcCategory);
   
   // For obese users, stay with easy exercises longer and limit intensity
   const isHighIMC = imcCategory === 'obese' || imcCategory === 'overweight';
@@ -61,8 +86,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       week: 1, 
       title: 'Adaptação', 
       exerciseIds: getExerciseIds(easyExercises, 0, 3),
-      recipeIds: ['n-1', 'n-2'],
-      detoxIds: ['nm-d1'],
+      recipeIds: [`${recipePrefix}-1`, `${recipePrefix}-2`, `${recipePrefix}-18`],
+      detoxIds: [`${detoxPrefix}1`, `${detoxPrefix}2`],
       waterDaysGoal: 3,
       capsuleDaysGoal: 5,
     },
@@ -70,8 +95,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       week: 2, 
       title: 'Começando Bem', 
       exerciseIds: getExerciseIds(easyExercises, 3, 4),
-      recipeIds: ['n-3', 'n-4', 'n-5'],
-      detoxIds: ['nm-d2', 'nm-d3'],
+      recipeIds: [`${recipePrefix}-3`, `${recipePrefix}-4`, `${recipePrefix}-19`, `${recipePrefix}-35`],
+      detoxIds: [`${detoxPrefix}3`, `${detoxPrefix}18`, `${detoxPrefix}35`],
       waterDaysGoal: 4,
       capsuleDaysGoal: 6,
     },
@@ -81,8 +106,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC 
         ? getExerciseIds(easyExercises, 7, 5)
         : [...getExerciseIds(easyExercises, 7, 3), ...getExerciseIds(moderateExercises, 0, 2)],
-      recipeIds: ['n-11', 'n-12', 'n-13'],
-      detoxIds: ['nm-d11', 'nm-d12'],
+      recipeIds: [`${recipePrefix}-5`, `${recipePrefix}-6`, `${recipePrefix}-20`, `${recipePrefix}-21`, `${recipePrefix}-36`],
+      detoxIds: [`${detoxPrefix}4`, `${detoxPrefix}5`, `${detoxPrefix}19`],
       waterDaysGoal: 5,
       capsuleDaysGoal: 6,
     },
@@ -92,8 +117,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC
         ? [...getExerciseIds(easyExercises, 12, 3), ...getExerciseIds(moderateExercises, 0, 2)]
         : [...getExerciseIds(easyExercises, 10, 2), ...getExerciseIds(moderateExercises, 2, 3)],
-      recipeIds: ['n-14', 'n-15', 'n-16', 'n-21'],
-      detoxIds: ['nm-d13', 'nm-d14', 'nm-d21'],
+      recipeIds: [`${recipePrefix}-7`, `${recipePrefix}-8`, `${recipePrefix}-22`, `${recipePrefix}-23`, `${recipePrefix}-37`, `${recipePrefix}-38`],
+      detoxIds: [`${detoxPrefix}6`, `${detoxPrefix}7`, `${detoxPrefix}20`, `${detoxPrefix}36`],
       waterDaysGoal: 5,
       capsuleDaysGoal: 7,
     },
@@ -103,8 +128,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC
         ? [...getExerciseIds(easyExercises, 15, 2), ...getExerciseIds(moderateExercises, 2, 4)]
         : getExerciseIds(moderateExercises, 5, 6),
-      recipeIds: ['n-17', 'n-18', 'n-19', 'n-22'],
-      detoxIds: ['nm-d15', 'nm-d16', 'nm-d22'],
+      recipeIds: [`${recipePrefix}-9`, `${recipePrefix}-10`, `${recipePrefix}-24`, `${recipePrefix}-25`, `${recipePrefix}-39`, `${recipePrefix}-40`],
+      detoxIds: [`${detoxPrefix}8`, `${detoxPrefix}9`, `${detoxPrefix}21`, `${detoxPrefix}22`, `${detoxPrefix}37`],
       waterDaysGoal: 6,
       capsuleDaysGoal: 7,
     },
@@ -114,8 +139,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC
         ? getExerciseIds(moderateExercises, 6, 6)
         : [...getExerciseIds(moderateExercises, 11, 4), ...getExerciseIds(intenseExercises, 0, 2)],
-      recipeIds: ['n-23', 'n-24', 'n-25', 'n-26', 'n-27'],
-      detoxIds: ['nm-d23', 'nm-d24', 'nm-d25', 'nm-d26'],
+      recipeIds: [`${recipePrefix}-11`, `${recipePrefix}-12`, `${recipePrefix}-26`, `${recipePrefix}-27`, `${recipePrefix}-41`, `${recipePrefix}-42`],
+      detoxIds: [`${detoxPrefix}10`, `${detoxPrefix}11`, `${detoxPrefix}23`, `${detoxPrefix}24`, `${detoxPrefix}38`, `${detoxPrefix}39`],
       waterDaysGoal: 6,
       capsuleDaysGoal: 7,
     },
@@ -125,8 +150,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC
         ? getExerciseIds(moderateExercises, 12, 7)
         : [...getExerciseIds(moderateExercises, 15, 3), ...getExerciseIds(intenseExercises, 2, 4)],
-      recipeIds: ['n-28', 'n-29', 'n-30', 'n-31', 'n-32'],
-      detoxIds: ['nm-d27', 'nm-d28', 'nm-d29', 'nm-d30'],
+      recipeIds: [`${recipePrefix}-13`, `${recipePrefix}-14`, `${recipePrefix}-28`, `${recipePrefix}-29`, `${recipePrefix}-43`, `${recipePrefix}-44`, `${recipePrefix}-45`],
+      detoxIds: [`${detoxPrefix}12`, `${detoxPrefix}13`, `${detoxPrefix}25`, `${detoxPrefix}26`, `${detoxPrefix}40`, `${detoxPrefix}41`],
       waterDaysGoal: 7,
       capsuleDaysGoal: 7,
     },
@@ -136,8 +161,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       exerciseIds: isHighIMC
         ? [...getExerciseIds(moderateExercises, 19, 4), ...getExerciseIds(intenseExercises, 0, 3)]
         : getExerciseIds(intenseExercises, 6, 7),
-      recipeIds: ['n-33', 'n-34', 'n-35', 'n-36', 'n-49', 'n-50'],
-      detoxIds: ['nm-d1', 'nm-d2', 'nm-d11', 'nm-d21', 'nm-d22'],
+      recipeIds: [`${recipePrefix}-15`, `${recipePrefix}-16`, `${recipePrefix}-17`, `${recipePrefix}-30`, `${recipePrefix}-31`, `${recipePrefix}-46`, `${recipePrefix}-47`, `${recipePrefix}-48`],
+      detoxIds: [`${detoxPrefix}14`, `${detoxPrefix}15`, `${detoxPrefix}27`, `${detoxPrefix}28`, `${detoxPrefix}42`, `${detoxPrefix}43`, `${detoxPrefix}44`],
       waterDaysGoal: 7,
       capsuleDaysGoal: 7,
     },
