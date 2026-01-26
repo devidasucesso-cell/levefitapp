@@ -11,7 +11,7 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
-import DailyExerciseSuggestion from '@/components/DailyExerciseSuggestion';
+import DashboardExerciseSuggestion from '@/components/DashboardExerciseSuggestion';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import NotificationReminderBanner from '@/components/NotificationReminderBanner';
@@ -46,8 +46,6 @@ const Dashboard = () => {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [showNotificationBanner, setShowNotificationBanner] = useState(false);
   const [pushPromptLoading, setPushPromptLoading] = useState(false);
-  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
-  
   // Check for iOS and standalone mode
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
@@ -69,32 +67,6 @@ const Dashboard = () => {
     // Show reminder if more than 24 hours have passed
     return hoursSinceLast >= 24;
   }, [capsuleDays]);
-
-  // Fetch completed exercises
-  useEffect(() => {
-    const fetchCompletedExercises = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('completed_exercises')
-        .select('exercise_id')
-        .eq('user_id', user.id);
-      
-      if (data) {
-        setCompletedExercises(data.map(e => e.exercise_id));
-      }
-    };
-    
-    fetchCompletedExercises();
-  }, [user]);
-
-  const handleExerciseCompleted = (exerciseId: string) => {
-    setCompletedExercises(prev => 
-      prev.includes(exerciseId) 
-        ? prev.filter(id => id !== exerciseId)
-        : [...prev, exerciseId]
-    );
-  };
 
   // Check if user should see onboarding (first time login - never completed onboarding)
   useEffect(() => {
@@ -355,11 +327,7 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <DailyExerciseSuggestion 
-              imcCategory={profile.imc_category as IMCCategory}
-              completedExercises={completedExercises}
-              onExerciseCompleted={handleExerciseCompleted}
-            />
+            <DashboardExerciseSuggestion imcCategory={profile.imc_category as IMCCategory} />
           </motion.div>
         )}
 
