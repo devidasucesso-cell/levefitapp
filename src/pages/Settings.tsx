@@ -563,7 +563,7 @@ const Settings = () => {
           transition={{ delay: 0.35 }}
         >
           <a 
-            href="https://wa.me/message/HQIWLURN37IUP1" 
+            href="https://levaday.lovable.app" 
             target="_blank" 
             rel="noopener noreferrer"
             className="block"
