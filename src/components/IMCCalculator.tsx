@@ -7,14 +7,14 @@ import { Card } from '@/components/ui/card';
 import { Scale, Ruler, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import IMCGuide from './IMCGuide';
+
 import { differenceInDays, parseISO } from 'date-fns';
 
 const IMCCalculator = forwardRef<HTMLDivElement>((_, ref) => {
   const { profile, updateIMC, progressHistory } = useAuth();
   const [weight, setWeight] = useState(profile?.weight?.toString() || '');
   const [height, setHeight] = useState(profile?.height?.toString() || '');
-  const [showGuide, setShowGuide] = useState(false);
+  
   const [justCalculated, setJustCalculated] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showIMCDetails, setShowIMCDetails] = useState(false);
@@ -53,7 +53,7 @@ const IMCCalculator = forwardRef<HTMLDivElement>((_, ref) => {
     if (w > 0 && h > 0) {
       await updateIMC(w, h);
       setJustCalculated(true);
-      setShowGuide(true);
+      
       setShowCalculator(false);
     }
   };
@@ -289,44 +289,7 @@ const IMCCalculator = forwardRef<HTMLDivElement>((_, ref) => {
           )}
         </AnimatePresence>
 
-        {/* Toggle Guide Button - only show if IMC exists */}
-        {profile?.imc !== undefined && profile.imc > 0 && (
-          <Button
-            variant="outline"
-            onClick={() => setShowGuide(!showGuide)}
-            className="w-full flex items-center justify-center gap-2 mt-4"
-          >
-            {showGuide ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                Ocultar próximos passos
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                Ver próximos passos
-              </>
-            )}
-          </Button>
-        )}
       </Card>
-
-      {/* Guide Section */}
-      <AnimatePresence>
-        {showGuide && profile?.imc !== undefined && profile.imc > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <IMCGuide 
-              imcCategory={profile.imc_category} 
-              onClose={() => setShowGuide(false)}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 });
