@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Dumbbell, Flame, Clock, ChevronRight, Star } from 'lucide-react';
+import { Dumbbell, Flame, Clock, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { IMCCategory, Exercise } from '@/types';
-import { getRecommendedExercises, getIMCExerciseRecommendation, exerciseCategoryLabels } from '@/data/exercises';
+import { getRecommendedExercises, exerciseCategoryLabels } from '@/data/exercises';
 import {
   Dialog,
   DialogContent,
@@ -61,7 +61,7 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
     return suggestions;
   }, [imcCategory]);
 
-  const recommendation = getIMCExerciseRecommendation(imcCategory);
+  
 
   const getDifficultyConfig = (difficulty: string) => {
     switch (difficulty) {
@@ -84,18 +84,10 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Exercícios do Dia</h3>
-              <p className="text-xs text-muted-foreground">{recommendation.title}</p>
             </div>
           </div>
         </div>
 
-        {/* Dica personalizada */}
-        <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
-          <div className="flex items-start gap-2">
-            <Star className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground">{recommendation.tip}</p>
-          </div>
-        </div>
 
         {/* Lista de exercícios sugeridos com fotos - estilo igual às receitas */}
         <div className="space-y-2">
