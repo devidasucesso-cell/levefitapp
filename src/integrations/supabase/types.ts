@@ -553,6 +553,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_generate_and_claim_code: {
+        Args: { claiming_user_id: string }
+        Returns: Json
+      }
       claim_access_code: {
         Args: { claiming_user_id: string; code_input: string }
         Returns: Json
