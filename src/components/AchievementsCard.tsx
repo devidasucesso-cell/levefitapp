@@ -120,44 +120,7 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
       total: 7,
       color: 'from-cyan-400 to-cyan-600',
     },
-    // New recipe achievements
-    {
-      id: 'first-recipe',
-      name: 'Primeira Receita',
-      description: 'Preparou sua primeira receita fit',
-      icon: <ChefHat className="w-4 h-4" />,
-      unlocked: completedRecipes >= 1,
-      color: 'from-orange-400 to-orange-600',
-    },
-    {
-      id: 'chef-fit',
-      name: 'Chef Fit',
-      description: 'Completou 10 receitas saudáveis',
-      icon: <ChefHat className="w-4 h-4" />,
-      unlocked: completedRecipes >= 10,
-      progress: Math.min(completedRecipes, 10),
-      total: 10,
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      id: 'chef-master',
-      name: 'Chef Master',
-      description: 'Completou 25 receitas — você é incrível!',
-      icon: <CakeSlice className="w-4 h-4" />,
-      unlocked: completedRecipes >= 25,
-      progress: Math.min(completedRecipes, 25),
-      total: 25,
-      color: 'from-rose-400 to-pink-600',
-    },
-    // New detox achievements
-    {
-      id: 'first-detox',
-      name: 'Primeiro Detox',
-      description: 'Tomou seu primeiro drink detox',
-      icon: <GlassWater className="w-4 h-4" />,
-      unlocked: completedDetox >= 1,
-      color: 'from-emerald-400 to-emerald-600',
-    },
+    // Detox achievements
     {
       id: 'detox-lover',
       name: 'Amante Detox',
@@ -178,25 +141,16 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
       total: 25,
       color: 'from-green-500 to-emerald-600',
     },
-    // Dessert achievements
+    // Recipe achievement
     {
-      id: 'first-dessert',
-      name: 'Primeira Sobremesa',
-      description: 'Preparou sua primeira sobremesa fit',
-      icon: <CakeSlice className="w-4 h-4" />,
-      unlocked: completedDesserts >= 1,
-      color: 'from-pink-400 to-rose-500',
+      id: 'first-recipe',
+      name: 'Primeira Receita',
+      description: 'Preparou sua primeira receita fit',
+      icon: <ChefHat className="w-4 h-4" />,
+      unlocked: completedRecipes >= 1,
+      color: 'from-orange-400 to-orange-600',
     },
-    {
-      id: 'dessert-lover',
-      name: 'Doce Saudável',
-      description: 'Completou 5 sobremesas fit',
-      icon: <CakeSlice className="w-4 h-4" />,
-      unlocked: completedDesserts >= 5,
-      progress: Math.min(completedDesserts, 5),
-      total: 5,
-      color: 'from-rose-400 to-pink-600',
-    },
+    // Dessert achievement
     {
       id: 'dessert-master',
       name: 'Confeiteiro Fit',
