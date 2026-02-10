@@ -26,6 +26,7 @@ import KitSelectionPage from "./pages/KitSelectionPage";
 import Referral from "./pages/Referral";
 import Store from "./pages/Store";
 import ProductDetail from "./pages/ProductDetail";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import { useCartSync } from "./hooks/useCartSync";
 
 const queryClient = new QueryClient();
@@ -138,6 +139,7 @@ const AppRoutes = () => {
       <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/product/:handle" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
+      <Route path="/checkout-success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
