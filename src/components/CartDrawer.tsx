@@ -117,7 +117,7 @@ export const CartDrawer = () => {
                   <span className="text-xl font-bold">R$ {totalPrice.toFixed(2)}</span>
                 </div>
                 <Button onClick={handleCheckout} className="w-full gradient-primary text-primary-foreground" size="lg" disabled={items.length === 0 || isLoading || isSyncing || isCheckingOut}>
-                  {isLoading || isSyncing || isCheckingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Stripe</>}
+                  {isLoading || isSyncing || isCheckingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Pagar</>}
                 </Button>
               </div>
             </>
