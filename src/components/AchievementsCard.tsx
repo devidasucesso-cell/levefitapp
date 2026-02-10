@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Trophy, Droplets, Pill, Star, Award, Target, Zap, Sparkles, X, Check } from 'lucide-react';
+import { Trophy, Droplets, Pill, Star, Award, Target, Zap, Sparkles, X, Check, ChefHat, GlassWater, CakeSlice } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -23,9 +23,11 @@ interface AchievementsCardProps {
   capsuleDays: number;
   waterStreak: number;
   totalWaterDays: number;
+  completedRecipes?: number;
+  completedDetox?: number;
 }
 
-const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: AchievementsCardProps) => {
+const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedRecipes = 0, completedDetox = 0 }: AchievementsCardProps) => {
   const { user } = useAuth();
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -127,7 +129,65 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays }: Achievem
       total: 3,
       color: 'from-red-400 to-red-600',
     },
-  ], [capsuleDays, totalWaterDays, waterStreak]);
+    // New recipe achievements
+    {
+      id: 'first-recipe',
+      name: 'Primeira Receita',
+      description: 'Preparou sua primeira receita fit',
+      icon: <ChefHat className="w-4 h-4" />,
+      unlocked: completedRecipes >= 1,
+      color: 'from-orange-400 to-orange-600',
+    },
+    {
+      id: 'chef-fit',
+      name: 'Chef Fit',
+      description: 'Completou 10 receitas saudáveis',
+      icon: <ChefHat className="w-4 h-4" />,
+      unlocked: completedRecipes >= 10,
+      progress: Math.min(completedRecipes, 10),
+      total: 10,
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      id: 'chef-master',
+      name: 'Chef Master',
+      description: 'Completou 25 receitas — você é incrível!',
+      icon: <CakeSlice className="w-4 h-4" />,
+      unlocked: completedRecipes >= 25,
+      progress: Math.min(completedRecipes, 25),
+      total: 25,
+      color: 'from-rose-400 to-pink-600',
+    },
+    // New detox achievements
+    {
+      id: 'first-detox',
+      name: 'Primeiro Detox',
+      description: 'Tomou seu primeiro drink detox',
+      icon: <GlassWater className="w-4 h-4" />,
+      unlocked: completedDetox >= 1,
+      color: 'from-emerald-400 to-emerald-600',
+    },
+    {
+      id: 'detox-lover',
+      name: 'Amante Detox',
+      description: 'Completou 10 drinks detox',
+      icon: <GlassWater className="w-4 h-4" />,
+      unlocked: completedDetox >= 10,
+      progress: Math.min(completedDetox, 10),
+      total: 10,
+      color: 'from-teal-400 to-teal-600',
+    },
+    {
+      id: 'detox-master',
+      name: 'Detox Master',
+      description: 'Completou 25 drinks detox — corpo purificado!',
+      icon: <GlassWater className="w-4 h-4" />,
+      unlocked: completedDetox >= 25,
+      progress: Math.min(completedDetox, 25),
+      total: 25,
+      color: 'from-green-500 to-emerald-600',
+    },
+  ], [capsuleDays, totalWaterDays, waterStreak, completedRecipes, completedDetox]);
 
   // Check for newly unlocked achievements
   useEffect(() => {

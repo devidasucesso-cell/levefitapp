@@ -116,6 +116,8 @@ const Progress = () => {
             capsuleDays={capsuleDays.length}
             waterStreak={currentStreak}
             totalWaterDays={totalDaysMetGoal}
+            completedRecipes={completedRecipes.length}
+            completedDetox={completedDetox.length}
           />
         </motion.div>
 
