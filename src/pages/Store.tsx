@@ -72,7 +72,11 @@ const Store = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-5 shadow-glow"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-5 shadow-glow cursor-pointer hover:scale-[1.02] transition-transform"
+          onClick={() => {
+            const kit3 = products.find(p => p.node.title.toLowerCase().includes('3 pote'));
+            if (kit3) navigate(`/product/${kit3.node.handle}`);
+          }}
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary-foreground/5 rounded-full translate-y-1/2 -translate-x-1/2" />
