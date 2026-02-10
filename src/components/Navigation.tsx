@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, UtensilsCrossed, GlassWater, Dumbbell, TrendingUp, Settings, Calendar, Gift } from 'lucide-react';
+import { Home, UtensilsCrossed, GlassWater, Dumbbell, TrendingUp, Settings, Calendar, Gift, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { path: '/detox', icon: GlassWater, label: 'Detox' },
   { path: '/exercises', icon: Dumbbell, label: 'Exercícios' },
   { path: '/progress', icon: TrendingUp, label: 'Evolução' },
+  { path: '/store', icon: ShoppingBag, label: 'Loja' },
   { path: '/referral', icon: Gift, label: 'Indicar', emoji: '🎁' },
   { path: '/calendar', icon: Calendar, label: 'Calendário' },
   { path: '/settings', icon: Settings, label: 'Config' },
