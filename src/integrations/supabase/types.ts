@@ -443,6 +443,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          amount: number
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          product_title: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone: string
+          product_title: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          product_title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       shown_achievements: {
         Row: {
           achievement_id: string
