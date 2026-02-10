@@ -142,7 +142,10 @@ const Store = () => {
                       <h3 className="font-semibold text-sm text-foreground truncate">{product.node.title}</h3>
                       {product.node.title.toLowerCase().includes('em breve') ? (
                         <>
-                          <p className="text-muted-foreground font-medium mt-1 text-sm">Em breve</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-muted-foreground line-through text-xs">R$ 297,00</span>
+                            <span className="text-primary font-bold text-sm">R$ 99,99</span>
+                          </div>
                           <Button
                             className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
                             size="sm"
