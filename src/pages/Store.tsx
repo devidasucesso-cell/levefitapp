@@ -66,8 +66,36 @@ const Store = () => {
         </div>
       </div>
 
+      {/* Promotional Banner */}
+      <div className="px-4 max-w-4xl mx-auto -mt-4 mb-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-5 shadow-glow"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary-foreground/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10">
+            <span className="inline-block bg-primary-foreground/20 text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-2">
+              🔥 MAIS VENDIDO
+            </span>
+            <h2 className="text-lg font-bold text-primary-foreground leading-tight">
+              Kit 3 Potes LeveFit
+            </h2>
+            <p className="text-primary-foreground/80 text-sm mt-1">
+              90 dias de tratamento completo com frete grátis!
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <span className="text-primary-foreground/60 line-through text-sm">R$ 591,00</span>
+              <span className="text-primary-foreground font-extrabold text-xl">R$ 397,00</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Content */}
-      <div className="p-4 max-w-4xl mx-auto -mt-4">
+      <div className="p-4 max-w-4xl mx-auto">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
