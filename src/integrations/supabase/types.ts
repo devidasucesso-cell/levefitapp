@@ -242,6 +242,48 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount_total: number
+          created_at: string
+          currency: string
+          customer_email: string | null
+          id: string
+          items: Json | null
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_total?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          items?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_total?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          items?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           code_validated: boolean | null
