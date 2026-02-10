@@ -137,18 +137,34 @@ const Store = () => {
                     </div>
                     <div className="p-3">
                       <h3 className="font-semibold text-sm text-foreground truncate">{product.node.title}</h3>
-                      <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
-                      <Button
-                        className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
-                        size="sm"
-                        disabled={isCartLoading}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product);
-                        }}
-                      >
-                        Adicionar
-                      </Button>
+                      {product.node.title.toLowerCase().includes('em breve') ? (
+                        <>
+                          <p className="text-muted-foreground font-medium mt-1 text-sm">Em breve</p>
+                          <Button
+                            className="w-full mt-2 text-xs h-8"
+                            size="sm"
+                            variant="secondary"
+                            disabled
+                          >
+                            Em Breve
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
+                          <Button
+                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
+                            size="sm"
+                            disabled={isCartLoading}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                          >
+                            Adicionar
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </Card>
                 </motion.div>
