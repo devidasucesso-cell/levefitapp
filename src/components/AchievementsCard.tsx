@@ -131,25 +131,6 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
       total: 10,
       color: 'from-teal-400 to-teal-600',
     },
-    {
-      id: 'detox-master',
-      name: 'Detox Master',
-      description: 'Completou 25 drinks detox — corpo purificado!',
-      icon: <GlassWater className="w-4 h-4" />,
-      unlocked: completedDetox >= 25,
-      progress: Math.min(completedDetox, 25),
-      total: 25,
-      color: 'from-green-500 to-emerald-600',
-    },
-    // Recipe achievement
-    {
-      id: 'first-recipe',
-      name: 'Primeira Receita',
-      description: 'Preparou sua primeira receita fit',
-      icon: <ChefHat className="w-4 h-4" />,
-      unlocked: completedRecipes >= 1,
-      color: 'from-orange-400 to-orange-600',
-    },
     // Dessert achievement
     {
       id: 'dessert-master',
