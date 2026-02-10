@@ -2,22 +2,47 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ShoppingCart, Minus, Plus, Trash2, ExternalLink, Loader2 } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { items, isLoading, isSyncing, updateQuantity, removeItem, getCheckoutUrl, syncCart } = useCartStore();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { items, isLoading, isSyncing, updateQuantity, removeItem, syncCart } = useCartStore();
+  const { toast } = useToast();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
 
   useEffect(() => { if (isOpen) syncCart(); }, [isOpen, syncCart]);
 
-  const handleCheckout = () => {
-    const checkoutUrl = getCheckoutUrl();
-    if (checkoutUrl) {
-      window.open(checkoutUrl, '_blank');
-      setIsOpen(false);
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      const checkoutItems = items.map(item => ({
+        title: item.product.node.title,
+        price: parseFloat(item.price.amount),
+        quantity: item.quantity,
+        image: item.product.node.images?.edges?.[0]?.node?.url || undefined,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { items: checkoutItems },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        setIsOpen(false);
+      } else {
+        throw new Error('URL de checkout não retornada');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({ title: 'Erro no checkout', description: 'Não foi possível iniciar o pagamento. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
@@ -91,8 +116,8 @@ export const CartDrawer = () => {
                   <span className="text-lg font-semibold">Total</span>
                   <span className="text-xl font-bold">R$ {totalPrice.toFixed(2)}</span>
                 </div>
-                <Button onClick={handleCheckout} className="w-full gradient-primary text-primary-foreground" size="lg" disabled={items.length === 0 || isLoading || isSyncing}>
-                  {isLoading || isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ExternalLink className="w-4 h-4 mr-2" />Finalizar Compra</>}
+                <Button onClick={handleCheckout} className="w-full gradient-primary text-primary-foreground" size="lg" disabled={items.length === 0 || isLoading || isSyncing || isCheckingOut}>
+                  {isLoading || isSyncing || isCheckingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Pagar com Stripe</>}
                 </Button>
               </div>
             </>
