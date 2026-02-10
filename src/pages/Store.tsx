@@ -141,12 +141,15 @@ const Store = () => {
                         <>
                           <p className="text-muted-foreground font-medium mt-1 text-sm">Em breve</p>
                           <Button
-                            className="w-full mt-2 text-xs h-8"
+                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
                             size="sm"
-                            variant="secondary"
-                            disabled
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
+                            disabled={isCartLoading}
                           >
-                            Em Breve
+                            Reservar o meu
                           </Button>
                         </>
                       ) : (
