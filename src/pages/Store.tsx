@@ -10,6 +10,7 @@ import { storefrontApiRequest, STOREFRONT_PRODUCTS_QUERY } from '@/lib/shopify';
 import { toast } from 'sonner';
 import Navigation from '@/components/Navigation';
 import { ReservationDialog } from '@/components/ReservationDialog';
+import { ProductImageCarousel, getKitImages } from '@/components/ProductImageCarousel';
 
 const Store = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -151,6 +152,7 @@ const Store = () => {
             {products.map((product, index) => {
               const image = product.node.images.edges[0]?.node;
               const price = product.node.priceRange.minVariantPrice;
+              const kitImages = getKitImages(product.node.title);
               return (
                 <motion.div
                   key={product.node.id}
@@ -163,7 +165,9 @@ const Store = () => {
                     onClick={() => navigate(`/product/${product.node.handle}`)}
                   >
                     <div className="aspect-square bg-secondary overflow-hidden">
-                      {image ? (
+                      {kitImages ? (
+                        <ProductImageCarousel images={kitImages} alt={product.node.title} />
+                      ) : image ? (
                         <img src={image.url} alt={image.altText || product.node.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
