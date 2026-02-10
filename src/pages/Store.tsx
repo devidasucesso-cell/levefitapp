@@ -9,10 +9,13 @@ import { useCartStore, ShopifyProduct } from '@/stores/cartStore';
 import { storefrontApiRequest, STOREFRONT_PRODUCTS_QUERY } from '@/lib/shopify';
 import { toast } from 'sonner';
 import Navigation from '@/components/Navigation';
+import { ReservationDialog } from '@/components/ReservationDialog';
 
 const Store = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reservationOpen, setReservationOpen] = useState(false);
+  const [reservationProduct, setReservationProduct] = useState('');
   const navigate = useNavigate();
   const addItem = useCartStore(state => state.addItem);
   const isCartLoading = useCartStore(state => state.isLoading);
@@ -145,9 +148,9 @@ const Store = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddToCart(product);
+                              setReservationProduct(product.node.title);
+                              setReservationOpen(true);
                             }}
-                            disabled={isCartLoading}
                           >
                             Reservar o meu
                           </Button>
@@ -176,6 +179,7 @@ const Store = () => {
           </div>
         )}
       </div>
+      <ReservationDialog open={reservationOpen} onOpenChange={setReservationOpen} productTitle={reservationProduct} />
       <Navigation />
     </div>
   );
