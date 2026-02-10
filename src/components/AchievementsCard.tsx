@@ -25,9 +25,10 @@ interface AchievementsCardProps {
   totalWaterDays: number;
   completedRecipes?: number;
   completedDetox?: number;
+  completedDesserts?: number;
 }
 
-const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedRecipes = 0, completedDetox = 0 }: AchievementsCardProps) => {
+const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedRecipes = 0, completedDetox = 0, completedDesserts = 0 }: AchievementsCardProps) => {
   const { user } = useAuth();
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -187,7 +188,36 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
       total: 25,
       color: 'from-green-500 to-emerald-600',
     },
-  ], [capsuleDays, totalWaterDays, waterStreak, completedRecipes, completedDetox]);
+    // Dessert achievements
+    {
+      id: 'first-dessert',
+      name: 'Primeira Sobremesa',
+      description: 'Preparou sua primeira sobremesa fit',
+      icon: <CakeSlice className="w-4 h-4" />,
+      unlocked: completedDesserts >= 1,
+      color: 'from-pink-400 to-rose-500',
+    },
+    {
+      id: 'dessert-lover',
+      name: 'Doce Saudável',
+      description: 'Completou 5 sobremesas fit',
+      icon: <CakeSlice className="w-4 h-4" />,
+      unlocked: completedDesserts >= 5,
+      progress: Math.min(completedDesserts, 5),
+      total: 5,
+      color: 'from-rose-400 to-pink-600',
+    },
+    {
+      id: 'dessert-master',
+      name: 'Confeiteiro Fit',
+      description: 'Completou 15 sobremesas — doçura sem culpa!',
+      icon: <CakeSlice className="w-4 h-4" />,
+      unlocked: completedDesserts >= 15,
+      progress: Math.min(completedDesserts, 15),
+      total: 15,
+      color: 'from-fuchsia-400 to-purple-600',
+    },
+  ], [capsuleDays, totalWaterDays, waterStreak, completedRecipes, completedDetox, completedDesserts]);
 
   // Check for newly unlocked achievements
   useEffect(() => {
