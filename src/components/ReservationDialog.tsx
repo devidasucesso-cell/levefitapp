@@ -159,7 +159,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
             </div>
             <div className="rounded-xl bg-secondary/50 p-4 space-y-3">
               <p className="text-sm font-medium text-foreground">Valor: <span className="text-primary font-bold">R$ 119,99</span></p>
-              <p className="text-sm text-muted-foreground">Beneficiário: ESTER SANTOS</p>
+              
               <div className="bg-background rounded-lg p-3 border border-input">
                 <p className="text-xs text-muted-foreground break-all font-mono leading-relaxed">{PIX_CODE}</p>
               </div>
