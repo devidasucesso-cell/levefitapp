@@ -69,12 +69,45 @@ const Store = () => {
         </div>
       </div>
 
-      {/* Promotional Banner */}
+      {/* Detox Banner */}
       <div className="px-4 max-w-4xl mx-auto -mt-4 mb-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-green-400 p-5 shadow-glow cursor-pointer hover:scale-[1.02] transition-transform"
+          onClick={() => {
+            setReservationProduct('Leve Fit Detox - Em Breve');
+            setReservationOpen(true);
+          }}
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary-foreground/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10">
+            <span className="inline-block bg-primary-foreground/20 text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-2">
+              🍍 LANÇAMENTO
+            </span>
+            <h2 className="text-lg font-bold text-primary-foreground leading-tight">
+              Leve Fit Detox
+            </h2>
+            <p className="text-primary-foreground/80 text-sm mt-1">
+              Sabor Abacaxi com Hortelã • Natural, Sem Açúcar, Sem Glúten
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <span className="text-primary-foreground/60 line-through text-sm">R$ 297,00</span>
+              <span className="text-primary-foreground font-extrabold text-xl">R$ 99,99</span>
+            </div>
+            <p className="text-primary-foreground/90 text-xs mt-2 font-semibold">Toque para reservar o seu! 🔥</p>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Kit 3 Potes Banner */}
+      <div className="px-4 max-w-4xl mx-auto mb-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
           className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-5 shadow-glow cursor-pointer hover:scale-[1.02] transition-transform"
           onClick={() => {
             const kit3 = products.find(p => p.node.title.toLowerCase().includes('3 pote'));
