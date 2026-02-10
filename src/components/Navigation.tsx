@@ -11,7 +11,7 @@ const navItems = [
   { path: '/progress', icon: TrendingUp, label: 'Evolução' },
   { path: '/store', icon: ShoppingBag, label: 'Loja' },
   { path: '/referral', icon: Gift, label: 'Indicar', emoji: '🎁' },
-  { path: '/calendar', icon: Calendar, label: 'Calendário' },
+  
   { path: '/settings', icon: Settings, label: 'Config' },
 ];
 
