@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [flavor, setFlavor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
@@ -30,7 +32,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || !email.trim()) return;
+    if (!name.trim() || !phone.trim() || !email.trim() || !flavor) return;
 
     const phoneDigits = phone.replace(/\D/g, '');
     if (phoneDigits.length < 10) {
@@ -47,7 +49,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
           name: name.trim(),
           phone: phoneDigits,
           email: email.trim(),
-          product_title: productTitle,
+          product_title: `${productTitle} - Sabor: ${flavor}`,
           amount: 149.99,
           user_id: user?.id || null,
         },
@@ -70,6 +72,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
       setName('');
       setPhone('');
       setEmail('');
+      setFlavor('');
     }, 300);
   };
 
@@ -109,7 +112,20 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
                 <Label htmlFor="res-email">E-mail</Label>
                 <Input id="res-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required maxLength={255} />
               </div>
-              <Button type="submit" className="w-full gradient-primary text-primary-foreground" size="lg" disabled={isSubmitting}>
+              <div className="space-y-3">
+                <Label>Sabor desejado</Label>
+                <RadioGroup value={flavor} onValueChange={setFlavor} className="flex flex-col gap-3">
+                  <div className="flex items-center space-x-3 rounded-lg border border-input p-3 cursor-pointer hover:bg-secondary/50 transition-colors">
+                    <RadioGroupItem value="Limão" id="flavor-limao" />
+                    <Label htmlFor="flavor-limao" className="cursor-pointer font-medium">🍋 Limão</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 rounded-lg border border-input p-3 cursor-pointer hover:bg-secondary/50 transition-colors">
+                    <RadioGroupItem value="Abacaxi com Hortelã" id="flavor-abacaxi" />
+                    <Label htmlFor="flavor-abacaxi" className="cursor-pointer font-medium">🍍 Abacaxi com Hortelã</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              <Button type="submit" className="w-full gradient-primary text-primary-foreground" size="lg" disabled={isSubmitting || !flavor}>
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Reserva - R$ 149,99'}
               </Button>
             </form>
