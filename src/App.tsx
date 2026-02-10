@@ -133,7 +133,7 @@ const AppRoutes = () => {
       <Route path="/detox" element={<ProtectedRoute><Detox /></ProtectedRoute>} />
       <Route path="/exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
       <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+      
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/push-diagnostics" element={<ProtectedRoute><PushDiagnostics /></ProtectedRoute>} />
       <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
