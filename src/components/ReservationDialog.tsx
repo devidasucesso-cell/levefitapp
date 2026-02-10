@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +20,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
   const [email, setEmail] = useState('');
   const [flavor, setFlavor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
 
@@ -65,6 +66,31 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
     }
   };
 
+  const handlePayment = async () => {
+    setIsRedirecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          items: [{
+            title: `Leve Fit Detox - Sabor: ${flavor}`,
+            price: 119.99,
+            quantity: 1,
+          }],
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      toast({ title: 'Erro ao iniciar pagamento', description: 'Tente novamente.', variant: 'destructive' });
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
+
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
@@ -81,10 +107,27 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
       <DialogContent className="sm:max-w-md">
         {success ? (
           <div className="text-center py-6 space-y-4">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+            <CheckCircle className="w-16 h-16 text-primary mx-auto" />
             <h2 className="text-xl font-bold text-foreground">Reserva Confirmada! 🎉</h2>
-            <p className="text-muted-foreground">Você receberá mais informações em breve.</p>
-            <Button onClick={handleClose} className="gradient-primary text-primary-foreground">Fechar</Button>
+            <p className="text-muted-foreground">Deseja pagar sua reserva agora?</p>
+            <div className="flex flex-col gap-3 pt-2">
+              <Button
+                onClick={handlePayment}
+                className="w-full gradient-primary text-primary-foreground"
+                size="lg"
+                disabled={isRedirecting}
+              >
+                {isRedirecting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                Sim, pagar R$ 119,99
+              </Button>
+              <Button onClick={handleClose} variant="outline" size="lg">
+                Não, pagar depois
+              </Button>
+            </div>
           </div>
         ) : (
           <>
