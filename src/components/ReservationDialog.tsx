@@ -48,7 +48,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
           phone: phoneDigits,
           email: email.trim(),
           product_title: productTitle,
-          amount: 99.99,
+          amount: 149.99,
           user_id: user?.id || null,
         },
       });
@@ -93,7 +93,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
               <p className="text-sm text-muted-foreground">Desconto do produto</p>
               <div className="flex items-center justify-center gap-2 mt-1">
                 <span className="text-muted-foreground line-through text-lg">R$ 297,00</span>
-                <span className="text-2xl font-extrabold text-primary">R$ 99,99</span>
+                <span className="text-2xl font-extrabold text-primary">R$ 149,99</span>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,7 +110,7 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
                 <Input id="res-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" required maxLength={255} />
               </div>
               <Button type="submit" className="w-full gradient-primary text-primary-foreground" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Reserva - R$ 99,99'}
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Reserva - R$ 149,99'}
               </Button>
             </form>
           </>
