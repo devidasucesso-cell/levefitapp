@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, CheckCircle, CreditCard } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard, Copy, Check, QrCode } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,8 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
   const [flavor, setFlavor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showPix, setShowPix] = useState(false);
   const [success, setSuccess] = useState(false);
   const { toast } = useToast();
 
@@ -91,10 +93,20 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
     }
   };
 
+  const PIX_CODE = '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406119.995802BR592564.399.771 ESTER SANTOS F6009SAO PAULO610805409000622505216pAtxEbE75Nit4t7athiv6304CBA6';
+
+  const handleCopyPix = async () => {
+    await navigator.clipboard.writeText(PIX_CODE);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
       setSuccess(false);
+      setShowPix(false);
+      setCopied(false);
       setName('');
       setPhone('');
       setEmail('');
@@ -105,15 +117,24 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        {success ? (
+        {success && !showPix ? (
           <div className="text-center py-6 space-y-4">
             <CheckCircle className="w-16 h-16 text-primary mx-auto" />
             <h2 className="text-xl font-bold text-foreground">Reserva Confirmada! 🎉</h2>
             <p className="text-muted-foreground">Deseja pagar sua reserva agora?</p>
             <div className="flex flex-col gap-3 pt-2">
               <Button
-                onClick={handlePayment}
+                onClick={() => setShowPix(true)}
                 className="w-full gradient-primary text-primary-foreground"
+                size="lg"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Pagar via PIX - R$ 119,99
+              </Button>
+              <Button
+                onClick={handlePayment}
+                className="w-full"
+                variant="outline"
                 size="lg"
                 disabled={isRedirecting}
               >
@@ -122,12 +143,46 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
                 ) : (
                   <CreditCard className="w-4 h-4 mr-2" />
                 )}
-                Sim, pagar R$ 119,99
+                Pagar com Cartão/Boleto
               </Button>
-              <Button onClick={handleClose} variant="outline" size="lg">
+              <Button onClick={handleClose} variant="ghost" size="sm" className="text-muted-foreground">
                 Não, pagar depois
               </Button>
             </div>
+          </div>
+        ) : showPix ? (
+          <div className="py-4 space-y-4">
+            <div className="text-center space-y-2">
+              <QrCode className="w-12 h-12 text-primary mx-auto" />
+              <h2 className="text-lg font-bold text-foreground">Pagamento via PIX</h2>
+              <p className="text-sm text-muted-foreground">Copie o código abaixo e cole no app do seu banco</p>
+            </div>
+            <div className="rounded-xl bg-secondary/50 p-4 space-y-3">
+              <p className="text-sm font-medium text-foreground">Valor: <span className="text-primary font-bold">R$ 119,99</span></p>
+              <p className="text-sm text-muted-foreground">Beneficiário: ESTER SANTOS</p>
+              <div className="bg-background rounded-lg p-3 border border-input">
+                <p className="text-xs text-muted-foreground break-all font-mono leading-relaxed">{PIX_CODE}</p>
+              </div>
+              <Button onClick={handleCopyPix} className="w-full gradient-primary text-primary-foreground" size="lg">
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar código PIX
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-center text-muted-foreground">
+              Após o pagamento, envie o comprovante pelo WhatsApp para confirmar.
+            </p>
+            <Button onClick={handleClose} variant="outline" className="w-full" size="sm">
+              Fechar
+            </Button>
           </div>
         ) : (
           <>
