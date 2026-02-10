@@ -1,4 +1,5 @@
 import { DetoxDrink, IMCCategory } from '@/types';
+import { extraUnderweightDrinks, extraNormalDrinks, extraOverweightDrinks, extraObeseDrinks } from './detoxDrinksExtra';
 
 // ============= BEBIDAS PARA ABAIXO DO PESO (Nutritivas e calóricas) - 50 bebidas =============
 const underweightDrinks: DetoxDrink[] = [
@@ -231,9 +232,13 @@ const obeseDrinks: DetoxDrink[] = [
 // Combinando todas as bebidas
 export const detoxDrinks: DetoxDrink[] = [
   ...underweightDrinks,
+  ...extraUnderweightDrinks,
   ...normalDrinks,
+  ...extraNormalDrinks,
   ...overweightDrinks,
+  ...extraOverweightDrinks,
   ...obeseDrinks,
+  ...extraObeseDrinks,
 ];
 
 // Função para filtrar por categoria
