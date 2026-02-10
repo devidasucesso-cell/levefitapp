@@ -95,7 +95,7 @@ const Store = () => {
             </p>
             <div className="flex items-center gap-3 mt-3">
               <span className="text-primary-foreground/60 line-through text-sm">R$ 297,00</span>
-              <span className="text-primary-foreground font-extrabold text-xl">R$ 99,99</span>
+              <span className="text-primary-foreground font-extrabold text-xl">R$ 149,99</span>
             </div>
             <p className="text-primary-foreground/90 text-xs mt-2 font-semibold">Toque para reservar o seu! 🔥</p>
           </div>
@@ -177,7 +177,7 @@ const Store = () => {
                         <>
                           <div className="flex items-center gap-1 mt-1">
                             <span className="text-muted-foreground line-through text-xs">R$ 297,00</span>
-                            <span className="text-primary font-bold text-sm">R$ 99,99</span>
+                            <span className="text-primary font-bold text-sm">R$ 149,99</span>
                           </div>
                           <Button
                             className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
