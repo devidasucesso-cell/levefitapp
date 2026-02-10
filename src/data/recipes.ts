@@ -1,4 +1,5 @@
 import { Recipe, IMCCategory } from '@/types';
+import { extraUnderweightRecipes, extraNormalRecipes, extraOverweightRecipes, extraObeseRecipes } from './recipesExtra';
 
 // ============= RECEITAS PARA ABAIXO DO PESO (Ganho de massa) - 50 receitas =============
 const underweightRecipes: Recipe[] = [
@@ -239,9 +240,13 @@ const obeseRecipes: Recipe[] = [
 // Combinando todas as receitas
 export const recipes: Recipe[] = [
   ...underweightRecipes,
+  ...extraUnderweightRecipes,
   ...normalRecipes,
+  ...extraNormalRecipes,
   ...overweightRecipes,
+  ...extraOverweightRecipes,
   ...obeseRecipes,
+  ...extraObeseRecipes,
 ];
 
 // Função para filtrar receitas por categoria IMC e horário
