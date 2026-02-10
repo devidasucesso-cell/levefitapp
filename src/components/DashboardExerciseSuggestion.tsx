@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Dumbbell, Flame, Clock, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Dumbbell, Flame, Clock, ChevronRight, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IMCCategory, Exercise } from '@/types';
 import { getRecommendedExercises, exerciseCategoryLabels } from '@/data/exercises';
 import {
@@ -17,6 +17,7 @@ interface DashboardExerciseSuggestionProps {
 
 const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = ({ imcCategory }) => {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Seleciona exercícios recomendados para o dia baseado na data
   const dailyExercises = useMemo(() => {
@@ -61,8 +62,6 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
     return suggestions;
   }, [imcCategory]);
 
-  
-
   const getDifficultyConfig = (difficulty: string) => {
     switch (difficulty) {
       case 'easy': return { label: 'Fácil', color: 'bg-exercise-easy text-white' };
@@ -77,75 +76,87 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
   return (
     <>
       <Card className="p-4 shadow-md bg-card overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between w-full"
+        >
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
+            <div className="text-left">
               <h3 className="font-semibold text-foreground">Exercícios do Dia</h3>
             </div>
           </div>
-        </div>
+          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
 
-
-        {/* Lista de exercícios sugeridos com fotos - estilo igual às receitas */}
-        <div className="space-y-2">
-          {dailyExercises.map((exercise, index) => {
-            const categoryInfo = exerciseCategoryLabels[exercise.category];
-            const diffConfig = getDifficultyConfig(exercise.difficulty);
-            
-            return (
-              <motion.div
-                key={exercise.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => setSelectedExercise(exercise)}
-              >
-                {/* Background Image */}
-                <div className="absolute inset-0">
-                  <img 
-                    src={exercise.image || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop'} 
-                    alt={exercise.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
-                </div>
-                
-                {/* Content */}
-                <div className="relative flex items-center gap-3 p-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
-                    <span className="text-lg">{categoryInfo?.icon || '🏃'}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white truncate">
-                        {exercise.name}
-                      </p>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${diffConfig.color}`}>
-                        {diffConfig.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-white/70 mt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {exercise.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Flame className="w-3 h-3" />
-                        {exercise.calories} kcal
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-2 mt-4">
+                {dailyExercises.map((exercise, index) => {
+                  const categoryInfo = exerciseCategoryLabels[exercise.category];
+                  const diffConfig = getDifficultyConfig(exercise.difficulty);
+                  
+                  return (
+                    <motion.div
+                      key={exercise.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setSelectedExercise(exercise)}
+                    >
+                      <div className="absolute inset-0">
+                        <img 
+                          src={exercise.image || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop'} 
+                          alt={exercise.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+                      </div>
+                      
+                      <div className="relative flex items-center gap-3 p-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
+                          <span className="text-lg">{categoryInfo?.icon || '🏃'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white truncate">
+                              {exercise.name}
+                            </p>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${diffConfig.color}`}>
+                              {diffConfig.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-white/70 mt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {exercise.duration}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Flame className="w-3 h-3" />
+                              {exercise.calories} kcal
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
 
       {/* Exercise Detail Modal */}
@@ -153,7 +164,6 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           {selectedExercise && (
             <>
-              {/* Exercise Image */}
               <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
                 <img 
                   src={selectedExercise.image || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop'} 
@@ -167,7 +177,6 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
               </div>
               
               <div className="space-y-4">
-                {/* Metrics */}
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyConfig(selectedExercise.difficulty).color}`}>
                     {getDifficultyConfig(selectedExercise.difficulty).label}
@@ -182,19 +191,16 @@ const DashboardExerciseSuggestion: React.FC<DashboardExerciseSuggestionProps> = 
                   </span>
                 </div>
 
-                {/* Category */}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary w-fit">
                   <span className="text-lg">{exerciseCategoryLabels[selectedExercise.category]?.icon || '🏃'}</span>
                   <span className="text-sm">{exerciseCategoryLabels[selectedExercise.category]?.label || 'Exercício'}</span>
                 </div>
 
-                {/* Description */}
                 <div>
                   <h4 className="font-semibold mb-2 text-foreground">Descrição:</h4>
                   <p className="text-sm text-muted-foreground">{selectedExercise.description}</p>
                 </div>
 
-                {/* Steps */}
                 <div>
                   <h4 className="font-semibold mb-2 text-foreground">Como fazer:</h4>
                   <ol className="space-y-2">
