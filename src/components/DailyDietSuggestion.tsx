@@ -218,7 +218,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
               {/* Recipe Image */}
               <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
                 <img 
-                  src={getRecipeImage(selectedRecipe.mealTime, imcCategory, 0)} 
+                  src={getRecipeImage(selectedRecipe.mealTime as 'morning' | 'afternoon' | 'night', imcCategory, 0)}
                   alt={selectedRecipe.name}
                   className="w-full h-full object-cover"
                 />

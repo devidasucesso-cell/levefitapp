@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sun, CloudSun, Moon, ArrowLeft } from 'lucide-react';
+import { Sun, CloudSun, Moon, CakeSlice, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { getRecipesByMealTime, getCategoryDescription } from '@/data/recipes';
@@ -10,12 +10,13 @@ import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import { useNavigate } from 'react-router-dom';
 
-type MealTime = 'morning' | 'afternoon' | 'night';
+type MealTime = 'morning' | 'afternoon' | 'night' | 'dessert';
 
 const mealTimeConfig = {
   morning: { label: 'Manhã', icon: Sun, color: 'bg-warning text-warning-foreground' },
   afternoon: { label: 'Tarde', icon: CloudSun, color: 'bg-primary text-primary-foreground' },
   night: { label: 'Noite', icon: Moon, color: 'bg-info text-info-foreground' },
+  dessert: { label: 'Sobremesa', icon: CakeSlice, color: 'bg-pink-500 text-white' },
 };
 
 const Recipes = () => {
