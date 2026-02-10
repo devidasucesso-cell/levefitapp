@@ -1,5 +1,6 @@
 import { Recipe, IMCCategory } from '@/types';
 import { extraUnderweightRecipes, extraNormalRecipes, extraOverweightRecipes, extraObeseRecipes } from './recipesExtra';
+import { dessertRecipes } from './recipeDesserts';
 
 // ============= RECEITAS PARA ABAIXO DO PESO (Ganho de massa) - 50 receitas =============
 const underweightRecipes: Recipe[] = [
@@ -247,10 +248,11 @@ export const recipes: Recipe[] = [
   ...extraOverweightRecipes,
   ...obeseRecipes,
   ...extraObeseRecipes,
+  ...dessertRecipes,
 ];
 
 // Função para filtrar receitas por categoria IMC e horário
-export const getRecipesByMealTime = (category: IMCCategory, mealTime: 'morning' | 'afternoon' | 'night'): Recipe[] => {
+export const getRecipesByMealTime = (category: IMCCategory, mealTime: 'morning' | 'afternoon' | 'night' | 'dessert'): Recipe[] => {
   return recipes.filter(recipe => recipe.category === category && recipe.mealTime === mealTime);
 };
 

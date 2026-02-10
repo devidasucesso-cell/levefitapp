@@ -1,7 +1,7 @@
 import React from 'react';
 import { Recipe } from '@/types';
 import { Card } from '@/components/ui/card';
-import { Clock, Flame, Sun, CloudSun, Moon } from 'lucide-react';
+import { Clock, Flame, Sun, CloudSun, Moon, CakeSlice } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   Dialog,
@@ -23,6 +23,7 @@ const getMealTimeIcon = (mealTime: string) => {
     case 'morning': return <Sun className="w-4 h-4 text-warning" />;
     case 'afternoon': return <CloudSun className="w-4 h-4 text-primary" />;
     case 'night': return <Moon className="w-4 h-4 text-info" />;
+    case 'dessert': return <CakeSlice className="w-4 h-4 text-pink-500" />;
     default: return null;
   }
 };
@@ -32,6 +33,7 @@ const getMealTimeLabel = (mealTime: string) => {
     case 'morning': return 'Manhã';
     case 'afternoon': return 'Tarde';
     case 'night': return 'Noite';
+    case 'dessert': return 'Sobremesa';
     default: return '';
   }
 };

@@ -15,7 +15,7 @@ export interface Recipe {
   id: string;
   name: string;
   category: IMCCategory;
-  mealTime: 'morning' | 'afternoon' | 'night';
+  mealTime: 'morning' | 'afternoon' | 'night' | 'dessert';
   ingredients: string[];
   instructions: string[];
   calories: number;

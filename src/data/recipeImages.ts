@@ -69,6 +69,29 @@ export const recipeImages = {
       'https://images.unsplash.com/photo-1540914124281-342587941389?w=400&h=300&fit=crop',
     ],
   },
+  // Sobremesas
+  dessert: {
+    underweight: [
+      'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=400&h=300&fit=crop',
+    ],
+    normal: [
+      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=300&fit=crop',
+    ],
+    overweight: [
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=400&h=300&fit=crop',
+    ],
+    obese: [
+      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?w=400&h=300&fit=crop',
+    ],
+  },
 };
 
 // Imagens para detox por horário
@@ -90,7 +113,7 @@ export const detoxImages = {
   ],
 };
 
-export const getRecipeImage = (mealTime: 'morning' | 'afternoon' | 'night', category: string, index: number): string => {
+export const getRecipeImage = (mealTime: 'morning' | 'afternoon' | 'night' | 'dessert', category: string, index: number): string => {
   const images = recipeImages[mealTime]?.[category as keyof typeof recipeImages.morning] || recipeImages[mealTime].normal;
   return images[index % images.length];
 };
