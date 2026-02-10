@@ -59,6 +59,38 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://levefitapp.lovable.app";
 
+    // Determine shipping: free for 3+ pots, R$15 for 1 pot
+    const totalQuantity = items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0);
+    const hasFreeShipping = totalQuantity >= 3;
+
+    const shippingOptions = hasFreeShipping
+      ? [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount" as const,
+              fixed_amount: { amount: 0, currency: "brl" },
+              display_name: "Frete Grátis",
+              delivery_estimate: {
+                minimum: { unit: "business_day" as const, value: 5 },
+                maximum: { unit: "business_day" as const, value: 10 },
+              },
+            },
+          },
+        ]
+      : [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount" as const,
+              fixed_amount: { amount: 1500, currency: "brl" },
+              display_name: "Envio Padrão",
+              delivery_estimate: {
+                minimum: { unit: "business_day" as const, value: 5 },
+                maximum: { unit: "business_day" as const, value: 10 },
+              },
+            },
+          },
+        ];
+
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -66,6 +98,8 @@ serve(async (req) => {
       line_items: lineItems,
       mode: "payment",
       payment_method_types: ["card", "boleto"],
+      shipping_address_collection: { allowed_countries: ["BR"] },
+      shipping_options: shippingOptions,
       success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/store`,
     });
