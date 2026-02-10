@@ -52,7 +52,7 @@ serve(async (req) => {
           name: item.title,
           ...(item.image ? { images: [item.image] } : {}),
         },
-        unit_amount: Math.round(item.price * 100), // Convert to centavos
+        unit_amount: Math.round(item.price * 100),
       },
       quantity: item.quantity,
     }));
@@ -68,6 +68,23 @@ serve(async (req) => {
       payment_method_types: ["card", "boleto", "pix"],
       success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/store`,
+    });
+
+    // Save order to database with service role
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    await supabaseAdmin.from("orders").insert({
+      user_id: user.id,
+      stripe_session_id: session.id,
+      status: "pending",
+      amount_total: 0,
+      currency: "brl",
+      customer_email: user.email,
+      items: JSON.stringify(items),
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
