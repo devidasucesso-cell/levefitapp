@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Trophy, Droplets, Pill, Star, Award, Target, Zap, Sparkles, X, Check, ChefHat, GlassWater, CakeSlice } from 'lucide-react';
+import { Trophy, Droplets, Pill, Star, Award, Target, Sparkles, X, Check, ChefHat, GlassWater, CakeSlice } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -119,16 +119,6 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
       progress: Math.min(totalWaterDays, 7),
       total: 7,
       color: 'from-cyan-400 to-cyan-600',
-    },
-    {
-      id: 'fire',
-      name: 'Em Chamas',
-      description: '3 dias seguidos de hidratação',
-      icon: <Zap className="w-4 h-4" />,
-      unlocked: waterStreak >= 3,
-      progress: Math.min(waterStreak, 3),
-      total: 3,
-      color: 'from-red-400 to-red-600',
     },
     // New recipe achievements
     {
@@ -279,46 +269,28 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
           </div>
         </div>
 
-        {/* Simple list of achievements */}
+        {/* Only show incomplete achievements */}
         <div className="space-y-2">
-          {achievements.map((achievement) => (
+          {achievements.filter(a => !a.unlocked).map((achievement) => (
             <div
               key={achievement.id}
-              className={cn(
-                "flex items-center gap-3 p-2 rounded-lg transition-all",
-                achievement.unlocked 
-                  ? "bg-success/10 border border-success/30" 
-                  : "bg-muted/30"
-              )}
+              className="flex items-center gap-3 p-2 rounded-lg transition-all bg-muted/30"
             >
               {/* Icon */}
-              <div className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                achievement.unlocked
-                  ? `bg-gradient-to-br ${achievement.color}`
-                  : "bg-muted"
-              )}>
-                <span className={achievement.unlocked ? "text-white" : "text-muted-foreground"}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted">
+                <span className="text-muted-foreground">
                   {achievement.icon}
                 </span>
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "text-sm font-medium truncate",
-                    achievement.unlocked ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {achievement.name}
-                  </span>
-                  {achievement.unlocked && (
-                    <Check className="w-3 h-3 text-success flex-shrink-0" />
-                  )}
-                </div>
+                <span className="text-sm font-medium truncate text-muted-foreground">
+                  {achievement.name}
+                </span>
                 
-                {/* Progress bar for incomplete achievements */}
-                {!achievement.unlocked && achievement.progress !== undefined && achievement.total && (
+                {/* Progress bar */}
+                {achievement.progress !== undefined && achievement.total && (
                   <div className="flex items-center gap-2 mt-1">
                     <Progress 
                       value={(achievement.progress / achievement.total) * 100} 
