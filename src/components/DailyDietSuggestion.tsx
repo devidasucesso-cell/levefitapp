@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Sun, CloudSun, Moon, UtensilsCrossed, GlassWater, ChevronRight, Clock, Flame, Sparkles } from 'lucide-react';
+import { Sun, CloudSun, Moon, UtensilsCrossed, GlassWater, CakeSlice, ChevronRight, Clock, Flame, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getRecipesByMealTime } from '@/data/recipes';
 import { getDetoxByTimeOfDay } from '@/data/detoxDrinks';
@@ -26,6 +26,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
       case 'morning': return 'Manhã';
       case 'afternoon': return 'Tarde';
       case 'night': return 'Noite';
+      case 'dessert': return 'Sobremesa';
       default: return '';
     }
   };
@@ -47,6 +48,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
     const morningRecipes = getRecipesByMealTime(imcCategory, 'morning');
     const afternoonRecipes = getRecipesByMealTime(imcCategory, 'afternoon');
     const nightRecipes = getRecipesByMealTime(imcCategory, 'night');
+    const dessertRecipes = getRecipesByMealTime(imcCategory, 'dessert');
 
     const morningDrinks = getDetoxByTimeOfDay(imcCategory, 'morning');
     const afternoonDrinks = getDetoxByTimeOfDay(imcCategory, 'afternoon');
@@ -58,6 +60,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
         afternoon: getRandomItem(afternoonRecipes, 2),
         night: getRandomItem(nightRecipes, 3),
       },
+      dessert: getRandomItem(dessertRecipes, 7),
       drinks: {
         morning: getRandomItem(morningDrinks, 4),
         afternoon: getRandomItem(afternoonDrinks, 5),
@@ -159,6 +162,48 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
           </div>
         </div>
 
+        {/* Sobremesa Section */}
+        {dailySelection.dessert && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🍰</span>
+              <h4 className="font-medium text-sm text-foreground">Sobremesa Fit</h4>
+            </div>
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.25 }}
+              className="relative overflow-hidden rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setSelectedRecipe(dailySelection.dessert)}
+            >
+              <div className="absolute inset-0">
+                <img 
+                  src={getRecipeImage('dessert', imcCategory, 0)} 
+                  alt={dailySelection.dessert.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+              </div>
+              <div className="relative flex items-center gap-3 p-3">
+                <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center">
+                  <CakeSlice className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-white/80">Sobremesa</p>
+                  <p className="text-sm font-medium text-white truncate">
+                    {dailySelection.dessert.name}
+                  </p>
+                  {dailySelection.dessert.calories && (
+                    <p className="text-xs text-white/70">{dailySelection.dessert.calories} kcal</p>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* Detox Section */}
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -218,7 +263,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
               {/* Recipe Image */}
               <div className="relative h-40 -mx-6 -mt-6 mb-4 overflow-hidden rounded-t-lg">
                 <img 
-                  src={getRecipeImage(selectedRecipe.mealTime as 'morning' | 'afternoon' | 'night', imcCategory, 0)}
+                  src={getRecipeImage(selectedRecipe.mealTime as 'morning' | 'afternoon' | 'night' | 'dessert', imcCategory, 0)}
                   alt={selectedRecipe.name}
                   className="w-full h-full object-cover"
                 />
@@ -237,6 +282,7 @@ const DailyDietSuggestion = ({ imcCategory }: DailyDietSuggestionProps) => {
                   {selectedRecipe.mealTime === 'morning' && <Sun className="w-4 h-4 text-warning" />}
                   {selectedRecipe.mealTime === 'afternoon' && <CloudSun className="w-4 h-4 text-primary" />}
                   {selectedRecipe.mealTime === 'night' && <Moon className="w-4 h-4 text-info" />}
+                  {selectedRecipe.mealTime === 'dessert' && <CakeSlice className="w-4 h-4 text-pink-500" />}
                   {getMealTimeLabel(selectedRecipe.mealTime)}
                 </span>
                 <span className="flex items-center gap-1 text-muted-foreground">
