@@ -65,7 +65,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "payment",
-      payment_method_types: ["card", "boleto", "pix"],
+      payment_method_types: ["card", "boleto"],
       success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/store`,
     });
