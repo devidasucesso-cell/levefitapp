@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dumbbell, ChefHat, GlassWater, Lock, ChevronDown, ChevronUp, Droplets, Pill, Star } from 'lucide-react';
+import { Dumbbell, ChefHat, GlassWater, CakeSlice, Lock, ChevronDown, ChevronUp, Droplets, Pill, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ interface WeekPhase {
   title: string;
   exerciseIds: string[];
   recipeIds: string[];
+  dessertIds: string[];
   detoxIds: string[];
   waterDaysGoal: number;
   capsuleDaysGoal: number;
@@ -48,6 +49,26 @@ const getDetoxPrefix = (imcCategory: IMCCategory): string => {
     case 'overweight': return 'ow-d';
     case 'obese': return 'ob-d';
     default: return 'nm-d';
+  }
+};
+
+const getDessertPrefix = (imcCategory: IMCCategory): string => {
+  switch (imcCategory) {
+    case 'underweight': return 'ds-uw';
+    case 'normal': return 'ds-n';
+    case 'overweight': return 'ds-ow';
+    case 'obese': return 'ds-ob';
+    default: return 'ds-n';
+  }
+};
+
+const getExtraDetoxPrefix = (imcCategory: IMCCategory): string => {
+  switch (imcCategory) {
+    case 'underweight': return 'uw-dx';
+    case 'normal': return 'nm-dx';
+    case 'overweight': return 'ow-dx';
+    case 'obese': return 'ob-dx';
+    default: return 'nm-dx';
   }
 };
 
@@ -77,6 +98,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
   // Get prefixes based on IMC category
   const recipePrefix = getRecipePrefix(imcCategory);
   const detoxPrefix = getDetoxPrefix(imcCategory);
+  const dessertPrefix = getDessertPrefix(imcCategory);
+  const extraDetoxPrefix = getExtraDetoxPrefix(imcCategory);
   
   // For obese users, stay with easy exercises longer and limit intensity
   const isHighIMC = imcCategory === 'obese' || imcCategory === 'overweight';
@@ -87,7 +110,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       title: 'Adaptação', 
       exerciseIds: getExerciseIds(easyExercises, 0, 3),
       recipeIds: [`${recipePrefix}-1`, `${recipePrefix}-2`, `${recipePrefix}-18`],
-      detoxIds: [`${detoxPrefix}1`, `${detoxPrefix}2`],
+      dessertIds: [`${dessertPrefix}-1`],
+      detoxIds: [`${detoxPrefix}1`, `${detoxPrefix}2`, `${extraDetoxPrefix}1`],
       waterDaysGoal: 3,
       capsuleDaysGoal: 5,
     },
@@ -96,7 +120,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       title: 'Começando Bem', 
       exerciseIds: getExerciseIds(easyExercises, 3, 4),
       recipeIds: [`${recipePrefix}-3`, `${recipePrefix}-4`, `${recipePrefix}-19`, `${recipePrefix}-35`],
-      detoxIds: [`${detoxPrefix}3`, `${detoxPrefix}18`, `${detoxPrefix}35`],
+      dessertIds: [`${dessertPrefix}-2`],
+      detoxIds: [`${detoxPrefix}3`, `${detoxPrefix}18`, `${detoxPrefix}35`, `${extraDetoxPrefix}2`, `${extraDetoxPrefix}3`],
       waterDaysGoal: 4,
       capsuleDaysGoal: 6,
     },
@@ -107,7 +132,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? getExerciseIds(easyExercises, 7, 5)
         : [...getExerciseIds(easyExercises, 7, 3), ...getExerciseIds(moderateExercises, 0, 2)],
       recipeIds: [`${recipePrefix}-5`, `${recipePrefix}-6`, `${recipePrefix}-20`, `${recipePrefix}-21`, `${recipePrefix}-36`],
-      detoxIds: [`${detoxPrefix}4`, `${detoxPrefix}5`, `${detoxPrefix}19`],
+      dessertIds: [`${dessertPrefix}-3`],
+      detoxIds: [`${detoxPrefix}4`, `${detoxPrefix}5`, `${detoxPrefix}19`, `${extraDetoxPrefix}4`],
       waterDaysGoal: 5,
       capsuleDaysGoal: 6,
     },
@@ -118,7 +144,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? [...getExerciseIds(easyExercises, 12, 3), ...getExerciseIds(moderateExercises, 0, 2)]
         : [...getExerciseIds(easyExercises, 10, 2), ...getExerciseIds(moderateExercises, 2, 3)],
       recipeIds: [`${recipePrefix}-7`, `${recipePrefix}-8`, `${recipePrefix}-22`, `${recipePrefix}-23`, `${recipePrefix}-37`, `${recipePrefix}-38`],
-      detoxIds: [`${detoxPrefix}6`, `${detoxPrefix}7`, `${detoxPrefix}20`, `${detoxPrefix}36`],
+      dessertIds: [`${dessertPrefix}-4`],
+      detoxIds: [`${detoxPrefix}6`, `${detoxPrefix}7`, `${detoxPrefix}20`, `${detoxPrefix}36`, `${extraDetoxPrefix}5`, `${extraDetoxPrefix}6`],
       waterDaysGoal: 5,
       capsuleDaysGoal: 7,
     },
@@ -129,7 +156,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? [...getExerciseIds(easyExercises, 15, 2), ...getExerciseIds(moderateExercises, 2, 4)]
         : getExerciseIds(moderateExercises, 5, 6),
       recipeIds: [`${recipePrefix}-9`, `${recipePrefix}-10`, `${recipePrefix}-24`, `${recipePrefix}-25`, `${recipePrefix}-39`, `${recipePrefix}-40`],
-      detoxIds: [`${detoxPrefix}8`, `${detoxPrefix}9`, `${detoxPrefix}21`, `${detoxPrefix}22`, `${detoxPrefix}37`],
+      dessertIds: [`${dessertPrefix}-5`],
+      detoxIds: [`${detoxPrefix}8`, `${detoxPrefix}9`, `${detoxPrefix}21`, `${detoxPrefix}22`, `${detoxPrefix}37`, `${extraDetoxPrefix}7`, `${extraDetoxPrefix}8`],
       waterDaysGoal: 6,
       capsuleDaysGoal: 7,
     },
@@ -140,7 +168,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? getExerciseIds(moderateExercises, 6, 6)
         : [...getExerciseIds(moderateExercises, 11, 4), ...getExerciseIds(intenseExercises, 0, 2)],
       recipeIds: [`${recipePrefix}-11`, `${recipePrefix}-12`, `${recipePrefix}-26`, `${recipePrefix}-27`, `${recipePrefix}-41`, `${recipePrefix}-42`],
-      detoxIds: [`${detoxPrefix}10`, `${detoxPrefix}11`, `${detoxPrefix}23`, `${detoxPrefix}24`, `${detoxPrefix}38`, `${detoxPrefix}39`],
+      dessertIds: [`${dessertPrefix}-6`],
+      detoxIds: [`${detoxPrefix}10`, `${detoxPrefix}11`, `${detoxPrefix}23`, `${detoxPrefix}24`, `${detoxPrefix}38`, `${detoxPrefix}39`, `${extraDetoxPrefix}9`, `${extraDetoxPrefix}10`],
       waterDaysGoal: 6,
       capsuleDaysGoal: 7,
     },
@@ -151,7 +180,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? getExerciseIds(moderateExercises, 12, 7)
         : [...getExerciseIds(moderateExercises, 15, 3), ...getExerciseIds(intenseExercises, 2, 4)],
       recipeIds: [`${recipePrefix}-13`, `${recipePrefix}-14`, `${recipePrefix}-28`, `${recipePrefix}-29`, `${recipePrefix}-43`, `${recipePrefix}-44`, `${recipePrefix}-45`],
-      detoxIds: [`${detoxPrefix}12`, `${detoxPrefix}13`, `${detoxPrefix}25`, `${detoxPrefix}26`, `${detoxPrefix}40`, `${detoxPrefix}41`],
+      dessertIds: [`${dessertPrefix}-7`],
+      detoxIds: [`${detoxPrefix}12`, `${detoxPrefix}13`, `${detoxPrefix}25`, `${detoxPrefix}26`, `${detoxPrefix}40`, `${detoxPrefix}41`, `${extraDetoxPrefix}11`],
       waterDaysGoal: 7,
       capsuleDaysGoal: 7,
     },
@@ -162,7 +192,8 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
         ? [...getExerciseIds(moderateExercises, 19, 4), ...getExerciseIds(intenseExercises, 0, 3)]
         : getExerciseIds(intenseExercises, 6, 7),
       recipeIds: [`${recipePrefix}-15`, `${recipePrefix}-16`, `${recipePrefix}-17`, `${recipePrefix}-30`, `${recipePrefix}-31`, `${recipePrefix}-46`, `${recipePrefix}-47`, `${recipePrefix}-48`],
-      detoxIds: [`${detoxPrefix}14`, `${detoxPrefix}15`, `${detoxPrefix}27`, `${detoxPrefix}28`, `${detoxPrefix}42`, `${detoxPrefix}43`, `${detoxPrefix}44`],
+      dessertIds: [`${dessertPrefix}-7`, `${dessertPrefix}-6`, `${dessertPrefix}-5`],
+      detoxIds: [`${detoxPrefix}14`, `${detoxPrefix}15`, `${detoxPrefix}27`, `${detoxPrefix}28`, `${detoxPrefix}42`, `${detoxPrefix}43`, `${detoxPrefix}44`, `${extraDetoxPrefix}12`],
       waterDaysGoal: 7,
       capsuleDaysGoal: 7,
     },
@@ -230,19 +261,21 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
   const getWeekProgress = (phase: WeekPhase) => {
     const exerciseProgress = phase.exerciseIds.filter(id => completedExercises.includes(id)).length;
     const recipeProgress = phase.recipeIds.filter(id => completedRecipes.includes(id)).length;
+    const dessertProgress = phase.dessertIds.filter(id => completedRecipes.includes(id)).length;
     const detoxProgress = phase.detoxIds.filter(id => completedDetox.includes(id)).length;
     
     // Get water and capsule progress for this specific week
     const capsuleProgress = Math.min(getCapsuleDaysInWeek(phase.week), phase.capsuleDaysGoal);
     const waterProgress = Math.min(getWaterDaysInWeek(phase.week), phase.waterDaysGoal);
     
-    const totalGoal = phase.exerciseIds.length + phase.recipeIds.length + phase.detoxIds.length + 
+    const totalGoal = phase.exerciseIds.length + phase.recipeIds.length + phase.dessertIds.length + phase.detoxIds.length + 
                       phase.waterDaysGoal + phase.capsuleDaysGoal;
-    const totalProgress = exerciseProgress + recipeProgress + detoxProgress + capsuleProgress + waterProgress;
+    const totalProgress = exerciseProgress + recipeProgress + dessertProgress + detoxProgress + capsuleProgress + waterProgress;
     
     return {
       exercises: { current: exerciseProgress, goal: phase.exerciseIds.length },
       recipes: { current: recipeProgress, goal: phase.recipeIds.length },
+      desserts: { current: dessertProgress, goal: phase.dessertIds.length },
       detox: { current: detoxProgress, goal: phase.detoxIds.length },
       water: { current: waterProgress, goal: phase.waterDaysGoal },
       capsules: { current: capsuleProgress, goal: phase.capsuleDaysGoal },
@@ -628,6 +661,48 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
                                     {isRecommended && !isCompleted && (
                                       <Star className="w-3 h-3 text-primary fill-primary" />
                                     )}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Desserts section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <CakeSlice className="w-4 h-4 text-pink-500" />
+                            <span className="text-xs font-medium text-foreground">
+                              Sobremesas ({progress.desserts.current}/{progress.desserts.goal})
+                            </span>
+                          </div>
+                          <div className="space-y-1.5 ml-6">
+                            {phase.dessertIds.map(id => {
+                              const recipe = getRecipeById(id);
+                              if (!recipe) return null;
+                              const isCompleted = completedRecipes.includes(id);
+                              const isLoading = loading === id;
+                              
+                              return (
+                                <div 
+                                  key={id} 
+                                  className="flex items-center gap-2"
+                                >
+                                  <Checkbox
+                                    id={`dessert-${id}`}
+                                    checked={isCompleted}
+                                    disabled={isLoading}
+                                    onCheckedChange={() => toggleRecipe(id, recipe.name, isCompleted)}
+                                    className="h-4 w-4"
+                                  />
+                                  <label 
+                                    htmlFor={`dessert-${id}`}
+                                    className={cn(
+                                      "text-xs cursor-pointer flex-1 flex items-center gap-1 transition-all duration-300",
+                                      isCompleted ? "text-success line-through decoration-success decoration-2" : "text-foreground"
+                                    )}
+                                  >
+                                    {recipe.name}
                                   </label>
                                 </div>
                               );
