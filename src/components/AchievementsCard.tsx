@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Trophy, Droplets, Pill, Star, Award, Target, Sparkles, X, Check, ChefHat, GlassWater, CakeSlice } from 'lucide-react';
+import { Trophy, Droplets, Pill, Star, Award, Target, Sparkles, X, Check, ChefHat, GlassWater, CakeSlice, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -33,6 +33,7 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [shownAchievements, setShownAchievements] = useState<string[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoadingShown, setIsLoadingShown] = useState(true);
 
   // Fetch shown achievements from database
@@ -192,54 +193,67 @@ const AchievementsCard = ({ capsuleDays, waterStreak, totalWaterDays, completedR
   return (
     <>
       <Card className="p-3 sm:p-4 bg-card">
-        <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between w-full"
+        >
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
               <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <div>
+            <div className="text-left">
               <h3 className="font-semibold text-foreground text-sm sm:text-base">Conquistas</h3>
               <p className="text-[10px] sm:text-xs text-muted-foreground">{unlockedCount}/{achievements.length} desbloqueadas</p>
             </div>
           </div>
-        </div>
+          <ChevronDown className={cn(
+            "w-5 h-5 text-muted-foreground transition-transform duration-200",
+            isOpen && "rotate-180"
+          )} />
+        </button>
 
-        {/* Only show incomplete achievements */}
-        <div className="space-y-2">
-          {achievements.filter(a => !a.unlocked).map((achievement) => (
-            <div
-              key={achievement.id}
-              className="flex items-center gap-3 p-2 rounded-lg transition-all bg-muted/30"
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
             >
-              {/* Icon */}
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted">
-                <span className="text-muted-foreground">
-                  {achievement.icon}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium truncate text-muted-foreground">
-                  {achievement.name}
-                </span>
-                
-                {/* Progress bar */}
-                {achievement.progress !== undefined && achievement.total && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <Progress 
-                      value={(achievement.progress / achievement.total) * 100} 
-                      className="h-1.5 flex-1"
-                    />
-                    <span className="text-[10px] text-muted-foreground">
-                      {achievement.progress}/{achievement.total}
-                    </span>
+              <div className="space-y-2 mt-3">
+                {achievements.filter(a => !a.unlocked).map((achievement) => (
+                  <div
+                    key={achievement.id}
+                    className="flex items-center gap-3 p-2 rounded-lg transition-all bg-muted/30"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted">
+                      <span className="text-muted-foreground">
+                        {achievement.icon}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium truncate text-muted-foreground">
+                        {achievement.name}
+                      </span>
+                      {achievement.progress !== undefined && achievement.total && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Progress 
+                            value={(achievement.progress / achievement.total) * 100} 
+                            className="h-1.5 flex-1"
+                          />
+                          <span className="text-[10px] text-muted-foreground">
+                            {achievement.progress}/{achievement.total}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
 
       {/* Achievement Celebration Modal */}
