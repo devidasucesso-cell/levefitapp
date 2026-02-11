@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 const MERCADO_PAGO_LINKS: Record<string, string> = {
   '5 pote': 'https://mpago.la/2LKDGgZ',
   '3 pote': 'https://mpago.li/285vej2',
-  '1 pote': 'https://mpago.la/1zxxgv2',
+  '1 pote': 'https://mpago.la/2JEW5PU',
 };
 
 function getMercadoPagoLink(title: string): string | null {
