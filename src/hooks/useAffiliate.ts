@@ -183,7 +183,7 @@ export function useAffiliate() {
   };
 
   const affiliateLink = affiliate
-    ? `https://levefitapp.lovable.app/store?aff=${affiliate.affiliate_code}`
+    ? `https://leveday.com.br/?aff=${affiliate.affiliate_code}`
     : '';
 
   const levelInfo = getAffiliateLevel(monthlySales);
