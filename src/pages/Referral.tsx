@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard, ScrollText, AlertTriangle, Ban, Shield, Settings2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,7 +39,7 @@ const Referral = () => {
     loading, referralCode, referralLink, transactions,
     showCreditDialog, newCreditAmount, dismissCreditDialog
   } = useWallet();
-  const { affiliate, sales, withdrawals, loading: affLoading, activating, activateAffiliate, affiliateLink, savePixKey, requestWithdrawal } = useAffiliate();
+  const { affiliate, sales, withdrawals, monthlySales, levelInfo, rates, loading: affLoading, activating, activateAffiliate, affiliateLink, savePixKey, requestWithdrawal } = useAffiliate();
 
   const referralMessage = `🌿 Garanta seu LeveFit com 10% de desconto! Use meu código ${referralCode} na hora da compra. Acesse: ${referralLink}`;
 
@@ -299,17 +300,17 @@ const Referral = () => {
                     <ShoppingBag className="w-8 h-8 text-primary-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-2">Seja um Afiliado LeveFit</h3>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    Ganhe <span className="font-bold text-primary">25% de comissão</span> sobre cada venda feita pelo seu link!
-                  </p>
+                   <p className="text-muted-foreground text-sm mb-4">
+                     Ganhe de <span className="font-bold text-primary">25% a 45% de comissão</span> sobre cada venda — quanto mais vende, mais ganha!
+                   </p>
                   <ul className="text-left text-sm space-y-2 mb-6">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                       <span className="text-muted-foreground">Link exclusivo para compartilhar</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">25% de comissão por venda confirmada</span>
+                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                       <span className="text-muted-foreground">De 25% a 45% de comissão por venda</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
@@ -359,8 +360,11 @@ const Referral = () => {
                             <span className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-primary" /> 3️⃣ Comissão</span>
                           </AccordionTrigger>
                           <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                            <p>O afiliado receberá <strong className="text-foreground">25% de comissão</strong> sobre cada venda confirmada.</p>
-                            <p>A comissão será creditada em uma carteira separada dentro do app.</p>
+                            <p>A comissão varia de <strong className="text-foreground">25% a 45%</strong> conforme o nível do afiliado e o kit vendido.</p>
+                            <p><strong className="text-foreground">Nível 1 (0-10 vendas/mês):</strong> Kit 1: 25% • Kit 3: 30% • Kit 5: 35%</p>
+                            <p><strong className="text-foreground">Nível 2 (11-30 vendas/mês):</strong> Kit 1: 30% • Kit 3: 35% • Kit 5: 40%</p>
+                            <p><strong className="text-foreground">Nível 3 (31+ vendas/mês):</strong> Kit 1: 35% • Kit 3: 40% • Kit 5: 45%</p>
+                            <p>O nível é recalculado mensalmente com base nas vendas confirmadas do mês corrente.</p>
                           </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="prazo">
@@ -480,14 +484,64 @@ const Referral = () => {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                   <div className="grid grid-cols-2 gap-3">
                     <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-muted-foreground">Vendas</p>
-                      <p className="text-2xl font-bold text-foreground">{affiliate.total_sales}</p>
+                      <p className="text-sm text-muted-foreground">Vendas (mês)</p>
+                      <p className="text-2xl font-bold text-foreground">{monthlySales}</p>
                     </Card>
                     <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
                       <p className="text-sm text-muted-foreground">Comissões</p>
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">R$ {affiliate.total_commission.toFixed(2)}</p>
                     </Card>
                   </div>
+                </motion.div>
+
+                {/* Affiliate Level Card */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}>
+                  <Card className="p-6 bg-card">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{levelInfo.emoji}</span>
+                        <div>
+                          <h3 className="font-semibold text-foreground">Nível {levelInfo.level} — {levelInfo.name}</h3>
+                          <p className="text-xs text-muted-foreground">{monthlySales} vendas confirmadas este mês</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {levelInfo.next && (
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <span>Progresso para Nível {levelInfo.level + 1}</span>
+                          <span>Faltam {levelInfo.salesNeeded} vendas</span>
+                        </div>
+                        <Progress
+                          value={levelInfo.next === 11
+                            ? (monthlySales / 11) * 100
+                            : ((monthlySales - 11) / (31 - 11)) * 100
+                          }
+                          className="h-2"
+                        />
+                      </div>
+                    )}
+
+                    {/* Commission rates table */}
+                    <div className="bg-secondary rounded-xl p-4">
+                      <p className="text-xs font-medium text-foreground mb-2">Suas comissões atuais:</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Kit 1 Pote (R$ 197)</span>
+                          <span className="font-bold text-primary">{rates.kit1}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Kit 3 Potes (R$ 397)</span>
+                          <span className="font-bold text-primary">{rates.kit3}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Kit 5 Potes (R$ 559)</span>
+                          <span className="font-bold text-primary">{rates.kit5}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 </motion.div>
 
                 {/* Affiliate Wallet */}
@@ -658,7 +712,7 @@ const Referral = () => {
                       {[
                         { step: 1, title: 'Compartilhe seu link', desc: 'Envie o link da loja para seus contatos' },
                         { step: 2, title: 'Cliente compra', desc: 'Quando alguém comprar pelo seu link' },
-                        { step: 3, title: 'Ganhe 25%', desc: '25% do valor da venda é creditado na sua carteira' },
+                        { step: 3, title: 'Ganhe até 45%', desc: 'Comissão escalonada creditada na sua carteira' },
                       ].map((item) => (
                         <li key={item.step} className="flex items-start gap-3">
                           <span className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">

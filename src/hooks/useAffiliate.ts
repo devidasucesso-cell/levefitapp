@@ -41,11 +41,24 @@ interface PixWithdrawal {
   reviewed_by: string | null;
 }
 
+export function getAffiliateLevel(monthlySales: number) {
+  if (monthlySales >= 31) return { level: 3, name: 'Avançado', emoji: '🏆', color: 'text-yellow-500', next: null, salesNeeded: 0 };
+  if (monthlySales >= 11) return { level: 2, name: 'Intermediário', emoji: '🚀', color: 'text-blue-500', next: 31, salesNeeded: 31 - monthlySales };
+  return { level: 1, name: 'Iniciante', emoji: '🌱', color: 'text-green-500', next: 11, salesNeeded: 11 - monthlySales };
+}
+
+export function getCommissionRates(monthlySales: number) {
+  if (monthlySales >= 31) return { kit1: 35, kit3: 40, kit5: 45 };
+  if (monthlySales >= 11) return { kit1: 30, kit3: 35, kit5: 40 };
+  return { kit1: 25, kit3: 30, kit5: 35 };
+}
+
 export function useAffiliate() {
   const { user } = useAuth();
   const [affiliate, setAffiliate] = useState<Affiliate | null>(null);
   const [sales, setSales] = useState<AffiliateSale[]>([]);
   const [withdrawals, setWithdrawals] = useState<PixWithdrawal[]>([]);
+  const [monthlySales, setMonthlySales] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
 
@@ -62,9 +75,14 @@ export function useAffiliate() {
       setAffiliate(data as Affiliate | null);
 
       if (data) {
-        const [salesRes, withdrawalsRes] = await Promise.all([
+        // Get start of current month
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        const [salesRes, withdrawalsRes, monthlyRes] = await Promise.all([
           supabase.from('affiliate_sales').select('*').eq('affiliate_id', data.id).order('created_at', { ascending: false }),
           supabase.from('pix_withdrawals').select('*').eq('affiliate_id', data.id).order('created_at', { ascending: false }),
+          supabase.from('affiliate_sales').select('id', { count: 'exact', head: true }).eq('affiliate_id', data.id).eq('status', 'paid').gte('created_at', startOfMonth),
         ]);
 
         if (salesRes.error) throw salesRes.error;
@@ -72,6 +90,8 @@ export function useAffiliate() {
 
         if (withdrawalsRes.error) throw withdrawalsRes.error;
         setWithdrawals((withdrawalsRes.data as PixWithdrawal[]) || []);
+
+        setMonthlySales(monthlyRes.count ?? 0);
       }
     } catch (err) {
       console.error('Error fetching affiliate:', err);
@@ -166,10 +186,16 @@ export function useAffiliate() {
     ? `https://levefitapp.lovable.app/store?aff=${affiliate.affiliate_code}`
     : '';
 
+  const levelInfo = getAffiliateLevel(monthlySales);
+  const rates = getCommissionRates(monthlySales);
+
   return {
     affiliate,
     sales,
     withdrawals,
+    monthlySales,
+    levelInfo,
+    rates,
     loading,
     activating,
     activateAffiliate,
