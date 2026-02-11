@@ -7,8 +7,12 @@ const corsHeaders = {
 };
 
 interface PushNotificationRequest {
-  type: 'test' | 'capsule' | 'water' | 'treatment_end' | 'daily_summary';
+  type: 'test' | 'capsule' | 'water' | 'treatment_end' | 'daily_summary' | 'custom';
   userId?: string;
+  title?: string;
+  body?: string;
+  tag?: string;
+  url?: string;
 }
 
 // Helper to encode to base64url
@@ -184,14 +188,14 @@ const handler = async (req: Request): Promise<Response> => {
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, userId }: PushNotificationRequest = await req.json();
+    const { type, userId, title: customTitle, body: customBody, tag: customTag, url: customUrl }: PushNotificationRequest = await req.json();
     console.log('Notification request:', { type, userId, authenticatedUserId });
 
     // Determine target user - prefer userId from body, fallback to authenticated user
     const targetUserId = userId || authenticatedUserId;
     
-    if (!targetUserId && type === 'test') {
-      console.error('No user ID available for test notification');
+    if (!targetUserId && (type === 'test' || type === 'custom')) {
+      console.error('No user ID available for notification');
       return new Response(
         JSON.stringify({ error: 'User ID required', sent: 0 }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -207,7 +211,16 @@ const handler = async (req: Request): Promise<Response> => {
       url: '/dashboard'
     };
 
-    if (type === 'test') {
+    if (type === 'custom') {
+      targetUserIds = [targetUserId!];
+      notificationPayload = {
+        title: customTitle || 'LeveFit',
+        body: customBody || '',
+        icon: '/pwa-192x192.png',
+        tag: customTag || 'levefit-custom-' + Date.now(),
+        url: customUrl || '/dashboard'
+      };
+    } else if (type === 'test') {
       targetUserIds = [targetUserId!];
       notificationPayload = {
         title: '🔔 Teste de Notificação',

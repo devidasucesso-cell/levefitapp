@@ -163,6 +163,34 @@ async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Ch
       });
     }
 
+    // Check for level-up: new monthly sales count is monthlySales + 1 (this sale)
+    const newMonthlySales = monthlySales + 1;
+    const levelNames: Record<number, string> = { 11: "Intermediário 🚀", 31: "Avançado 🏆" };
+    if (newMonthlySales === 11 || newMonthlySales === 31) {
+      const levelName = levelNames[newMonthlySales];
+      console.log(`[STRIPE-WEBHOOK] Affiliate ${affiliate.affiliate_code} leveled up to ${levelName}!`);
+      try {
+        const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
+        await fetch(fnUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            type: "custom",
+            userId: affiliate.user_id,
+            title: `🎉 Parabéns! Nível ${levelName}`,
+            body: `Você atingiu ${newMonthlySales} vendas no mês e subiu de nível! Suas comissões aumentaram.`,
+            tag: "affiliate-level-up",
+            url: "/referral",
+          }),
+        });
+      } catch (pushErr) {
+        console.error("[STRIPE-WEBHOOK] Level-up notification error:", pushErr);
+      }
+    }
+
     console.log(`[STRIPE-WEBHOOK] Affiliate commission of R$${commissionAmount.toFixed(2)} credited to ${affiliate.affiliate_code}`);
   } catch (err) {
     console.error("[STRIPE-WEBHOOK] Error processing affiliate commission:", err);
