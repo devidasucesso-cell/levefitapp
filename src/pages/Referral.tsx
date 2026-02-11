@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard, ScrollText, AlertTriangle, Ban, Shield, Settings2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
@@ -28,6 +29,8 @@ const Referral = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [savingPix, setSavingPix] = useState(false);
   const [requestingWithdrawal, setRequestingWithdrawal] = useState(false);
+  const [acceptedReferralTerms, setAcceptedReferralTerms] = useState(false);
+  const [acceptedAffiliateTerms, setAcceptedAffiliateTerms] = useState(false);
   const { 
     balance, referrals, approvedReferrals, pendingReferrals, convertedReferrals,
     loading, referralCode, referralLink, transactions,
@@ -270,6 +273,16 @@ const Referral = () => {
                     <span className="text-muted-foreground"><strong className="text-foreground">Validade de 90 dias:</strong> Os créditos expiram após 90 dias.</span>
                   </li>
                 </ul>
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/50">
+                  <Checkbox
+                    id="referral-terms"
+                    checked={acceptedReferralTerms}
+                    onCheckedChange={(checked) => setAcceptedReferralTerms(checked === true)}
+                  />
+                  <label htmlFor="referral-terms" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                    Estou ciente das regras e condições
+                  </label>
+                </div>
               </Card>
             </motion.div>
           </TabsContent>
@@ -629,6 +642,16 @@ const Referral = () => {
                       </AccordionItem>
 
                     </Accordion>
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/50">
+                      <Checkbox
+                        id="affiliate-terms"
+                        checked={acceptedAffiliateTerms}
+                        onCheckedChange={(checked) => setAcceptedAffiliateTerms(checked === true)}
+                      />
+                      <label htmlFor="affiliate-terms" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                        Estou ciente do regulamento do programa
+                      </label>
+                    </div>
                   </Card>
                 </motion.div>
 
