@@ -104,6 +104,80 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_sales: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          created_at: string | null
+          customer_email: string | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          sale_amount: number
+          status: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount: number
+          created_at?: string | null
+          customer_email?: string | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          sale_amount: number
+          status?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          created_at?: string | null
+          customer_email?: string | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          sale_amount?: number
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_sales_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          total_commission: number | null
+          total_sales: number | null
+          user_id: string
+        }
+        Insert: {
+          affiliate_code: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          total_commission?: number | null
+          total_sales?: number | null
+          user_id: string
+        }
+        Update: {
+          affiliate_code?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          total_commission?: number | null
+          total_sales?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       capsule_days: {
         Row: {
           created_at: string

@@ -21,6 +21,15 @@ const Store = () => {
   const addItem = useCartStore(state => state.addItem);
   const isCartLoading = useCartStore(state => state.isLoading);
 
+  // Capture affiliate code from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const affCode = params.get('aff');
+    if (affCode) {
+      localStorage.setItem('aff_code', affCode);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
   }, []);
