@@ -270,6 +270,7 @@ const Store = () => {
             pixAmount={pix?.amount || null}
             onCartPayment={() => handleAddToCart(selectedProduct)}
             isCartLoading={isCartLoading}
+            isAvulso={selectedProduct.node.title.toLowerCase().includes('avulso') || selectedProduct.node.title.toLowerCase().includes('sem acompanhamento')}
           />
         );
       })()}

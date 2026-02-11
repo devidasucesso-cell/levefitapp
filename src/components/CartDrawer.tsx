@@ -1,21 +1,62 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ShoppingCart, Minus, Plus, Trash2, CreditCard, Loader2 } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, CreditCard, Loader2, Wallet } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWallet } from '@/hooks/useWallet';
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [useBalance, setUseBalance] = useState(false);
+  const [isWalletPaying, setIsWalletPaying] = useState(false);
   const { items, isLoading, isSyncing, updateQuantity, removeItem, syncCart } = useCartStore();
   const { toast } = useToast();
+  const { balance, refetch } = useWallet();
+
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (parseFloat(item.price.amount) * item.quantity), 0);
 
+  const walletDiscount = useBalance ? Math.min(balance, totalPrice) : 0;
+  const finalPrice = totalPrice - walletDiscount;
+  const fullyCovered = useBalance && finalPrice <= 0;
+
   useEffect(() => { if (isOpen) syncCart(); }, [isOpen, syncCart]);
+
+  const handleWalletFullPayment = async () => {
+    setIsWalletPaying(true);
+    try {
+      const checkoutItems = items.map(item => ({
+        title: item.product.node.title,
+        price: parseFloat(item.price.amount),
+        quantity: item.quantity,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('use-wallet-balance', {
+        body: {
+          amount: totalPrice,
+          product_title: checkoutItems.map(i => i.title).join(', '),
+          items: checkoutItems,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: 'Compra realizada!', description: `Pago com saldo da carteira. Novo saldo: R$ ${data.new_balance.toFixed(2)}` });
+      await refetch();
+      setIsOpen(false);
+      setUseBalance(false);
+    } catch (error) {
+      console.error('Wallet payment error:', error);
+      toast({ title: 'Erro no pagamento', description: 'Não foi possível usar o saldo. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setIsWalletPaying(false);
+    }
+  };
 
   const handleCheckout = async () => {
     setIsCheckingOut(true);
@@ -29,14 +70,18 @@ export const CartDrawer = () => {
 
       const affiliateCode = localStorage.getItem('aff_code') || undefined;
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { items: checkoutItems, affiliate_code: affiliateCode },
-      });
+      const body: any = { items: checkoutItems, affiliate_code: affiliateCode };
+      if (useBalance && walletDiscount > 0) {
+        body.wallet_discount = walletDiscount;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', { body });
 
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, '_blank');
         setIsOpen(false);
+        setUseBalance(false);
       } else {
         throw new Error('URL de checkout não retornada');
       }
@@ -47,8 +92,6 @@ export const CartDrawer = () => {
       setIsCheckingOut(false);
     }
   };
-
-  const currencyCode = items[0]?.price.currencyCode || 'BRL';
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -114,13 +157,54 @@ export const CartDrawer = () => {
                 </div>
               </div>
               <div className="flex-shrink-0 space-y-4 pt-4 border-t bg-background">
+                {/* Wallet balance option */}
+                {balance > 0 && (
+                  <div className="bg-secondary/50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Wallet className="w-4 h-4" />
+                      <span>Saldo disponível: <strong className="text-foreground">R$ {balance.toFixed(2)}</strong></span>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={useBalance}
+                        onCheckedChange={(checked) => setUseBalance(checked === true)}
+                      />
+                      <span className="text-sm font-medium text-foreground">
+                        Usar meu saldo (-R$ {Math.min(balance, totalPrice).toFixed(2)})
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">Total</span>
-                  <span className="text-xl font-bold">R$ {totalPrice.toFixed(2)}</span>
+                  <div className="text-right">
+                    {useBalance && walletDiscount > 0 && (
+                      <span className="text-sm line-through text-muted-foreground block">R$ {totalPrice.toFixed(2)}</span>
+                    )}
+                    <span className="text-xl font-bold">R$ {(useBalance ? finalPrice : totalPrice).toFixed(2)}</span>
+                  </div>
                 </div>
-                <Button onClick={handleCheckout} className="w-full gradient-primary text-primary-foreground" size="lg" disabled={items.length === 0 || isLoading || isSyncing || isCheckingOut}>
-                  {isLoading || isSyncing || isCheckingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Pagar</>}
-                </Button>
+
+                {fullyCovered ? (
+                  <Button
+                    onClick={handleWalletFullPayment}
+                    className="w-full gradient-primary text-primary-foreground"
+                    size="lg"
+                    disabled={isWalletPaying}
+                  >
+                    {isWalletPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Wallet className="w-4 h-4 mr-2" />Finalizar com Saldo</>}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleCheckout}
+                    className="w-full gradient-primary text-primary-foreground"
+                    size="lg"
+                    disabled={items.length === 0 || isLoading || isSyncing || isCheckingOut}
+                  >
+                    {isLoading || isSyncing || isCheckingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Pagar{useBalance && walletDiscount > 0 ? ` R$ ${finalPrice.toFixed(2)}` : ''}</>}
+                  </Button>
+                )}
               </div>
             </>
           )}

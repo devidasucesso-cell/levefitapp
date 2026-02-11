@@ -197,6 +197,55 @@ async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Ch
   }
 }
 
+async function processWalletDiscount(supabaseAdmin: any, session: Stripe.Checkout.Session) {
+  const walletDiscount = session.metadata?.wallet_discount;
+  const walletUserId = session.metadata?.wallet_user_id;
+  if (!walletDiscount || !walletUserId) return;
+
+  const discountAmount = parseFloat(walletDiscount);
+  if (discountAmount <= 0) return;
+
+  console.log(`[STRIPE-WEBHOOK] Processing wallet discount of R$${discountAmount.toFixed(2)} for user ${walletUserId}`);
+
+  try {
+    // Fetch wallet
+    const { data: wallet, error: walletError } = await supabaseAdmin
+      .from("wallets")
+      .select("id, balance")
+      .eq("user_id", walletUserId)
+      .single();
+
+    if (walletError || !wallet) {
+      console.error("[STRIPE-WEBHOOK] Wallet not found for discount deduction");
+      return;
+    }
+
+    if (wallet.balance < discountAmount) {
+      console.error(`[STRIPE-WEBHOOK] Insufficient wallet balance: ${wallet.balance} < ${discountAmount}`);
+      return;
+    }
+
+    // Deduct balance
+    await supabaseAdmin
+      .from("wallets")
+      .update({ balance: wallet.balance - discountAmount })
+      .eq("id", wallet.id);
+
+    // Record transaction
+    await supabaseAdmin.from("wallet_transactions").insert({
+      wallet_id: wallet.id,
+      user_id: walletUserId,
+      amount: -discountAmount,
+      type: "purchase",
+      description: `Desconto aplicado na compra (Session: ${session.id})`,
+    });
+
+    console.log(`[STRIPE-WEBHOOK] Wallet discount of R$${discountAmount.toFixed(2)} deducted successfully`);
+  } catch (err) {
+    console.error("[STRIPE-WEBHOOK] Error processing wallet discount:", err);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -254,6 +303,7 @@ serve(async (req) => {
         // Process affiliate commission for immediate payments (card)
         if (session.payment_status === "paid") {
           await processAffiliateCommission(supabaseAdmin, session);
+          await processWalletDiscount(supabaseAdmin, session);
         }
 
         // Send confirmation email for immediate payments (card)
@@ -274,8 +324,8 @@ serve(async (req) => {
 
         if (error) console.error("[STRIPE-WEBHOOK] Update error:", error);
 
-        // Process affiliate commission for async payments (boleto/pix)
         await processAffiliateCommission(supabaseAdmin, session);
+        await processWalletDiscount(supabaseAdmin, session);
 
         // Send confirmation email for async payments (boleto/pix)
         if (session.customer_details?.email) {
