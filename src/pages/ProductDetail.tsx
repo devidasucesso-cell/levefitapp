@@ -105,7 +105,7 @@ const ProductDetail = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/store')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <CartDrawer />
+          <div />
         </div>
       </div>
 

@@ -65,17 +65,14 @@ const Store = () => {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="gradient-hero p-4 sm:p-6 pb-6 rounded-b-3xl shadow-lg safe-area-top">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-6 h-6 text-primary-foreground" />
-              <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">Loja LeveFit</h1>
-            </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-primary-foreground" />
+            <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">Loja LeveFit</h1>
           </div>
-          <CartDrawer />
         </div>
       </div>
 
