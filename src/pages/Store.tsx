@@ -201,6 +201,20 @@ const Store = () => {
                             Reservar o meu
                           </Button>
                         </>
+                      ) : product.node.title.toLowerCase().includes('avulso') ? (
+                        <>
+                          <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
+                          <Button
+                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/product/${product.node.handle}`);
+                            }}
+                          >
+                            Pagar via PIX
+                          </Button>
+                        </>
                       ) : (
                         <>
                           <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
