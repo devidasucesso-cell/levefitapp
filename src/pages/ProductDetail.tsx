@@ -22,14 +22,23 @@ const PIX_CODES: Record<string, { code: string; amount: string }> = {
     code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406597.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521KCxNwZ1Nj4tt3UT7athiv630496F5',
     amount: '597,00',
   },
+  'avulso': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406135.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521X68eRj5W0U7fIEr7athiv6304B810',
+    amount: '135,00',
+  },
 };
 
 function getPixForProduct(title: string) {
   const lower = title.toLowerCase();
+  if (lower.includes('avulso')) return PIX_CODES['avulso'];
   if (lower.includes('5 pote')) return PIX_CODES['5 pote'];
   if (lower.includes('3 pote')) return PIX_CODES['3 pote'];
   if (lower.includes('1 pote')) return PIX_CODES['1 pote'];
   return null;
+}
+
+function isPixOnly(title: string) {
+  return title.toLowerCase().includes('avulso');
 }
 
 const ProductDetail = () => {
@@ -183,32 +192,40 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Add to Cart */}
-          <Button
-            className="w-full h-14 text-lg gradient-primary text-primary-foreground shadow-glow"
-            onClick={handleAddToCart}
-            disabled={isCartLoading || !selectedVariant?.availableForSale}
-          >
-            {isCartLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Adicionar ao Carrinho
-              </>
-            )}
-          </Button>
+          {/* Add to Cart - hidden for PIX-only products */}
+          {!isPixOnly(product.title) && (
+            <Button
+              className="w-full h-14 text-lg gradient-primary text-primary-foreground shadow-glow"
+              onClick={handleAddToCart}
+              disabled={isCartLoading || !selectedVariant?.availableForSale}
+            >
+              {isCartLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Adicionar ao Carrinho
+                </>
+              )}
+            </Button>
+          )}
 
           {/* PIX Payment */}
           {getPixForProduct(product.title) && (
             <Button
-              variant="outline"
-              className="w-full h-14 text-lg"
+              variant={isPixOnly(product.title) ? 'default' : 'outline'}
+              className={`w-full h-14 text-lg ${isPixOnly(product.title) ? 'gradient-primary text-primary-foreground shadow-glow' : ''}`}
               onClick={() => setPixOpen(true)}
             >
               <QrCode className="w-5 h-5 mr-2" />
               Pagar via PIX
             </Button>
+          )}
+
+          {isPixOnly(product.title) && (
+            <p className="text-xs text-center text-muted-foreground">
+              Este produto aceita apenas pagamento via PIX e não participa do programa de indicação/afiliação.
+            </p>
           )}
         </div>
       </div>
