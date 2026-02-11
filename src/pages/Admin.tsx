@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText, Banknote } from 'lucide-react';
+import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText, Banknote, TrendingUp } from 'lucide-react';
+import { getCommissionRates, getAffiliateLevel } from '@/hooks/useAffiliate';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +63,17 @@ interface PixWithdrawal {
   affiliate_code?: string;
 }
 
+interface AffiliateWithName {
+  id: string;
+  user_id: string;
+  affiliate_code: string;
+  is_active: boolean;
+  total_sales: number;
+  total_commission: number;
+  user_name: string;
+  monthly_sales: number;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -68,6 +81,7 @@ const Admin = () => {
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [withdrawals, setWithdrawals] = useState<PixWithdrawal[]>([]);
+  const [affiliatesList, setAffiliatesList] = useState<AffiliateWithName[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCode, setNewCode] = useState('');
   const [creating, setCreating] = useState(false);
@@ -75,6 +89,12 @@ const Admin = () => {
   const [newReferralEmail, setNewReferralEmail] = useState('');
   const [newReferralCode, setNewReferralCode] = useState('');
   const [newOrderId, setNewOrderId] = useState('');
+  const [saleAffiliateId, setSaleAffiliateId] = useState('');
+  const [saleAmount, setSaleAmount] = useState('');
+  const [saleKit, setSaleKit] = useState('');
+  const [saleCustomerEmail, setSaleCustomerEmail] = useState('');
+  const [saleOrderId, setSaleOrderId] = useState('');
+  const [registeringSale, setRegisteringSale] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -88,8 +108,124 @@ const Admin = () => {
   }, [isAdmin, authLoading, navigate]);
 
   const fetchData = async () => {
-    await Promise.all([fetchCodes(), fetchReferrals(), fetchWithdrawals()]);
+    await Promise.all([fetchCodes(), fetchReferrals(), fetchWithdrawals(), fetchAffiliatesList()]);
     setLoading(false);
+  };
+
+  const fetchAffiliatesList = async () => {
+    try {
+      const { data: affiliates, error } = await supabase
+        .from('affiliates')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (!affiliates || affiliates.length === 0) { setAffiliatesList([]); return; }
+
+      const userIds = affiliates.map(a => a.user_id);
+      const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
+      const names: Record<string, string> = {};
+      if (profiles) profiles.forEach(p => { names[p.user_id] = p.name; });
+
+      // Get monthly sales count for each affiliate
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const { data: monthlySalesData } = await supabase
+        .from('affiliate_sales')
+        .select('affiliate_id')
+        .eq('status', 'paid')
+        .gte('created_at', startOfMonth);
+
+      const monthlyCounts: Record<string, number> = {};
+      if (monthlySalesData) {
+        monthlySalesData.forEach(s => {
+          monthlyCounts[s.affiliate_id] = (monthlyCounts[s.affiliate_id] || 0) + 1;
+        });
+      }
+
+      setAffiliatesList(affiliates.map(a => ({
+        id: a.id,
+        user_id: a.user_id,
+        affiliate_code: a.affiliate_code,
+        is_active: a.is_active ?? true,
+        total_sales: a.total_sales ?? 0,
+        total_commission: a.total_commission ?? 0,
+        user_name: names[a.user_id] || 'Usuário',
+        monthly_sales: monthlyCounts[a.id] || 0,
+      })));
+    } catch (err) {
+      console.error('Error fetching affiliates:', err);
+    }
+  };
+
+  const registerAffiliateSale = async () => {
+    if (!saleAffiliateId || !saleAmount || !saleKit) {
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
+      return;
+    }
+
+    const amount = parseFloat(saleAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'Valor inválido', variant: 'destructive' });
+      return;
+    }
+
+    setRegisteringSale(true);
+    try {
+      const affiliate = affiliatesList.find(a => a.id === saleAffiliateId);
+      if (!affiliate) throw new Error('Afiliado não encontrado');
+
+      // Calculate commission based on current monthly sales level
+      const rates = getCommissionRates(affiliate.monthly_sales);
+      let ratePercent = rates.kit1;
+      if (saleKit === '3') ratePercent = rates.kit3;
+      if (saleKit === '5') ratePercent = rates.kit5;
+
+      const commission = (amount * ratePercent) / 100;
+
+      // 1. Insert affiliate sale
+      const { error: saleError } = await supabase
+        .from('affiliate_sales')
+        .insert({
+          affiliate_id: affiliate.id,
+          order_id: saleOrderId || `MANUAL-${Date.now()}`,
+          sale_amount: amount,
+          commission_amount: commission,
+          customer_email: saleCustomerEmail || null,
+          status: 'paid',
+          paid_at: new Date().toISOString(),
+        });
+
+      if (saleError) throw saleError;
+
+      // 2. Update affiliate totals
+      const { error: updateError } = await supabase
+        .from('affiliates')
+        .update({
+          total_sales: (affiliate.total_sales || 0) + 1,
+          total_commission: (affiliate.total_commission || 0) + commission,
+        })
+        .eq('id', affiliate.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Venda registrada! 🎉',
+        description: `Comissão de R$ ${commission.toFixed(2)} (${ratePercent}%) creditada para ${affiliate.user_name}`,
+      });
+
+      setSaleAffiliateId('');
+      setSaleAmount('');
+      setSaleKit('');
+      setSaleCustomerEmail('');
+      setSaleOrderId('');
+      fetchAffiliatesList();
+    } catch (err) {
+      console.error('Error registering affiliate sale:', err);
+      toast({ title: 'Erro ao registrar venda', variant: 'destructive' });
+    } finally {
+      setRegisteringSale(false);
+    }
   };
 
   const fetchCodes = async () => {
@@ -524,8 +660,12 @@ const Admin = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <Tabs defaultValue="referrals" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="affiliates" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Afiliados
+            </TabsTrigger>
             <TabsTrigger value="referrals" className="flex items-center gap-2">
               <Gift className="w-4 h-4" />
               Indicações
@@ -539,6 +679,157 @@ const Admin = () => {
               Códigos
             </TabsTrigger>
           </TabsList>
+
+          {/* Affiliates Tab */}
+          <TabsContent value="affiliates" className="space-y-6">
+            {/* Register Sale */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    Registrar Venda de Afiliado
+                  </CardTitle>
+                  <CardDescription>
+                    Registre manualmente uma venda feita por um afiliado. A comissão será calculada automaticamente pelo nível atual.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Select value={saleAffiliateId} onValueChange={setSaleAffiliateId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o afiliado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {affiliatesList.map(a => {
+                          const level = getAffiliateLevel(a.monthly_sales);
+                          return (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.user_name} ({a.affiliate_code}) {level.emoji}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select value={saleKit} onValueChange={setSaleKit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kit vendido" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Kit 1 Pote</SelectItem>
+                        <SelectItem value="3">Kit 3 Potes</SelectItem>
+                        <SelectItem value="5">Kit 5 Potes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Input
+                      placeholder="Valor da venda (R$)"
+                      value={saleAmount}
+                      onChange={(e) => setSaleAmount(e.target.value)}
+                      type="number"
+                      step="0.01"
+                    />
+                    <Input
+                      placeholder="Email do cliente (opcional)"
+                      value={saleCustomerEmail}
+                      onChange={(e) => setSaleCustomerEmail(e.target.value)}
+                      type="email"
+                    />
+                    <Input
+                      placeholder="ID do pedido (opcional)"
+                      value={saleOrderId}
+                      onChange={(e) => setSaleOrderId(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Commission preview */}
+                  {saleAffiliateId && saleKit && saleAmount && parseFloat(saleAmount) > 0 && (() => {
+                    const aff = affiliatesList.find(a => a.id === saleAffiliateId);
+                    if (!aff) return null;
+                    const rates = getCommissionRates(aff.monthly_sales);
+                    const level = getAffiliateLevel(aff.monthly_sales);
+                    let rate = rates.kit1;
+                    if (saleKit === '3') rate = rates.kit3;
+                    if (saleKit === '5') rate = rates.kit5;
+                    const commission = (parseFloat(saleAmount) * rate) / 100;
+                    return (
+                      <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                          {level.emoji} Nível {level.level} ({level.name}) — {aff.monthly_sales} vendas no mês
+                        </p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          Comissão: R$ {commission.toFixed(2)} ({rate}%)
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  <Button
+                    onClick={registerAffiliateSale}
+                    disabled={registeringSale || !saleAffiliateId || !saleKit || !saleAmount}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600"
+                  >
+                    {registeringSale ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Plus className="h-4 w-4 mr-2" />
+                    )}
+                    Registrar Venda
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Affiliates List */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Afiliados Ativos ({affiliatesList.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {affiliatesList.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">Nenhum afiliado ativo</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Código</TableHead>
+                            <TableHead>Nível</TableHead>
+                            <TableHead>Vendas (mês)</TableHead>
+                            <TableHead>Comissão Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {affiliatesList.map(a => {
+                            const level = getAffiliateLevel(a.monthly_sales);
+                            return (
+                              <TableRow key={a.id}>
+                                <TableCell className="font-medium">{a.user_name}</TableCell>
+                                <TableCell className="font-mono text-xs">{a.affiliate_code}</TableCell>
+                                <TableCell>
+                                  <span className={level.color}>{level.emoji} {level.name}</span>
+                                </TableCell>
+                                <TableCell>{a.monthly_sales}</TableCell>
+                                <TableCell className="font-bold text-green-600">
+                                  R$ {(a.total_commission || 0).toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
           {/* Referrals Tab */}
           <TabsContent value="referrals" className="space-y-6">
