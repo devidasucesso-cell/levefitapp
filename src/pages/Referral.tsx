@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard, ScrollText, AlertTriangle, Ban, Shield, Settings2 } from 'lucide-react';
+import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard, ScrollText, AlertTriangle, Ban, Shield, Settings2, Store, ArrowLeftRight } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
@@ -19,7 +19,6 @@ import { useWallet } from '@/hooks/useWallet';
 import { useAffiliate } from '@/hooks/useAffiliate';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Referral = () => {
   const { user, profile } = useAuth();
@@ -34,6 +33,7 @@ const Referral = () => {
   const [acceptedReferralTerms, setAcceptedReferralTerms] = useState(false);
   const [acceptedAffiliateTerms, setAcceptedAffiliateTerms] = useState(false);
   const [showRegulamento, setShowRegulamento] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<'none' | 'referral' | 'affiliate'>('none');
   const { 
     balance, referrals, approvedReferrals, pendingReferrals, convertedReferrals,
     loading, referralCode, referralLink, transactions,
@@ -122,59 +122,109 @@ const Referral = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 pb-8 rounded-b-3xl">
         <div className="flex items-center gap-3 mb-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
+          <Button variant="ghost" size="icon" onClick={() => selectedMode !== 'none' ? setSelectedMode('none') : navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold font-display text-primary-foreground flex items-center gap-2">
               🤝 Ganhe
             </h1>
-            <p className="text-primary-foreground/80 text-sm">Indicando ou vendendo</p>
+            <p className="text-primary-foreground/80 text-sm">
+              {selectedMode === 'none' ? 'Indicando ou vendendo' : selectedMode === 'referral' ? 'Indicando amigos' : 'Como afiliado'}
+            </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <Card className="p-3 bg-white/20 backdrop-blur border-white/20">
-            <div className="flex flex-col items-center">
-              <Users className="w-6 h-6 text-white mb-1" />
-              <p className="text-white font-bold text-lg">{referrals.length}</p>
-              <p className="text-white/80 text-xs">Indicações</p>
-            </div>
-          </Card>
-          <Card className="p-3 bg-white/20 backdrop-blur border-white/20">
-            <div className="flex flex-col items-center">
-              <TrendingUp className="w-6 h-6 text-white mb-1" />
-              <p className="text-white font-bold text-lg">{affiliate?.total_sales || 0}</p>
-              <p className="text-white/80 text-xs">Vendas Afiliado</p>
-            </div>
-          </Card>
+        {/* Stats - contextual */}
+        <div className={`grid gap-3 mt-4 ${selectedMode === 'none' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {(selectedMode === 'none' || selectedMode === 'referral') && (
+            <Card className="p-3 bg-white/20 backdrop-blur border-white/20">
+              <div className="flex flex-col items-center">
+                <Users className="w-6 h-6 text-white mb-1" />
+                <p className="text-white font-bold text-lg">{referrals.length}</p>
+                <p className="text-white/80 text-xs">Indicações</p>
+              </div>
+            </Card>
+          )}
+          {(selectedMode === 'none' || selectedMode === 'affiliate') && (
+            <Card className="p-3 bg-white/20 backdrop-blur border-white/20">
+              <div className="flex flex-col items-center">
+                <TrendingUp className="w-6 h-6 text-white mb-1" />
+                <p className="text-white font-bold text-lg">{affiliate?.total_sales || 0}</p>
+                <p className="text-white/80 text-xs">Vendas Afiliado</p>
+              </div>
+            </Card>
+          )}
           <Card className="p-3 bg-white/20 backdrop-blur border-white/20">
             <div className="flex flex-col items-center">
               <Wallet className="w-6 h-6 text-white mb-1" />
-              <p className="text-white font-bold text-lg">R${balance.toFixed(2)}</p>
-              <p className="text-white/80 text-xs">Saldo</p>
+              <p className="text-white font-bold text-lg">R${selectedMode === 'affiliate' ? (affiliate?.total_commission || 0).toFixed(2) : balance.toFixed(2)}</p>
+              <p className="text-white/80 text-xs">{selectedMode === 'affiliate' ? 'Comissões' : 'Saldo'}</p>
             </div>
           </Card>
         </div>
       </div>
 
       <div className="p-4 -mt-4 space-y-4 max-w-4xl mx-auto">
-        {/* Tabs: Indicar / Afiliado */}
-        <Tabs defaultValue="affiliate" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="referral" className="flex items-center gap-2">
-              <Gift className="w-4 h-4" />
-              Indicar
-            </TabsTrigger>
-            <TabsTrigger value="affiliate" className="flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4" />
-              Afiliado
-            </TabsTrigger>
-          </TabsList>
 
-          {/* ===== TAB: INDICAR ===== */}
-          <TabsContent value="referral" className="space-y-4 mt-4">
+        {/* ===== CHOICE SCREEN ===== */}
+        {selectedMode === 'none' && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground text-center mt-2">Como você quer ganhar?</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Indicar Amigos */}
+              <Card
+                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-amber-400 dark:hover:border-amber-600 group"
+                onClick={() => setSelectedMode('referral')}
+              >
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform">
+                    <Gift className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Indicar Amigos</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Ganhe <span className="font-bold text-amber-600 dark:text-amber-400">R$25</span> por cada amigo que comprar
+                  </p>
+                  <ul className="text-left text-xs space-y-1.5 text-muted-foreground">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" /> Link exclusivo de indicação</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" /> Créditos para próxima compra</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" /> Simples e rápido</li>
+                  </ul>
+                </div>
+              </Card>
+
+              {/* Ser Afiliado */}
+              <Card
+                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary group"
+                onClick={() => setSelectedMode('affiliate')}
+              >
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform">
+                    <Store className="w-8 h-8 text-primary-foreground" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Ser Afiliado</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Ganhe de <span className="font-bold text-primary">25% a 45%</span> de comissão por venda
+                  </p>
+                  <ul className="text-left text-xs space-y-1.5 text-muted-foreground">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /> Comissões escalonadas</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /> Saque via Pix</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /> Painel completo de vendas</li>
+                  </ul>
+                </div>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ===== REFERRAL CONTENT ===== */}
+        {selectedMode === 'referral' && (
+          <div className="space-y-4">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedMode('none')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <ArrowLeftRight className="w-4 h-4" />
+              Trocar para Afiliado
+            </Button>
+
             {/* Referral Code Card */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Card className="p-6 bg-card">
@@ -257,8 +307,7 @@ const Referral = () => {
               </motion.div>
             )}
 
-
-            {/* Rules - only for referral tab */}
+            {/* Rules */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <Card className="p-6 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 dark:border-amber-800/50">
                 <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">⚠️ Regras e Condições</h3>
@@ -282,10 +331,17 @@ const Referral = () => {
                 </ul>
               </Card>
             </motion.div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* ===== TAB: AFILIADO ===== */}
-          <TabsContent value="affiliate" className="space-y-4 mt-4">
+        {/* ===== AFFILIATE CONTENT ===== */}
+        {selectedMode === 'affiliate' && (
+          <div className="space-y-4">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedMode('none')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <ArrowLeftRight className="w-4 h-4" />
+              Trocar para Indicação
+            </Button>
+
             {!affiliate ? (
               /* Activation Card */
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -722,7 +778,6 @@ const Referral = () => {
                   </Card>
                 </motion.div>
 
-
                 {/* Sales History */}
                 {sales.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -756,10 +811,8 @@ const Referral = () => {
                 )}
               </>
             )}
-          </TabsContent>
-        </Tabs>
-
-
+          </div>
+        )}
       </div>
 
       <WaterReminder />
