@@ -45,6 +45,91 @@ async function sendPaymentConfirmationEmail(email: string, amountTotal: number) 
     console.error("[STRIPE-WEBHOOK] Failed to send email:", err);
   }
 }
+async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Checkout.Session) {
+  const affiliateCode = session.metadata?.affiliate_code;
+  if (!affiliateCode) return;
+
+  const amountTotal = session.amount_total ?? 0;
+  if (amountTotal <= 0) return;
+
+  console.log(`[STRIPE-WEBHOOK] Processing affiliate commission for code: ${affiliateCode}`);
+
+  try {
+    // Find affiliate by code
+    const { data: affiliate, error: affError } = await supabaseAdmin
+      .from("affiliates")
+      .select("*")
+      .eq("affiliate_code", affiliateCode)
+      .eq("is_active", true)
+      .single();
+
+    if (affError || !affiliate) {
+      console.log(`[STRIPE-WEBHOOK] Affiliate not found or inactive: ${affiliateCode}`);
+      return;
+    }
+
+    // Check for duplicate
+    const { data: existing } = await supabaseAdmin
+      .from("affiliate_sales")
+      .select("id")
+      .eq("order_id", session.id)
+      .maybeSingle();
+
+    if (existing) {
+      console.log(`[STRIPE-WEBHOOK] Duplicate affiliate sale for session: ${session.id}`);
+      return;
+    }
+
+    const saleAmount = amountTotal / 100;
+    const commissionAmount = saleAmount * 0.25;
+
+    // Insert affiliate sale
+    await supabaseAdmin.from("affiliate_sales").insert({
+      affiliate_id: affiliate.id,
+      order_id: session.id,
+      sale_amount: saleAmount,
+      commission_amount: commissionAmount,
+      customer_email: session.customer_details?.email || null,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    });
+
+    // Update affiliate totals
+    await supabaseAdmin
+      .from("affiliates")
+      .update({
+        total_sales: (affiliate.total_sales || 0) + 1,
+        total_commission: (affiliate.total_commission || 0) + commissionAmount,
+      })
+      .eq("id", affiliate.id);
+
+    // Credit wallet
+    const { data: wallet } = await supabaseAdmin
+      .from("wallets")
+      .select("id, balance")
+      .eq("user_id", affiliate.user_id)
+      .single();
+
+    if (wallet) {
+      await supabaseAdmin
+        .from("wallets")
+        .update({ balance: wallet.balance + commissionAmount })
+        .eq("id", wallet.id);
+
+      await supabaseAdmin.from("wallet_transactions").insert({
+        wallet_id: wallet.id,
+        user_id: affiliate.user_id,
+        amount: commissionAmount,
+        type: "affiliate_commission",
+        description: `Comissão de venda (25%) - R$ ${saleAmount.toFixed(2)}`,
+      });
+    }
+
+    console.log(`[STRIPE-WEBHOOK] Affiliate commission of R$${commissionAmount.toFixed(2)} credited to ${affiliate.affiliate_code}`);
+  } catch (err) {
+    console.error("[STRIPE-WEBHOOK] Error processing affiliate commission:", err);
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -100,6 +185,11 @@ serve(async (req) => {
         if (error) console.error("[STRIPE-WEBHOOK] Update error:", error);
         else console.log(`[STRIPE-WEBHOOK] Order updated to ${session.payment_status}`);
 
+        // Process affiliate commission for immediate payments (card)
+        if (session.payment_status === "paid") {
+          await processAffiliateCommission(supabaseAdmin, session);
+        }
+
         // Send confirmation email for immediate payments (card)
         if (session.payment_status === "paid" && session.customer_details?.email) {
           await sendPaymentConfirmationEmail(session.customer_details.email, session.amount_total ?? 0);
@@ -118,9 +208,11 @@ serve(async (req) => {
 
         if (error) console.error("[STRIPE-WEBHOOK] Update error:", error);
 
+        // Process affiliate commission for async payments (boleto/pix)
+        await processAffiliateCommission(supabaseAdmin, session);
+
         // Send confirmation email for async payments (boleto/pix)
         if (session.customer_details?.email) {
-          // Fetch session to get amount
           const fullSession = await stripe.checkout.sessions.retrieve(session.id);
           await sendPaymentConfirmationEmail(session.customer_details.email, fullSession.amount_total ?? 0);
         }

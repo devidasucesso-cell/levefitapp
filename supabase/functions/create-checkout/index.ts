@@ -26,8 +26,8 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    // Parse cart items from request body
-    const { items } = await req.json();
+    // Parse cart items and affiliate code from request body
+    const { items, affiliate_code } = await req.json();
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error("No items provided");
     }
@@ -92,7 +92,7 @@ serve(async (req) => {
         ];
 
     // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
@@ -102,7 +102,15 @@ serve(async (req) => {
       shipping_options: shippingOptions,
       success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/store`,
-    });
+      metadata: {},
+    };
+
+    // Attach affiliate code if present
+    if (affiliate_code) {
+      sessionParams.metadata.affiliate_code = affiliate_code;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Save order to database with service role
     const supabaseAdmin = createClient(

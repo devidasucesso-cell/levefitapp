@@ -27,8 +27,10 @@ export const CartDrawer = () => {
         image: item.product.node.images?.edges?.[0]?.node?.url || undefined,
       }));
 
+      const affiliateCode = localStorage.getItem('aff_code') || undefined;
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { items: checkoutItems },
+        body: { items: checkoutItems, affiliate_code: affiliateCode },
       });
 
       if (error) throw error;
