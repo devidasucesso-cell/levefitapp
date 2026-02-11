@@ -1,98 +1,84 @@
 
 
-# Sistema de Afiliados - Comissao de 25% por Venda
+# Usar Saldo de Indicacao nas Compras da Loja
 
 ## Resumo
-
-Implementar um sistema de afiliados onde qualquer usuario pode se tornar afiliado, compartilhar seu link personalizado e ganhar 25% de comissao sobre cada venda confirmada feita atraves do seu link. Isso funciona separado do sistema de indicacao existente (que paga R$25 fixo via Kiwify).
+Adicionar a opcao de usar o saldo da carteira de indicacao como forma de pagamento (total ou parcial) ao comprar produtos na loja. O usuario podera aplicar seu saldo como desconto antes de finalizar o pagamento.
 
 ## Como vai funcionar
 
-1. Na pagina de Referral, adicionar uma nova secao "Afiliado" alem da indicacao existente
-2. O usuario ativa o modo afiliado com um clique
-3. Recebe um link de afiliado que direciona para a loja do app
-4. Quando alguem compra pelo link, o afiliado ganha 25% do valor da venda como credito na carteira
+1. No dialog de pagamento (ao clicar "Comprar"), o usuario vera seu saldo disponivel
+2. Podera ativar um toggle/checkbox "Usar meu saldo de R$ XX,XX"
+3. Se o saldo cobrir o valor total, o pagamento e finalizado direto (sem Stripe/PIX)
+4. Se o saldo cobrir parcialmente, o valor restante sera pago via PIX ou Cartao/Boleto
+5. O produto "avulso" (sem acompanhamento) nao participa -- saldo nao pode ser usado nele
+
+## Fluxo visual
 
 ```text
-Fluxo do Afiliado:
-Usuario ativa afiliado --> Recebe link da loja com ?aff=CODIGO
-       --> Cliente acessa loja --> Compra via Stripe
-       --> Webhook confirma pagamento --> 25% creditado na carteira do afiliado
+[Comprar] 
+   |
+   v
++----------------------------------+
+| Como deseja pagar?               |
+|                                  |
+| Saldo disponivel: R$ 50,00      |
+| [x] Usar meu saldo (-R$ 50,00)  |
+|                                  |
+| Total: R$ 397,00 -> R$ 347,00   |
+|                                  |
+| [Pagar via PIX - R$ 347,00]     |
+| [Pagar com Cartao/Boleto]       |
++----------------------------------+
+```
+
+Se o saldo cobre tudo:
+```text
++----------------------------------+
+| Saldo disponivel: R$ 200,00     |
+| [x] Usar meu saldo (-R$ 197,00) |
+|                                  |
+| Total: R$ 0,00                   |
+|                                  |
+| [Finalizar com Saldo]           |
++----------------------------------+
 ```
 
 ## Detalhes Tecnicos
 
-### 1. Tabela no banco de dados
+### 1. Nova Edge Function: `use-wallet-balance`
+- Recebe: `user_id`, `amount`, `product_title`, `items` (opcional)
+- Valida que o usuario tem saldo suficiente
+- Desconta o valor da carteira (`wallets.balance`)
+- Registra transacao negativa em `wallet_transactions` (type: `purchase`, amount negativo)
+- Cria registro em `orders` com status `paid` e metadado indicando pagamento via saldo
+- Retorna sucesso/erro
 
-Criar tabela `affiliates` para controlar quem e afiliado:
+### 2. Atualizar `PaymentChoiceDialog`
+- Importar `useWallet` para buscar o saldo
+- Adicionar checkbox "Usar meu saldo" com o valor disponivel
+- Recalcular precos exibidos quando saldo e aplicado
+- Se saldo >= preco total: mostrar botao "Finalizar com Saldo" em vez dos outros
+- Se saldo < preco: ajustar valores nos botoes PIX e Cartao
 
-```sql
-CREATE TABLE affiliates (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  affiliate_code text UNIQUE NOT NULL,
-  is_active boolean DEFAULT true,
-  total_sales integer DEFAULT 0,
-  total_commission numeric DEFAULT 0,
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(user_id)
-);
-```
+### 3. Atualizar `create-checkout` Edge Function
+- Aceitar parametro `wallet_discount` no body
+- Aplicar desconto via Stripe coupon ou ajuste no `unit_amount`
+- Registrar a transacao de saldo no webhook ao confirmar pagamento
 
-Criar tabela `affiliate_sales` para registrar cada venda do afiliado:
+### 4. Atualizar `CartDrawer`
+- Adicionar opcao de usar saldo no checkout do carrinho tambem
+- Mostrar saldo disponivel e toggle para aplicar
 
-```sql
-CREATE TABLE affiliate_sales (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  affiliate_id uuid REFERENCES affiliates(id),
-  order_id text NOT NULL UNIQUE,  -- stripe session id
-  sale_amount numeric NOT NULL,
-  commission_amount numeric NOT NULL,
-  customer_email text,
-  status text DEFAULT 'pending',
-  created_at timestamptz DEFAULT now(),
-  paid_at timestamptz
-);
-```
+### 5. Restricoes
+- Produto "avulso/sem acompanhamento" nao aceita saldo (ja e PIX-only e fora do programa)
+- Saldo nao pode ficar negativo
+- Operacao atomica para evitar uso duplo do saldo
 
-Ambas com RLS para o usuario ver apenas seus dados e admin ver tudo.
-
-### 2. Fluxo de ativacao
-
-- Botao "Quero ser Afiliado" na pagina Referral
-- Ao clicar, insere registro na tabela `affiliates` com codigo gerado (ex: `AFF` + sequencia)
-- Mostra link da loja: `https://levefitapp.lovable.app/store?aff=AFFXXXXX`
-
-### 3. Rastreamento da venda
-
-- Na pagina da Loja (`Store.tsx`), capturar o parametro `?aff=` da URL e salvar no `localStorage`
-- No checkout (`create-checkout` edge function), enviar o codigo do afiliado como `metadata` na sessao Stripe
-- No webhook do Stripe (`stripe-webhook`), ao confirmar pagamento:
-  - Verificar se existe metadata de afiliado
-  - Calcular 25% do valor da venda
-  - Creditar na carteira do afiliado
-  - Registrar na tabela `affiliate_sales`
-
-### 4. Interface na pagina Referral
-
-Adicionar uma secao com tabs ou cards separados:
-- **Indicar** (sistema atual de R$25 fixo via Kiwify)
-- **Afiliado** (novo - 25% sobre vendas na loja do app)
-
-Na aba de Afiliado mostrar:
-- Botao para ativar (se ainda nao e afiliado)
-- Link do afiliado para copiar/compartilhar
-- Total de vendas e comissoes ganhas
-- Historico de vendas com status
-
-### 5. Arquivos que serao criados/editados
-
-| Arquivo | Acao |
-|---------|------|
-| Migracao SQL | Criar tabelas `affiliates` e `affiliate_sales` |
-| `src/pages/Referral.tsx` | Adicionar secao de afiliado |
-| `src/hooks/useAffiliate.ts` | Novo hook para gerenciar dados do afiliado |
-| `src/pages/Store.tsx` | Capturar parametro `?aff=` e salvar no localStorage |
-| `supabase/functions/create-checkout/index.ts` | Enviar codigo afiliado como metadata |
-| `supabase/functions/stripe-webhook/index.ts` | Processar comissao do afiliado |
+### Arquivos que serao criados/modificados:
+- **Criar**: `supabase/functions/use-wallet-balance/index.ts`
+- **Modificar**: `src/components/PaymentChoiceDialog.tsx` -- adicionar logica de saldo
+- **Modificar**: `src/components/CartDrawer.tsx` -- adicionar opcao de saldo
+- **Modificar**: `supabase/functions/create-checkout/index.ts` -- suportar desconto parcial via saldo
+- **Modificar**: `supabase/functions/stripe-webhook/index.ts` -- registrar debito do saldo apos pagamento confirmado
 
