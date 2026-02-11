@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { QrCode, Copy, Check } from 'lucide-react';
+import { QrCode, Copy, Check, MessageCircle } from 'lucide-react';
+
+const WHATSAPP_LINK = 'https://wa.me/message/HQIWLURN37IUP1';
 
 interface PixPaymentDialogProps {
   open: boolean;
@@ -39,9 +41,16 @@ export const PixPaymentDialog = ({ open, onOpenChange, pixCode, amount, productT
               {copied ? <><Check className="w-4 h-4 mr-2" />Copiado!</> : <><Copy className="w-4 h-4 mr-2" />Copiar código PIX</>}
             </Button>
           </div>
-          <p className="text-xs text-center text-muted-foreground">
-            Após o pagamento, envie o comprovante pelo WhatsApp para confirmar.
-          </p>
+          <Button
+            asChild
+            className="w-full bg-[#25D366] hover:bg-[#1da851] text-white"
+            size="lg"
+          >
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Enviar Comprovante
+            </a>
+          </Button>
           <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full" size="sm">
             Fechar
           </Button>
