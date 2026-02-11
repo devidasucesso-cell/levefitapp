@@ -14,7 +14,32 @@ serve(async (req) => {
   }
 
   try {
-    const { name, phone, email, product_title, amount, user_id } = await req.json();
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(token);
+    if (authError || !authData.user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authenticatedUserId = authData.user.id;
+
+    const { name, phone, email, product_title, amount } = await req.json();
 
     if (!name || !phone || !email || !product_title) {
       throw new Error("Campos obrigatórios faltando");
@@ -31,7 +56,7 @@ serve(async (req) => {
       email,
       product_title,
       amount: amount || 150,
-      user_id: user_id || null,
+      user_id: authenticatedUserId,
     });
 
     if (dbError) throw new Error(`DB error: ${dbError.message}`);
