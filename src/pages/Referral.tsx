@@ -33,7 +33,15 @@ const Referral = () => {
   const [acceptedReferralTerms, setAcceptedReferralTerms] = useState(false);
   const [acceptedAffiliateTerms, setAcceptedAffiliateTerms] = useState(false);
   const [showRegulamento, setShowRegulamento] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<'none' | 'referral' | 'affiliate'>('none');
+  const [selectedMode, setSelectedMode] = useState<'none' | 'referral' | 'affiliate'>(() => {
+    const saved = localStorage.getItem('referral_mode');
+    return (saved === 'referral' || saved === 'affiliate') ? saved : 'none';
+  });
+
+  const handleSelectMode = (mode: 'referral' | 'affiliate') => {
+    setSelectedMode(mode);
+    localStorage.setItem('referral_mode', mode);
+  };
   const { 
     balance, referrals, approvedReferrals, pendingReferrals, convertedReferrals,
     loading, referralCode, referralLink, transactions,
@@ -122,7 +130,7 @@ const Referral = () => {
       {/* Header */}
       <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 pb-8 rounded-b-3xl">
         <div className="flex items-center gap-3 mb-4">
-          <Button variant="ghost" size="icon" onClick={() => selectedMode !== 'none' ? setSelectedMode('none') : navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="text-primary-foreground hover:bg-primary-foreground/20">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -175,7 +183,7 @@ const Referral = () => {
               {/* Indicar Amigos */}
               <Card
                 className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-amber-400 dark:hover:border-amber-600 group"
-                onClick={() => setSelectedMode('referral')}
+                onClick={() => handleSelectMode('referral')}
               >
                 <div className="text-center space-y-3">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform">
@@ -196,7 +204,7 @@ const Referral = () => {
               {/* Ser Afiliado */}
               <Card
                 className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 hover:border-primary group"
-                onClick={() => setSelectedMode('affiliate')}
+                onClick={() => handleSelectMode('affiliate')}
               >
                 <div className="text-center space-y-3">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 transition-transform">
@@ -220,10 +228,6 @@ const Referral = () => {
         {/* ===== REFERRAL CONTENT ===== */}
         {selectedMode === 'referral' && (
           <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setSelectedMode('none')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-              <ArrowLeftRight className="w-4 h-4" />
-              Trocar para Afiliado
-            </Button>
 
             {/* Referral Code Card */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -337,11 +341,6 @@ const Referral = () => {
         {/* ===== AFFILIATE CONTENT ===== */}
         {selectedMode === 'affiliate' && (
           <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setSelectedMode('none')} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
-              <ArrowLeftRight className="w-4 h-4" />
-              Trocar para Indicação
-            </Button>
-
             {!affiliate ? (
               /* Activation Card */
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
