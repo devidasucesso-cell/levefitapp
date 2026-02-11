@@ -275,17 +275,11 @@ const Referral = () => {
                     <span className="text-red-500 font-bold">•</span>
                     <span className="text-muted-foreground"><strong className="text-foreground">Validade de 90 dias:</strong> Os créditos expiram após 90 dias.</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-500 font-bold">•</span>
+                    <span className="text-muted-foreground"><strong className="text-foreground">Limite mensal:</strong> Você pode indicar até 4 amigos por mês.</span>
+                  </li>
                 </ul>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/50">
-                  <Checkbox
-                    id="referral-terms"
-                    checked={acceptedReferralTerms}
-                    onCheckedChange={(checked) => setAcceptedReferralTerms(checked === true)}
-                  />
-                  <label htmlFor="referral-terms" className="text-sm font-medium text-foreground cursor-pointer select-none">
-                    Estou ciente das regras e condições
-                  </label>
-                </div>
               </Card>
             </motion.div>
           </TabsContent>
