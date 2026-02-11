@@ -201,7 +201,7 @@ const Store = () => {
                             Reservar o meu
                           </Button>
                         </>
-                      ) : product.node.title.toLowerCase().includes('avulso') ? (
+                      ) : (product.node.title.toLowerCase().includes('avulso') || product.node.title.toLowerCase().includes('sem acompanhamento')) ? (
                         <>
                           <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
                           <Button

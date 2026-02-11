@@ -30,7 +30,7 @@ const PIX_CODES: Record<string, { code: string; amount: string }> = {
 
 function getPixForProduct(title: string) {
   const lower = title.toLowerCase();
-  if (lower.includes('avulso')) return PIX_CODES['avulso'];
+  if (lower.includes('avulso') || lower.includes('sem acompanhamento')) return PIX_CODES['avulso'];
   if (lower.includes('5 pote')) return PIX_CODES['5 pote'];
   if (lower.includes('3 pote')) return PIX_CODES['3 pote'];
   if (lower.includes('1 pote')) return PIX_CODES['1 pote'];
@@ -38,7 +38,8 @@ function getPixForProduct(title: string) {
 }
 
 function isPixOnly(title: string) {
-  return title.toLowerCase().includes('avulso');
+  const lower = title.toLowerCase();
+  return lower.includes('avulso') || lower.includes('sem acompanhamento');
 }
 
 const ProductDetail = () => {
