@@ -628,15 +628,6 @@ const Referral = () => {
                         </AccordionContent>
                       </AccordionItem>
 
-                      <AccordionItem value="alteracoes">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> 9️⃣ Alterações no programa</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>O programa de afiliados pode ser alterado, suspenso ou encerrado a qualquer momento.</p>
-                          <p>Alterações serão comunicadas dentro do app.</p>
-                        </AccordionContent>
-                      </AccordionItem>
                     </Accordion>
                   </Card>
                 </motion.div>
