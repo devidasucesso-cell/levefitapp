@@ -323,6 +323,44 @@ const Referral = () => {
                   </div>
                 </motion.div>
 
+                {/* Affiliate Wallet */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+                  <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                          <Wallet className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">Carteira Afiliado</h3>
+                          <p className="text-sm text-muted-foreground">Comissões acumuladas</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          R$ {affiliate.total_commission.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {sales.length > 0 && (
+                      <div className="border-t border-blue-200 dark:border-blue-800 pt-4 mt-4">
+                        <p className="text-sm font-medium text-foreground mb-2">Últimas comissões</p>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {sales.slice(0, 3).map((sale) => (
+                            <div key={sale.id} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">Comissão de venda</span>
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                +R$ {sale.commission_amount.toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
+
                 {/* How it works */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
                   <Card className="p-6 bg-card">
