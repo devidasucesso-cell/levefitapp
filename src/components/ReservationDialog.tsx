@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, CheckCircle, CreditCard, Copy, Check, QrCode } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard, Copy, Check, QrCode, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -180,6 +180,16 @@ export const ReservationDialog = ({ open, onOpenChange, productTitle }: Reservat
             <p className="text-xs text-center text-muted-foreground">
               Após o pagamento, envie o comprovante pelo WhatsApp para confirmar.
             </p>
+            <Button
+              asChild
+              className="w-full bg-[#25D366] hover:bg-[#1da851] text-white"
+              size="lg"
+            >
+              <a href="https://wa.me/message/HQIWLURN37IUP1" target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Enviar Comprovante
+              </a>
+            </Button>
             <Button onClick={handleClose} variant="outline" className="w-full" size="sm">
               Fechar
             </Button>
