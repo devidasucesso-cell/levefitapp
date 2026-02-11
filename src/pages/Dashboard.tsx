@@ -321,16 +321,6 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        {/* Daily Exercise Suggestion */}
-        {profile?.imc !== undefined && profile.imc > 0 && profile?.imc_category && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <DashboardExerciseSuggestion imcCategory={profile.imc_category as IMCCategory} />
-          </motion.div>
-        )}
 
         {/* Affiliate Ranking */}
         <AffiliateRanking />
