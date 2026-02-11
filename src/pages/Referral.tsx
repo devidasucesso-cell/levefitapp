@@ -314,9 +314,106 @@ const Referral = () => {
                       <span className="text-muted-foreground">Créditos direto na sua carteira</span>
                     </li>
                   </ul>
+
+                  {/* Regulamento do Programa - inline before activation */}
+                  <Card className="p-4 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 dark:border-amber-800/50 mb-4 text-left">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <ScrollText className="w-4 h-4 text-primary" />
+                      📜 Regulamento do Programa
+                    </h4>
+                    <Accordion type="multiple" className="w-full">
+                      <AccordionItem value="participacao">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> 1️⃣ Quem pode participar</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Qualquer usuário maior de 18 anos pode se tornar afiliado.</p>
+                          <p>Ao participar, o afiliado concorda com todas as regras descritas neste regulamento.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="como-funciona">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Link2 className="w-4 h-4 text-primary" /> 2️⃣ Como funciona a afiliação</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>O afiliado recebe um link e/ou código exclusivo para divulgação.</p>
+                          <p>Toda venda realizada por meio desse link/código será automaticamente vinculada ao afiliado.</p>
+                          <p>A comissão é válida apenas para vendas confirmadas e aprovadas.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="prazo">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> 4️⃣ Prazo de liberação</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>A comissão fica pendente até a confirmação do pagamento.</p>
+                          <p>Após a confirmação, a comissão será liberada em até 3 dias corridos.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="pagamento">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /> 5️⃣ Pagamento</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>O pagamento é feito exclusivamente via Pix, para a chave cadastrada no app.</p>
+                          <p>Valor mínimo para saque: <strong className="text-foreground">R$ 50,00</strong>.</p>
+                          <p>Após a solicitação, o pagamento será realizado em até 2 dias úteis.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="responsabilidades">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> 6️⃣ Responsabilidades do afiliado</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Divulgar o produto de forma ética e verdadeira.</p>
+                          <p>Não utilizar promessas falsas, linguagem enganosa ou informações não autorizadas.</p>
+                          <p>Não se passar por representante oficial, suporte ou equipe do app.</p>
+                          <p>Não realizar spam, anúncios enganosos ou práticas abusivas.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="proibicoes">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Ban className="w-4 h-4 text-destructive" /> 7️⃣ Proibições</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>É proibido:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            <li>Comprar o produto usando o próprio link de afiliado.</li>
+                            <li>Criar contas falsas para gerar comissão.</li>
+                            <li>Utilizar tráfego fraudulento, bots ou qualquer meio ilícito.</li>
+                            <li>Copiar ou modificar materiais oficiais sem autorização.</li>
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="penalidades">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-destructive" /> 8️⃣ Penalidades</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Em caso de descumprimento das regras, o afiliado poderá:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            <li>Ter comissões canceladas</li>
+                            <li>Ter a conta suspensa ou encerrada</li>
+                            <li>Ser removido do programa sem aviso prévio</li>
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/50">
+                      <Checkbox
+                        id="affiliate-terms"
+                        checked={acceptedAffiliateTerms}
+                        onCheckedChange={(checked) => setAcceptedAffiliateTerms(checked === true)}
+                      />
+                      <label htmlFor="affiliate-terms" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                        Estou ciente do regulamento do programa
+                      </label>
+                    </div>
+                  </Card>
+
                   <Button 
                     onClick={activateAffiliate} 
-                    disabled={activating}
+                    disabled={activating || !acceptedAffiliateTerms}
                     className="w-full gradient-primary text-primary-foreground text-base h-12"
                   >
                     {activating ? 'Ativando...' : '🚀 Quero ser Afiliado'}
@@ -550,110 +647,6 @@ const Referral = () => {
                   </Card>
                 </motion.div>
 
-                {/* Regulamento do Programa de Afiliados */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}>
-                  <Card className="p-6 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 dark:border-amber-800/50">
-                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <ScrollText className="w-5 h-5 text-primary" />
-                      📜 Regulamento do Programa
-                    </h3>
-                    <Accordion type="multiple" className="w-full">
-                      <AccordionItem value="participacao">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> 1️⃣ Quem pode participar</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>Qualquer usuário maior de 18 anos pode se tornar afiliado.</p>
-                          <p>Ao participar, o afiliado concorda com todas as regras descritas neste regulamento.</p>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="como-funciona">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Link2 className="w-4 h-4 text-primary" /> 2️⃣ Como funciona a afiliação</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>O afiliado recebe um link e/ou código exclusivo para divulgação.</p>
-                          <p>Toda venda realizada por meio desse link/código será automaticamente vinculada ao afiliado.</p>
-                          <p>A comissão é válida apenas para vendas confirmadas e aprovadas.</p>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="prazo">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> 4️⃣ Prazo de liberação</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>A comissão fica pendente até a confirmação do pagamento.</p>
-                          <p>Após a confirmação, a comissão será liberada em até 3 dias corridos.</p>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="pagamento">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /> 5️⃣ Pagamento</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>O pagamento é feito exclusivamente via Pix, para a chave cadastrada no app.</p>
-                          <p>Valor mínimo para saque: <strong className="text-foreground">R$ 50,00</strong>.</p>
-                          <p>Após a solicitação, o pagamento será realizado em até 2 dias úteis.</p>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="responsabilidades">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> 6️⃣ Responsabilidades do afiliado</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>Divulgar o produto de forma ética e verdadeira.</p>
-                          <p>Não utilizar promessas falsas, linguagem enganosa ou informações não autorizadas.</p>
-                          <p>Não se passar por representante oficial, suporte ou equipe do app.</p>
-                          <p>Não realizar spam, anúncios enganosos ou práticas abusivas.</p>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="proibicoes">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><Ban className="w-4 h-4 text-destructive" /> 7️⃣ Proibições</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>É proibido:</p>
-                          <ul className="list-disc pl-4 space-y-1">
-                            <li>Comprar o produto usando o próprio link de afiliado.</li>
-                            <li>Criar contas falsas para gerar comissão.</li>
-                            <li>Utilizar tráfego fraudulento, bots ou qualquer meio ilícito.</li>
-                            <li>Copiar ou modificar materiais oficiais sem autorização.</li>
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="penalidades">
-                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                          <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-destructive" /> 8️⃣ Penalidades</span>
-                        </AccordionTrigger>
-                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
-                          <p>Em caso de descumprimento das regras, o afiliado poderá:</p>
-                          <ul className="list-disc pl-4 space-y-1">
-                            <li>Ter comissões canceladas</li>
-                            <li>Ter a conta suspensa ou encerrada</li>
-                            <li>Ser removido do programa sem aviso prévio</li>
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                    </Accordion>
-                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-amber-200/50 dark:border-amber-800/50">
-                      <Checkbox
-                        id="affiliate-terms"
-                        checked={acceptedAffiliateTerms}
-                        onCheckedChange={(checked) => setAcceptedAffiliateTerms(checked === true)}
-                      />
-                      <label htmlFor="affiliate-terms" className="text-sm font-medium text-foreground cursor-pointer select-none">
-                        Estou ciente do regulamento do programa
-                      </label>
-                    </div>
-                  </Card>
-                </motion.div>
 
                 {/* Sales History */}
                 {sales.length > 0 && (
