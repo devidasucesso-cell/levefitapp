@@ -10,13 +10,44 @@ import { storefrontApiRequest, STOREFRONT_PRODUCTS_QUERY } from '@/lib/shopify';
 import { toast } from 'sonner';
 import Navigation from '@/components/Navigation';
 import { ReservationDialog } from '@/components/ReservationDialog';
+import { PaymentChoiceDialog } from '@/components/PaymentChoiceDialog';
 import { ProductImageCarousel, getKitImages } from '@/components/ProductImageCarousel';
+
+const PIX_CODES: Record<string, { code: string; amount: string }> = {
+  '1 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406197.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521ijG7D3PyjYf9Rcc7athiv6304720F',
+    amount: '197,00',
+  },
+  '3 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406397.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521T7yyFq4m0DDTZGn7athiv6304AEDE',
+    amount: '397,00',
+  },
+  '5 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406597.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521KCxNwZ1Nj4tt3UT7athiv630496F5',
+    amount: '597,00',
+  },
+  'avulso': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406135.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521X68eRj5W0U7fIEr7athiv6304B810',
+    amount: '135,00',
+  },
+};
+
+function getPixForProduct(title: string) {
+  const lower = title.toLowerCase();
+  if (lower.includes('avulso') || lower.includes('sem acompanhamento')) return PIX_CODES['avulso'];
+  if (lower.includes('5 pote')) return PIX_CODES['5 pote'];
+  if (lower.includes('3 pote')) return PIX_CODES['3 pote'];
+  if (lower.includes('1 pote')) return PIX_CODES['1 pote'];
+  return null;
+}
 
 const Store = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationProduct, setReservationProduct] = useState('');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ShopifyProduct | null>(null);
   const navigate = useNavigate();
   const addItem = useCartStore(state => state.addItem);
   const isCartLoading = useCartStore(state => state.isLoading);
@@ -201,20 +232,6 @@ const Store = () => {
                             Reservar o meu
                           </Button>
                         </>
-                      ) : (product.node.title.toLowerCase().includes('avulso') || product.node.title.toLowerCase().includes('sem acompanhamento')) ? (
-                        <>
-                          <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
-                          <Button
-                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/product/${product.node.handle}`);
-                            }}
-                          >
-                            Pagar via PIX
-                          </Button>
-                        </>
                       ) : (
                         <>
                           <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
@@ -223,22 +240,11 @@ const Store = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/product/${product.node.handle}`);
+                              setSelectedProduct(product);
+                              setPaymentDialogOpen(true);
                             }}
                           >
-                            Pagar via PIX
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="w-full mt-1 text-xs h-8"
-                            size="sm"
-                            disabled={isCartLoading}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAddToCart(product);
-                            }}
-                          >
-                            Cartão/Boleto
+                            Comprar
                           </Button>
                         </>
                       )}
@@ -251,6 +257,22 @@ const Store = () => {
         )}
       </div>
       <ReservationDialog open={reservationOpen} onOpenChange={setReservationOpen} productTitle={reservationProduct} />
+      {selectedProduct && (() => {
+        const pix = getPixForProduct(selectedProduct.node.title);
+        const variant = selectedProduct.node.variants.edges[0]?.node;
+        return (
+          <PaymentChoiceDialog
+            open={paymentDialogOpen}
+            onOpenChange={setPaymentDialogOpen}
+            productTitle={selectedProduct.node.title}
+            price={variant?.price.amount || '0'}
+            pixCode={pix?.code || null}
+            pixAmount={pix?.amount || null}
+            onCartPayment={() => handleAddToCart(selectedProduct)}
+            isCartLoading={isCartLoading}
+          />
+        );
+      })()}
       <Navigation />
     </div>
   );
