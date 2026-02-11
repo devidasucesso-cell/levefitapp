@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.create-reservation]
 verify_jwt = false
+
+[functions.use-wallet-balance]
+verify_jwt = false

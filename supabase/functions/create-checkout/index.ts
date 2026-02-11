@@ -26,8 +26,8 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    // Parse cart items and affiliate code from request body
-    const { items, affiliate_code } = await req.json();
+    // Parse cart items, affiliate code, and wallet discount from request body
+    const { items, affiliate_code, wallet_discount } = await req.json();
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error("No items provided");
     }
@@ -44,18 +44,28 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Build line items dynamically from cart data
-    const lineItems = items.map((item: { title: string; price: number; quantity: number; image?: string }) => ({
-      price_data: {
-        currency: "brl",
-        product_data: {
-          name: item.title,
-          ...(item.image ? { images: [item.image] } : {}),
+    // Calculate wallet discount distribution across items
+    const walletDiscountAmount = wallet_discount ? parseFloat(wallet_discount) : 0;
+    const itemsTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+    const discountRatio = walletDiscountAmount > 0 ? walletDiscountAmount / itemsTotal : 0;
+
+    // Build line items dynamically from cart data (applying wallet discount proportionally)
+    const lineItems = items.map((item: { title: string; price: number; quantity: number; image?: string }) => {
+      const discountedPrice = walletDiscountAmount > 0
+        ? Math.max(0, item.price - (item.price * discountRatio))
+        : item.price;
+      return {
+        price_data: {
+          currency: "brl",
+          product_data: {
+            name: item.title,
+            ...(item.image ? { images: [item.image] } : {}),
+          },
+          unit_amount: Math.round(discountedPrice * 100),
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
 
     const origin = req.headers.get("origin") || "https://levefitapp.lovable.app";
 
@@ -114,6 +124,12 @@ serve(async (req) => {
     // Attach affiliate code if present
     if (affiliate_code) {
       sessionParams.metadata.affiliate_code = affiliate_code;
+    }
+
+    // Attach wallet discount metadata for webhook processing
+    if (walletDiscountAmount > 0) {
+      sessionParams.metadata.wallet_discount = walletDiscountAmount.toString();
+      sessionParams.metadata.wallet_user_id = user.id;
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
