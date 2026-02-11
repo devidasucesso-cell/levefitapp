@@ -45,6 +45,38 @@ async function sendPaymentConfirmationEmail(email: string, amountTotal: number) 
     console.error("[STRIPE-WEBHOOK] Failed to send email:", err);
   }
 }
+function getCommissionRate(monthlySales: number, kitType: string): number {
+  // Tiered commission rates based on monthly sales volume and kit type
+  if (monthlySales >= 31) {
+    // Level 3 - Avançado
+    if (kitType === "kit5") return 0.45;
+    if (kitType === "kit3") return 0.40;
+    return 0.35; // kit1
+  } else if (monthlySales >= 11) {
+    // Level 2 - Intermediário
+    if (kitType === "kit5") return 0.40;
+    if (kitType === "kit3") return 0.35;
+    return 0.30; // kit1
+  } else {
+    // Level 1 - Iniciante
+    if (kitType === "kit5") return 0.35;
+    if (kitType === "kit3") return 0.30;
+    return 0.25; // kit1
+  }
+}
+
+async function getMonthlyConfirmedSales(supabaseAdmin: any, affiliateId: string): Promise<number> {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count } = await supabaseAdmin
+    .from("affiliate_sales")
+    .select("id", { count: "exact", head: true })
+    .eq("affiliate_id", affiliateId)
+    .eq("status", "paid")
+    .gte("created_at", startOfMonth);
+  return count ?? 0;
+}
+
 async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Checkout.Session) {
   const affiliateCode = session.metadata?.affiliate_code;
   if (!affiliateCode) return;
@@ -52,7 +84,8 @@ async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Ch
   const amountTotal = session.amount_total ?? 0;
   if (amountTotal <= 0) return;
 
-  console.log(`[STRIPE-WEBHOOK] Processing affiliate commission for code: ${affiliateCode}`);
+  const kitType = session.metadata?.kit_type || "kit1";
+  console.log(`[STRIPE-WEBHOOK] Processing affiliate commission for code: ${affiliateCode}, kit: ${kitType}`);
 
   try {
     // Find affiliate by code
@@ -80,8 +113,13 @@ async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Ch
       return;
     }
 
+    // Get monthly sales count to determine level
+    const monthlySales = await getMonthlyConfirmedSales(supabaseAdmin, affiliate.id);
+    const commissionRate = getCommissionRate(monthlySales, kitType);
+
     const saleAmount = amountTotal / 100;
-    const commissionAmount = saleAmount * 0.25;
+    const commissionAmount = saleAmount * commissionRate;
+    console.log(`[STRIPE-WEBHOOK] Monthly sales: ${monthlySales}, rate: ${commissionRate * 100}%, commission: R$${commissionAmount.toFixed(2)}`);
 
     // Insert affiliate sale
     await supabaseAdmin.from("affiliate_sales").insert({
@@ -121,7 +159,7 @@ async function processAffiliateCommission(supabaseAdmin: any, session: Stripe.Ch
         user_id: affiliate.user_id,
         amount: commissionAmount,
         type: "affiliate_commission",
-        description: `Comissão de venda (25%) - R$ ${saleAmount.toFixed(2)}`,
+        description: `Comissão de venda (${(commissionRate * 100).toFixed(0)}%) - R$ ${saleAmount.toFixed(2)}`,
       });
     }
 

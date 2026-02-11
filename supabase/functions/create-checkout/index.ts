@@ -92,6 +92,12 @@ serve(async (req) => {
         ];
 
     // Create Checkout Session
+    // Determine kit type from items total
+    const itemsTotal = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
+    let kitType = "kit1";
+    if (itemsTotal >= 500) kitType = "kit5";
+    else if (itemsTotal >= 300) kitType = "kit3";
+
     const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -102,7 +108,7 @@ serve(async (req) => {
       shipping_options: shippingOptions,
       success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/store`,
-      metadata: {},
+      metadata: { kit_type: kitType },
     };
 
     // Attach affiliate code if present
