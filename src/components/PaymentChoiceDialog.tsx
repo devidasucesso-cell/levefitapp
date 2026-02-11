@@ -70,9 +70,6 @@ export const PaymentChoiceDialog = ({
                 )}
                 Pagar com Cartão/Boleto
               </Button>
-              <Button onClick={handleClose} variant="ghost" size="sm" className="text-muted-foreground">
-                Não, pagar depois
-              </Button>
             </div>
           </div>
         </DialogContent>
