@@ -154,6 +154,8 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          pix_key: string | null
+          pix_key_type: string | null
           total_commission: number | null
           total_sales: number | null
           user_id: string
@@ -163,6 +165,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           total_commission?: number | null
           total_sales?: number | null
           user_id: string
@@ -172,6 +176,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           total_commission?: number | null
           total_sales?: number | null
           user_id?: string
@@ -357,6 +363,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      pix_withdrawals: {
+        Row: {
+          admin_notes: string | null
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          pix_key: string
+          pix_key_type: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          pix_key: string
+          pix_key_type: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          pix_key?: string
+          pix_key_type?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pix_withdrawals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

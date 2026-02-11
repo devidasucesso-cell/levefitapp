@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Gift, Copy, Share2, Check, Users, Star, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
@@ -20,12 +22,17 @@ const Referral = () => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [copiedAff, setCopiedAff] = useState(false);
+  const [pixKeyType, setPixKeyType] = useState('');
+  const [pixKey, setPixKey] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [savingPix, setSavingPix] = useState(false);
+  const [requestingWithdrawal, setRequestingWithdrawal] = useState(false);
   const { 
     balance, referrals, approvedReferrals, pendingReferrals, convertedReferrals,
     loading, referralCode, referralLink, transactions,
     showCreditDialog, newCreditAmount, dismissCreditDialog
   } = useWallet();
-  const { affiliate, sales, loading: affLoading, activating, activateAffiliate, affiliateLink } = useAffiliate();
+  const { affiliate, sales, withdrawals, loading: affLoading, activating, activateAffiliate, affiliateLink, savePixKey, requestWithdrawal } = useAffiliate();
 
   const referralMessage = `🌿 Garanta seu LeveFit com 10% de desconto! Use meu código ${referralCode} na hora da compra. Acesse: ${referralLink}`;
 
@@ -360,6 +367,125 @@ const Referral = () => {
                     )}
                   </Card>
                 </motion.div>
+
+                {/* Pix Key Registration */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }}>
+                  <Card className="p-6 bg-card">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CreditCard className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Dados Pix para Saque</h3>
+                    </div>
+                    {affiliate.pix_key ? (
+                      <div className="space-y-2">
+                        <div className="bg-secondary rounded-lg p-3">
+                          <p className="text-xs text-muted-foreground">Tipo: <span className="font-medium text-foreground">{affiliate.pix_key_type === 'cpf' ? 'CPF' : affiliate.pix_key_type === 'email' ? 'E-mail' : affiliate.pix_key_type === 'phone' ? 'Telefone' : 'Chave Aleatória'}</span></p>
+                          <p className="text-xs text-muted-foreground mt-1">Chave: <span className="font-medium text-foreground">{affiliate.pix_key}</span></p>
+                        </div>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => {
+                          setPixKeyType(affiliate.pix_key_type || '');
+                          setPixKey('');
+                        }}>
+                          Alterar chave Pix
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <Select value={pixKeyType} onValueChange={setPixKeyType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tipo de chave Pix" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cpf">CPF</SelectItem>
+                            <SelectItem value="email">E-mail</SelectItem>
+                            <SelectItem value="phone">Telefone</SelectItem>
+                            <SelectItem value="random">Chave Aleatória</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder={pixKeyType === 'cpf' ? '000.000.000-00' : pixKeyType === 'email' ? 'seu@email.com' : pixKeyType === 'phone' ? '(00) 00000-0000' : 'Cole sua chave aleatória'}
+                          value={pixKey}
+                          onChange={(e) => setPixKey(e.target.value)}
+                          maxLength={100}
+                        />
+                        <Button
+                          className="w-full gradient-primary text-primary-foreground"
+                          disabled={!pixKeyType || !pixKey.trim() || savingPix}
+                          onClick={async () => {
+                            if (!pixKeyType || !pixKey.trim()) return;
+                            setSavingPix(true);
+                            await savePixKey(pixKeyType, pixKey.trim());
+                            setSavingPix(false);
+                            setPixKey('');
+                          }}
+                        >
+                          {savingPix ? 'Salvando...' : 'Salvar Chave Pix'}
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
+
+                {/* Withdrawal Request */}
+                {affiliate.pix_key && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+                    <Card className="p-6 bg-card">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Banknote className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">Solicitar Saque</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Mínimo: R$ 50,00 • Disponível: <span className="font-bold text-foreground">R$ {affiliate.total_commission.toFixed(2)}</span>
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Valor (R$)"
+                          value={withdrawAmount}
+                          onChange={(e) => setWithdrawAmount(e.target.value)}
+                          min={50}
+                          step={0.01}
+                        />
+                        <Button
+                          className="gradient-primary text-primary-foreground whitespace-nowrap"
+                          disabled={!withdrawAmount || parseFloat(withdrawAmount) < 50 || requestingWithdrawal}
+                          onClick={async () => {
+                            setRequestingWithdrawal(true);
+                            const success = await requestWithdrawal(parseFloat(withdrawAmount));
+                            if (success) setWithdrawAmount('');
+                            setRequestingWithdrawal(false);
+                          }}
+                        >
+                          {requestingWithdrawal ? 'Enviando...' : 'Sacar'}
+                        </Button>
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Withdrawal History */}
+                {withdrawals.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+                    <Card className="p-6 bg-card">
+                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Banknote className="w-5 h-5 text-primary" />
+                        Histórico de Saques
+                      </h3>
+                      <div className="space-y-3">
+                        {withdrawals.map((w) => (
+                          <div key={w.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                            <div>
+                              <p className="font-medium text-foreground text-sm">R$ {w.amount.toFixed(2)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(w.requested_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            </div>
+                            {getStatusBadge(w.status)}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
 
                 {/* How it works */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
