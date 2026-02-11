@@ -28,6 +28,7 @@ import Store from "./pages/Store";
 import ProductDetail from "./pages/ProductDetail";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import { useCartSync } from "./hooks/useCartSync";
+import { FloatingCart } from "./components/FloatingCart";
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppRoutes />
+          <FloatingCart />
           <PWAInstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
