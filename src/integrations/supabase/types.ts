@@ -769,6 +769,16 @@ export type Database = {
         Args: { claiming_user_id: string; code_input: string }
         Returns: Json
       }
+      get_monthly_affiliate_ranking: {
+        Args: never
+        Returns: {
+          affiliate_code: string
+          affiliate_name: string
+          rank_position: number
+          sales_count: number
+          total_commission: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
