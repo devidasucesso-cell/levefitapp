@@ -11,7 +11,7 @@ import { useWallet } from '@/hooks/useWallet';
 
 export const CartDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isCheckingOut] = useState(false);
   const [useBalance, setUseBalance] = useState(false);
   const [isWalletPaying, setIsWalletPaying] = useState(false);
   const { items, isLoading, isSyncing, updateQuantity, removeItem, syncCart } = useCartStore();
@@ -58,38 +58,29 @@ export const CartDrawer = () => {
     }
   };
 
-  const handleCheckout = async () => {
-    setIsCheckingOut(true);
-    try {
-      const checkoutItems = items.map(item => ({
-        title: item.product.node.title,
-        price: parseFloat(item.price.amount),
-        quantity: item.quantity,
-        image: item.product.node.images?.edges?.[0]?.node?.url || undefined,
-      }));
+  const getMercadoPagoLinkForCart = (): string | null => {
+    const MERCADO_PAGO_LINKS: Record<string, string> = {
+      '5 pote': 'https://mpago.la/2LKDGgZ',
+      '3 pote': 'https://mpago.li/285vej2',
+      '1 pote': 'https://mpago.la/1zxxgv2',
+    };
+    for (const item of items) {
+      const lower = item.product.node.title.toLowerCase();
+      if (lower.includes('5 pote')) return MERCADO_PAGO_LINKS['5 pote'];
+      if (lower.includes('3 pote')) return MERCADO_PAGO_LINKS['3 pote'];
+      if (lower.includes('1 pote')) return MERCADO_PAGO_LINKS['1 pote'];
+    }
+    return null;
+  };
 
-      const affiliateCode = localStorage.getItem('aff_code') || undefined;
-
-      const body: any = { items: checkoutItems, affiliate_code: affiliateCode };
-      if (useBalance && walletDiscount > 0) {
-        body.wallet_discount = walletDiscount;
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-checkout', { body });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        setIsOpen(false);
-        setUseBalance(false);
-      } else {
-        throw new Error('URL de checkout não retornada');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast({ title: 'Erro no checkout', description: 'Não foi possível iniciar o pagamento. Tente novamente.', variant: 'destructive' });
-    } finally {
-      setIsCheckingOut(false);
+  const handleCheckout = () => {
+    const link = getMercadoPagoLinkForCart();
+    if (link) {
+      window.open(link, '_blank');
+      setIsOpen(false);
+      setUseBalance(false);
+    } else {
+      toast({ title: 'Erro', description: 'Link de pagamento não encontrado para este produto.', variant: 'destructive' });
     }
   };
 
