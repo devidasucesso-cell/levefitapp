@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard } from 'lucide-react';
+import { ArrowLeft, Gift, Copy, Share2, Check, Users, Wallet, Clock, CheckCircle2, ShoppingBag, TrendingUp, Link2, Banknote, CreditCard, ScrollText, AlertTriangle, Ban, Shield, Settings2 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
@@ -511,6 +512,110 @@ const Referral = () => {
                         </li>
                       ))}
                     </ol>
+                  </Card>
+                </motion.div>
+
+                {/* Regulamento do Programa de Afiliados */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}>
+                  <Card className="p-6 bg-card">
+                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <ScrollText className="w-5 h-5 text-primary" />
+                      📜 Regulamento do Programa
+                    </h3>
+                    <Accordion type="multiple" className="w-full">
+                      <AccordionItem value="participacao">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> 1️⃣ Quem pode participar</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Qualquer usuário maior de 18 anos pode se tornar afiliado.</p>
+                          <p>Ao participar, o afiliado concorda com todas as regras descritas neste regulamento.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="como-funciona">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Link2 className="w-4 h-4 text-primary" /> 2️⃣ Como funciona a afiliação</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>O afiliado recebe um link e/ou código exclusivo para divulgação.</p>
+                          <p>Toda venda realizada por meio desse link/código será automaticamente vinculada ao afiliado.</p>
+                          <p>A comissão é válida apenas para vendas confirmadas e aprovadas.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="prazo">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> 4️⃣ Prazo de liberação</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>A comissão fica pendente até a confirmação do pagamento.</p>
+                          <p>Após a confirmação, a comissão será liberada em até 3 dias corridos.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="pagamento">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Banknote className="w-4 h-4 text-primary" /> 5️⃣ Pagamento</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>O pagamento é feito exclusivamente via Pix, para a chave cadastrada no app.</p>
+                          <p>Valor mínimo para saque: <strong className="text-foreground">R$ 50,00</strong>.</p>
+                          <p>Após a solicitação, o pagamento será realizado em até 2 dias úteis.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="responsabilidades">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> 6️⃣ Responsabilidades do afiliado</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Divulgar o produto de forma ética e verdadeira.</p>
+                          <p>Não utilizar promessas falsas, linguagem enganosa ou informações não autorizadas.</p>
+                          <p>Não se passar por representante oficial, suporte ou equipe do app.</p>
+                          <p>Não realizar spam, anúncios enganosos ou práticas abusivas.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="proibicoes">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Ban className="w-4 h-4 text-destructive" /> 7️⃣ Proibições</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>É proibido:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            <li>Comprar o produto usando o próprio link de afiliado.</li>
+                            <li>Criar contas falsas para gerar comissão.</li>
+                            <li>Utilizar tráfego fraudulento, bots ou qualquer meio ilícito.</li>
+                            <li>Copiar ou modificar materiais oficiais sem autorização.</li>
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="penalidades">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-destructive" /> 8️⃣ Penalidades</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>Em caso de descumprimento das regras, o afiliado poderá:</p>
+                          <ul className="list-disc pl-4 space-y-1">
+                            <li>Ter comissões canceladas</li>
+                            <li>Ter a conta suspensa ou encerrada</li>
+                            <li>Ser removido do programa sem aviso prévio</li>
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="alteracoes">
+                        <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                          <span className="flex items-center gap-2"><Settings2 className="w-4 h-4 text-primary" /> 9️⃣ Alterações no programa</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-sm text-muted-foreground space-y-1">
+                          <p>O programa de afiliados pode ser alterado, suspenso ou encerrado a qualquer momento.</p>
+                          <p>Alterações serão comunicadas dentro do app.</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </Card>
                 </motion.div>
 
