@@ -539,7 +539,7 @@ const Referral = () => {
 
                 {/* Regulamento do Programa de Afiliados */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}>
-                  <Card className="p-6 bg-card">
+                  <Card className="p-6 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/50 dark:border-amber-800/50">
                     <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                       <ScrollText className="w-5 h-5 text-primary" />
                       📜 Regulamento do Programa
