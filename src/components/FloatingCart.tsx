@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { CartDrawer } from '@/components/CartDrawer';
 
-const SHOW_ON_ROUTES = ['/dashboard', '/recipes', '/detox', '/exercises', '/progress', '/store', '/referral', '/settings'];
+const SHOW_ON_ROUTES = ['/store'];
 
 export const FloatingCart = () => {
   const location = useLocation();
