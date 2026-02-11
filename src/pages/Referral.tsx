@@ -711,41 +711,6 @@ const Referral = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Wallet Balance - shared between tabs */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                  <Wallet className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Minha Carteira</h3>
-                  <p className="text-sm text-muted-foreground">Saldo disponível</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">R$ {balance.toFixed(2)}</p>
-              </div>
-            </div>
-
-            {transactions.length > 0 && (
-              <div className="border-t border-green-200 dark:border-green-800 pt-4 mt-4">
-                <p className="text-sm font-medium text-foreground mb-2">Últimas transações</p>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {transactions.slice(0, 3).map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{tx.description || 'Crédito de indicação'}</span>
-                      <span className={tx.amount > 0 ? 'text-green-600' : 'text-red-600'}>
-                        {tx.amount > 0 ? '+' : ''}R$ {tx.amount.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-        </motion.div>
 
       </div>
 
