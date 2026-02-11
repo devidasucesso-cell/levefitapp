@@ -12,6 +12,7 @@ import WaterReminder from '@/components/WaterReminder';
 import TreatmentReminder from '@/components/TreatmentReminder';
 import DailyDietSuggestion from '@/components/DailyDietSuggestion';
 import DashboardExerciseSuggestion from '@/components/DashboardExerciseSuggestion';
+import AffiliateRanking from '@/components/AffiliateRanking';
 import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import NotificationReminderBanner from '@/components/NotificationReminderBanner';
@@ -330,6 +331,9 @@ const Dashboard = () => {
             <DashboardExerciseSuggestion imcCategory={profile.imc_category as IMCCategory} />
           </motion.div>
         )}
+
+        {/* Affiliate Ranking */}
+        <AffiliateRanking />
 
       </div>
 
