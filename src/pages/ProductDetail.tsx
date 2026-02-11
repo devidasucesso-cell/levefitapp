@@ -1,12 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Loader2, ShoppingCart, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CartDrawer } from '@/components/CartDrawer';
 import { useCartStore } from '@/stores/cartStore';
 import { storefrontApiRequest, STOREFRONT_PRODUCT_BY_HANDLE_QUERY, ShopifyProduct } from '@/lib/shopify';
 import { toast } from 'sonner';
+import { PixPaymentDialog } from '@/components/PixPaymentDialog';
+
+const PIX_CODES: Record<string, { code: string; amount: string }> = {
+  '1 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406197.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521ijG7D3PyjYf9Rcc7athiv6304720F',
+    amount: '197,00',
+  },
+  '3 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406397.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521T7yyFq4m0DDTZGn7athiv6304AEDE',
+    amount: '397,00',
+  },
+  '5 pote': {
+    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406597.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521KCxNwZ1Nj4tt3UT7athiv630496F5',
+    amount: '597,00',
+  },
+};
+
+function getPixForProduct(title: string) {
+  const lower = title.toLowerCase();
+  if (lower.includes('5 pote')) return PIX_CODES['5 pote'];
+  if (lower.includes('3 pote')) return PIX_CODES['3 pote'];
+  if (lower.includes('1 pote')) return PIX_CODES['1 pote'];
+  return null;
+}
 
 const ProductDetail = () => {
   const { handle } = useParams<{ handle: string }>();
@@ -15,6 +39,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [pixOpen, setPixOpen] = useState(false);
   const addItem = useCartStore(state => state.addItem);
   const isCartLoading = useCartStore(state => state.isLoading);
 
@@ -173,8 +198,30 @@ const ProductDetail = () => {
               </>
             )}
           </Button>
+
+          {/* PIX Payment */}
+          {getPixForProduct(product.title) && (
+            <Button
+              variant="outline"
+              className="w-full h-14 text-lg"
+              onClick={() => setPixOpen(true)}
+            >
+              <QrCode className="w-5 h-5 mr-2" />
+              Pagar via PIX
+            </Button>
+          )}
         </div>
       </div>
+
+      {product && getPixForProduct(product.title) && (
+        <PixPaymentDialog
+          open={pixOpen}
+          onOpenChange={setPixOpen}
+          pixCode={getPixForProduct(product.title)!.code}
+          amount={getPixForProduct(product.title)!.amount}
+          productTitle={product.title}
+        />
+      )}
     </div>
   );
 };
