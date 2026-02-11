@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,12 +46,28 @@ interface Referral {
   referrer_name?: string;
 }
 
+interface PixWithdrawal {
+  id: string;
+  user_id: string;
+  affiliate_id: string;
+  amount: number;
+  pix_key_type: string;
+  pix_key: string;
+  status: string;
+  admin_notes: string | null;
+  requested_at: string;
+  reviewed_at: string | null;
+  user_name?: string;
+  affiliate_code?: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [withdrawals, setWithdrawals] = useState<PixWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCode, setNewCode] = useState('');
   const [creating, setCreating] = useState(false);
@@ -72,7 +88,7 @@ const Admin = () => {
   }, [isAdmin, authLoading, navigate]);
 
   const fetchData = async () => {
-    await Promise.all([fetchCodes(), fetchReferrals()]);
+    await Promise.all([fetchCodes(), fetchReferrals(), fetchWithdrawals()]);
     setLoading(false);
   };
 
@@ -151,6 +167,80 @@ const Admin = () => {
       }
     } catch (error) {
       console.error('Error fetching referrals:', error);
+    }
+  };
+
+  const fetchWithdrawals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pix_withdrawals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const userIds = [...new Set(data.map((w: any) => w.user_id))];
+        const affIds = [...new Set(data.map((w: any) => w.affiliate_id))];
+
+        let userNames: Record<string, string> = {};
+        let affCodes: Record<string, string> = {};
+
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
+          if (profiles) userNames = profiles.reduce((acc: any, p: any) => { acc[p.user_id] = p.name; return acc; }, {});
+        }
+        if (affIds.length > 0) {
+          const { data: affiliates } = await supabase.from('affiliates').select('id, affiliate_code').in('id', affIds);
+          if (affiliates) affCodes = affiliates.reduce((acc: any, a: any) => { acc[a.id] = a.affiliate_code; return acc; }, {});
+        }
+
+        setWithdrawals(data.map((w: any) => ({
+          ...w,
+          user_name: userNames[w.user_id] || 'Usuário',
+          affiliate_code: affCodes[w.affiliate_id] || '',
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+    }
+  };
+
+  const approveWithdrawal = async (withdrawalId: string) => {
+    setApprovingId(withdrawalId);
+    try {
+      const { error } = await supabase
+        .from('pix_withdrawals')
+        .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+        .eq('id', withdrawalId);
+
+      if (error) throw error;
+      toast({ title: 'Saque aprovado!', description: 'Faça a transferência Pix manualmente.' });
+      fetchWithdrawals();
+    } catch (error) {
+      console.error('Error approving withdrawal:', error);
+      toast({ title: 'Erro', description: 'Não foi possível aprovar o saque.', variant: 'destructive' });
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const rejectWithdrawal = async (withdrawalId: string) => {
+    setApprovingId(withdrawalId);
+    try {
+      const { error } = await supabase
+        .from('pix_withdrawals')
+        .update({ status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+        .eq('id', withdrawalId);
+
+      if (error) throw error;
+      toast({ title: 'Saque rejeitado' });
+      fetchWithdrawals();
+    } catch (error) {
+      console.error('Error rejecting withdrawal:', error);
+      toast({ title: 'Erro', description: 'Não foi possível rejeitar o saque.', variant: 'destructive' });
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -435,10 +525,14 @@ const Admin = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-6">
         <Tabs defaultValue="referrals" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="referrals" className="flex items-center gap-2">
               <Gift className="w-4 h-4" />
               Indicações
+            </TabsTrigger>
+            <TabsTrigger value="withdrawals" className="flex items-center gap-2">
+              <Banknote className="w-4 h-4" />
+              Saques
             </TabsTrigger>
             <TabsTrigger value="codes" className="flex items-center gap-2">
               <Key className="w-4 h-4" />
@@ -644,6 +738,112 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </motion.div>
+          </TabsContent>
+
+          {/* Withdrawals Tab */}
+          <TabsContent value="withdrawals" className="space-y-6">
+            {(() => {
+              const pendingW = withdrawals.filter(w => w.status === 'pending');
+              const processedW = withdrawals.filter(w => w.status !== 'pending');
+              return (
+                <>
+                  {/* Pending Withdrawals */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-amber-500" />
+                          Saques Pendentes ({pendingW.length})
+                        </CardTitle>
+                        <CardDescription>Aprovar ou rejeitar solicitações de saque via Pix</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {pendingW.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">Nenhum saque pendente</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {pendingW.map((w) => (
+                              <div key={w.id} className="border rounded-lg p-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-semibold text-foreground">{w.user_name}</p>
+                                    <p className="text-xs text-muted-foreground">Código: {w.affiliate_code}</p>
+                                  </div>
+                                  <p className="text-xl font-bold text-foreground">R$ {w.amount.toFixed(2)}</p>
+                                </div>
+                                <div className="bg-secondary rounded-lg p-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    Tipo: <span className="font-medium text-foreground">{w.pix_key_type === 'cpf' ? 'CPF' : w.pix_key_type === 'email' ? 'E-mail' : w.pix_key_type === 'phone' ? 'Telefone' : 'Chave Aleatória'}</span>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Chave: <span className="font-medium text-foreground font-mono">{w.pix_key}</span>
+                                  </p>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Solicitado em {format(new Date(w.requested_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                </p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                    disabled={approvingId === w.id}
+                                    onClick={() => approveWithdrawal(w.id)}
+                                  >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Aprovar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="flex-1"
+                                    disabled={approvingId === w.id}
+                                    onClick={() => rejectWithdrawal(w.id)}
+                                  >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  {/* Processed Withdrawals */}
+                  {processedW.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Histórico de Saques</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {processedW.map((w) => (
+                              <div key={w.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                                <div>
+                                  <p className="font-medium text-foreground text-sm">{w.user_name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(new Date(w.requested_at), "dd/MM/yyyy", { locale: ptBR })}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-foreground text-sm">R$ {w.amount.toFixed(2)}</span>
+                                  <Badge variant={w.status === 'approved' ? 'default' : 'destructive'}>
+                                    {w.status === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )}
+                </>
+              );
+            })()}
           </TabsContent>
 
           {/* Codes Tab */}
