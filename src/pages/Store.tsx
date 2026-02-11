@@ -221,13 +221,24 @@ const Store = () => {
                           <Button
                             className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
                             size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/product/${product.node.handle}`);
+                            }}
+                          >
+                            Pagar via PIX
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full mt-1 text-xs h-8"
+                            size="sm"
                             disabled={isCartLoading}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAddToCart(product);
                             }}
                           >
-                            Adicionar
+                            Cartão/Boleto
                           </Button>
                         </>
                       )}
