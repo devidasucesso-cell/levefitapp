@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText, Banknote, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Key, Plus, Check, X, Shield, Loader2, Copy, Users, Gift, Wallet, DollarSign, CheckCircle2, Clock, FileText, Banknote, TrendingUp, Bell, Send } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { getCommissionRates, getAffiliateLevel } from '@/hooks/useAffiliate';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,39 @@ const Admin = () => {
   const [saleCustomerEmail, setSaleCustomerEmail] = useState('');
   const [saleOrderId, setSaleOrderId] = useState('');
   const [registeringSale, setRegisteringSale] = useState(false);
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifBody, setNotifBody] = useState('');
+  const [sendingNotif, setSendingNotif] = useState(false);
+
+  const sendBroadcastNotification = async () => {
+    if (!notifTitle.trim() || !notifBody.trim()) {
+      toast({ title: 'Preencha título e mensagem', variant: 'destructive' });
+      return;
+    }
+    setSendingNotif(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          type: 'custom',
+          title: notifTitle.trim(),
+          body: notifBody.trim(),
+          broadcast: true,
+        },
+      });
+      if (error) throw error;
+      toast({
+        title: 'Notificação enviada! 🔔',
+        description: `Enviada para ${data?.sent || 0} dispositivos.`,
+      });
+      setNotifTitle('');
+      setNotifBody('');
+    } catch (err) {
+      console.error('Error sending broadcast:', err);
+      toast({ title: 'Erro ao enviar notificação', variant: 'destructive' });
+    } finally {
+      setSendingNotif(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -661,24 +695,28 @@ const Admin = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-6">
         <Tabs defaultValue="affiliates" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+           <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="affiliates" className="flex items-center gap-1 text-xs">
               <TrendingUp className="w-4 h-4" />
               Afiliados
             </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-2">
+            <TabsTrigger value="referrals" className="flex items-center gap-1 text-xs">
               <Gift className="w-4 h-4" />
               Indicações
             </TabsTrigger>
-            <TabsTrigger value="withdrawals" className="flex items-center gap-2">
+            <TabsTrigger value="withdrawals" className="flex items-center gap-1 text-xs">
               <Banknote className="w-4 h-4" />
               Saques
             </TabsTrigger>
-            <TabsTrigger value="codes" className="flex items-center gap-2">
+            <TabsTrigger value="codes" className="flex items-center gap-1 text-xs">
               <Key className="w-4 h-4" />
               Códigos
             </TabsTrigger>
-          </TabsList>
+            <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs">
+              <Bell className="w-4 h-4" />
+              Notificar
+            </TabsTrigger>
+           </TabsList>
 
           {/* Affiliates Tab */}
           <TabsContent value="affiliates" className="space-y-6">
@@ -1323,6 +1361,67 @@ const Admin = () => {
                       </Table>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5" />
+                    Enviar Notificação para Todos
+                  </CardTitle>
+                  <CardDescription>
+                    Envie uma notificação push personalizada para todos os usuários com notificações ativas.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Título</label>
+                    <Input
+                      placeholder="Ex: 🎉 Novidade no Leve Fit!"
+                      value={notifTitle}
+                      onChange={(e) => setNotifTitle(e.target.value)}
+                      maxLength={60}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{notifTitle.length}/60 caracteres</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Mensagem</label>
+                    <Textarea
+                      placeholder="Ex: Confira as novas receitas disponíveis no app!"
+                      value={notifBody}
+                      onChange={(e) => setNotifBody(e.target.value)}
+                      maxLength={200}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{notifBody.length}/200 caracteres</p>
+                  </div>
+
+                  {notifTitle && notifBody && (
+                    <div className="p-4 bg-muted rounded-xl">
+                      <p className="text-xs text-muted-foreground mb-2">Prévia:</p>
+                      <p className="font-semibold text-sm">{notifTitle}</p>
+                      <p className="text-sm text-muted-foreground">{notifBody}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={sendBroadcastNotification}
+                    disabled={sendingNotif || !notifTitle.trim() || !notifBody.trim()}
+                    className="w-full gradient-primary text-primary-foreground h-12"
+                  >
+                    {sendingNotif ? (
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    ) : (
+                      <Send className="w-5 h-5 mr-2" />
+                    )}
+                    {sendingNotif ? 'Enviando...' : 'Enviar para Todos'}
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>
