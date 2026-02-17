@@ -427,6 +427,7 @@ export type Database = {
           imc_category: string | null
           is_approved: boolean | null
           kit_type: string | null
+          last_active_at: string | null
           name: string
           onboarding_completed: boolean | null
           push_prompt_shown: boolean | null
@@ -446,6 +447,7 @@ export type Database = {
           imc_category?: string | null
           is_approved?: boolean | null
           kit_type?: string | null
+          last_active_at?: string | null
           name: string
           onboarding_completed?: boolean | null
           push_prompt_shown?: boolean | null
@@ -465,6 +467,7 @@ export type Database = {
           imc_category?: string | null
           is_approved?: boolean | null
           kit_type?: string | null
+          last_active_at?: string | null
           name?: string
           onboarding_completed?: boolean | null
           push_prompt_shown?: boolean | null
