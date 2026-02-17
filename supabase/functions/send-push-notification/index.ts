@@ -13,6 +13,7 @@ interface PushNotificationRequest {
   body?: string;
   tag?: string;
   url?: string;
+  broadcast?: boolean;
 }
 
 // Helper to encode to base64url
@@ -188,13 +189,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { type, userId, title: customTitle, body: customBody, tag: customTag, url: customUrl }: PushNotificationRequest = await req.json();
-    console.log('Notification request:', { type, userId, authenticatedUserId });
+    const { type, userId, title: customTitle, body: customBody, tag: customTag, url: customUrl, broadcast }: PushNotificationRequest = await req.json();
+    console.log('Notification request:', { type, userId, authenticatedUserId, broadcast });
 
     // Determine target user - prefer userId from body, fallback to authenticated user
     const targetUserId = userId || authenticatedUserId;
     
-    if (!targetUserId && (type === 'test' || type === 'custom')) {
+    if (!targetUserId && !broadcast && (type === 'test' || type === 'custom')) {
       console.error('No user ID available for notification');
       return new Response(
         JSON.stringify({ error: 'User ID required', sent: 0 }),
@@ -212,7 +213,17 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     if (type === 'custom') {
-      targetUserIds = [targetUserId!];
+      if (broadcast) {
+        // Broadcast to all users with push subscriptions
+        const { data: allSubs, error: allSubsError } = await supabase
+          .from('push_subscriptions')
+          .select('user_id');
+        if (allSubsError) throw allSubsError;
+        targetUserIds = [...new Set(allSubs?.map(s => s.user_id) || [])];
+        console.log(`Broadcasting custom notification to ${targetUserIds.length} users`);
+      } else {
+        targetUserIds = [targetUserId!];
+      }
       notificationPayload = {
         title: customTitle || 'LeveFit',
         body: customBody || '',
