@@ -1,29 +1,42 @@
 
 
-# Tela de Escolha: Afiliado ou Indicar
+# Rastreamento de Ultimo Acesso dos Usuarios
 
-## Resumo
+## O que sera feito
 
-Adicionar uma tela de escolha inicial na pagina `/referral` onde o usuario decide se quer ser **Afiliado** ou **Indicar amigos**. Depois de escolher, apenas a secao correspondente aparece e a outra some completamente.
+Adicionar uma funcionalidade no painel administrativo que mostra quando cada usuario utilizou o app pela ultima vez, com data e hora do ultimo acesso.
 
 ## Como vai funcionar
 
-1. Ao abrir a pagina `/referral`, o usuario vera dois cards grandes lado a lado (ou empilhados no mobile):
-   - **Indicar Amigos** - com icone de presente e descricao "Ganhe R$25 por cada amigo que comprar"
-   - **Ser Afiliado** - com icone de loja e descricao "Ganhe de 25% a 45% de comissao por venda"
+1. **Nova coluna no banco de dados**: Adicionar um campo `last_active_at` na tabela `profiles` que sera atualizado automaticamente toda vez que o usuario abrir o app.
 
-2. Ao clicar em uma opcao, a tela de escolha desaparece e apenas o conteudo da opcao selecionada e exibido (sem tabs).
+2. **Atualizacao automatica**: Quando o usuario fizer login ou abrir o app (ao carregar o perfil), o sistema atualiza o campo `last_active_at` com a data/hora atual.
 
-3. Um botao "Voltar" ou "Trocar modo" no topo permite voltar para a tela de escolha caso queira mudar.
+3. **Nova aba no Admin**: Adicionar uma aba "Usuarios" no painel administrativo com uma tabela mostrando:
+   - Nome do usuario
+   - Kit escolhido
+   - Ultimo acesso (com indicador visual: verde = hoje, amarelo = ultimos 7 dias, vermelho = inativo ha mais de 7 dias)
+   - Data de cadastro
+   - Status (aprovado ou nao)
+
+---
 
 ## Detalhes Tecnicos
 
-**Arquivo modificado:** `src/pages/Referral.tsx`
+### 1. Migracao do banco de dados
+- Adicionar coluna `last_active_at` (timestamp with time zone, nullable) na tabela `profiles`
 
-- Adicionar um estado `selectedMode: 'none' | 'referral' | 'affiliate'` iniciando como `'none'`
-- Quando `selectedMode === 'none'`: renderizar a tela de escolha com dois cards
-- Quando `selectedMode === 'referral'`: renderizar apenas o conteudo da aba "Indicar" (sem o componente Tabs)
-- Quando `selectedMode === 'affiliate'`: renderizar apenas o conteudo da aba "Afiliado" (sem o componente Tabs)
-- O header com stats se ajusta para mostrar apenas as metricas relevantes ao modo selecionado
-- Adicionar um botao discreto para trocar de modo (ex: "Trocar para Afiliado" ou "Trocar para Indicacao")
+### 2. Atualizar AuthContext (`src/contexts/AuthContext.tsx`)
+- Apos carregar o perfil com sucesso, enviar um UPDATE para `profiles` setando `last_active_at = now()`
+- Adicionar o campo ao tipo `Profile`
+
+### 3. Atualizar Admin (`src/pages/Admin.tsx`)
+- Adicionar nova aba "Usuarios" com icone `Users`
+- Buscar todos os perfis com `last_active_at`, `name`, `kit_type`, `created_at`, `is_approved`
+- Exibir tabela ordenada por ultimo acesso (mais recentes primeiro)
+- Badges coloridos indicando atividade recente
+
+### 4. Arquivos modificados
+- `src/contexts/AuthContext.tsx` - atualizar `last_active_at` e tipo Profile
+- `src/pages/Admin.tsx` - nova aba com listagem de usuarios
 
