@@ -99,6 +99,8 @@ const Admin = () => {
   const [notifTitle, setNotifTitle] = useState('');
   const [notifBody, setNotifBody] = useState('');
   const [sendingNotif, setSendingNotif] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   const sendBroadcastNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
@@ -142,8 +144,36 @@ const Admin = () => {
   }, [isAdmin, authLoading, navigate]);
 
   const fetchData = async () => {
-    await Promise.all([fetchCodes(), fetchReferrals(), fetchWithdrawals(), fetchAffiliatesList()]);
+    await Promise.all([fetchCodes(), fetchReferrals(), fetchWithdrawals(), fetchAffiliatesList(), fetchUsers()]);
     setLoading(false);
+  };
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, name, kit_type, created_at, is_approved, last_active_at')
+        .order('last_active_at', { ascending: false, nullsFirst: false });
+
+      if (error) throw error;
+      setUsersList(data || []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const getActivityBadge = (lastActiveAt: string | null) => {
+    if (!lastActiveAt) return <Badge variant="outline" className="text-muted-foreground">Nunca</Badge>;
+    const now = new Date();
+    const lastActive = new Date(lastActiveAt);
+    const diffMs = now.getTime() - lastActive.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    if (diffDays < 1) return <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">Hoje</Badge>;
+    if (diffDays < 7) return <Badge className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">{Math.floor(diffDays)}d atrás</Badge>;
+    return <Badge className="bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30">{Math.floor(diffDays)}d atrás</Badge>;
   };
 
   const fetchAffiliatesList = async () => {
@@ -694,8 +724,12 @@ const Admin = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <Tabs defaultValue="affiliates" className="space-y-6">
-           <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="users" className="space-y-6">
+           <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="users" className="flex items-center gap-1 text-xs">
+              <Users className="w-4 h-4" />
+              Usuários
+            </TabsTrigger>
             <TabsTrigger value="affiliates" className="flex items-center gap-1 text-xs">
               <TrendingUp className="w-4 h-4" />
               Afiliados
@@ -717,6 +751,70 @@ const Admin = () => {
               Notificar
             </TabsTrigger>
            </TabsList>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Usuários ({usersList.length})
+                  </CardTitle>
+                  <CardDescription>Último acesso de cada usuário no app</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {usersLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Kit</TableHead>
+                            <TableHead>Último Acesso</TableHead>
+                            <TableHead>Cadastro</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {usersList.map((u) => (
+                            <TableRow key={u.user_id}>
+                              <TableCell className="font-medium">{u.name}</TableCell>
+                              <TableCell>{u.kit_type || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1">
+                                  {getActivityBadge(u.last_active_at)}
+                                  {u.last_active_at && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {format(new Date(u.last_active_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {format(new Date(u.created_at), "dd/MM/yy", { locale: ptBR })}
+                              </TableCell>
+                              <TableCell>
+                                {u.is_approved ? (
+                                  <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">Aprovado</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground">Pendente</Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
 
           {/* Affiliates Tab */}
           <TabsContent value="affiliates" className="space-y-6">
