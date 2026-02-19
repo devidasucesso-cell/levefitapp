@@ -149,54 +149,6 @@ const getPhases = (imcCategory: IMCCategory): WeekPhase[] => {
       waterDaysGoal: 5,
       capsuleDaysGoal: 7,
     },
-    { 
-      week: 5, 
-      title: 'Intensificação', 
-      exerciseIds: isHighIMC
-        ? [...getExerciseIds(easyExercises, 15, 2), ...getExerciseIds(moderateExercises, 2, 4)]
-        : getExerciseIds(moderateExercises, 5, 6),
-      recipeIds: [`${recipePrefix}-9`, `${recipePrefix}-10`, `${recipePrefix}-24`, `${recipePrefix}-25`, `${recipePrefix}-39`, `${recipePrefix}-40`],
-      dessertIds: [`${dessertPrefix}-5`],
-      detoxIds: [`${detoxPrefix}8`, `${detoxPrefix}9`, `${detoxPrefix}21`, `${detoxPrefix}22`, `${detoxPrefix}37`, `${extraDetoxPrefix}7`, `${extraDetoxPrefix}8`],
-      waterDaysGoal: 6,
-      capsuleDaysGoal: 7,
-    },
-    { 
-      week: 6, 
-      title: 'Desafio Moderado', 
-      exerciseIds: isHighIMC
-        ? getExerciseIds(moderateExercises, 6, 6)
-        : [...getExerciseIds(moderateExercises, 11, 4), ...getExerciseIds(intenseExercises, 0, 2)],
-      recipeIds: [`${recipePrefix}-11`, `${recipePrefix}-12`, `${recipePrefix}-26`, `${recipePrefix}-27`, `${recipePrefix}-41`, `${recipePrefix}-42`],
-      dessertIds: [`${dessertPrefix}-6`],
-      detoxIds: [`${detoxPrefix}10`, `${detoxPrefix}11`, `${detoxPrefix}23`, `${detoxPrefix}24`, `${detoxPrefix}38`, `${detoxPrefix}39`, `${extraDetoxPrefix}9`, `${extraDetoxPrefix}10`],
-      waterDaysGoal: 6,
-      capsuleDaysGoal: 7,
-    },
-    { 
-      week: 7, 
-      title: 'Superação', 
-      exerciseIds: isHighIMC
-        ? getExerciseIds(moderateExercises, 12, 7)
-        : [...getExerciseIds(moderateExercises, 15, 3), ...getExerciseIds(intenseExercises, 2, 4)],
-      recipeIds: [`${recipePrefix}-13`, `${recipePrefix}-14`, `${recipePrefix}-28`, `${recipePrefix}-29`, `${recipePrefix}-43`, `${recipePrefix}-44`, `${recipePrefix}-45`],
-      dessertIds: [`${dessertPrefix}-7`],
-      detoxIds: [`${detoxPrefix}12`, `${detoxPrefix}13`, `${detoxPrefix}25`, `${detoxPrefix}26`, `${detoxPrefix}40`, `${detoxPrefix}41`, `${extraDetoxPrefix}11`],
-      waterDaysGoal: 7,
-      capsuleDaysGoal: 7,
-    },
-    { 
-      week: 8, 
-      title: 'Transformação', 
-      exerciseIds: isHighIMC
-        ? [...getExerciseIds(moderateExercises, 19, 4), ...getExerciseIds(intenseExercises, 0, 3)]
-        : getExerciseIds(intenseExercises, 6, 7),
-      recipeIds: [`${recipePrefix}-15`, `${recipePrefix}-16`, `${recipePrefix}-17`, `${recipePrefix}-30`, `${recipePrefix}-31`, `${recipePrefix}-46`, `${recipePrefix}-47`, `${recipePrefix}-48`],
-      dessertIds: [`${dessertPrefix}-7`, `${dessertPrefix}-6`, `${dessertPrefix}-5`],
-      detoxIds: [`${detoxPrefix}14`, `${detoxPrefix}15`, `${detoxPrefix}27`, `${detoxPrefix}28`, `${detoxPrefix}42`, `${detoxPrefix}43`, `${detoxPrefix}44`, `${extraDetoxPrefix}12`],
-      waterDaysGoal: 7,
-      capsuleDaysGoal: 7,
-    },
   ];
 };
 
@@ -215,7 +167,7 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
     if (!profile?.treatment_start_date) return 1;
     const startDate = parseISO(profile.treatment_start_date);
     const weeksElapsed = differenceInWeeks(new Date(), startDate);
-    return Math.min(Math.max(weeksElapsed + 1, 1), 8);
+    return Math.min(Math.max(weeksElapsed + 1, 1), 4);
   }, [profile?.treatment_start_date]);
 
   // Get the start date of each week based on treatment start
