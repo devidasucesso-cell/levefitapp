@@ -9,7 +9,7 @@ import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Area, AreaCh
 import Navigation from '@/components/Navigation';
 import WaterReminder from '@/components/WaterReminder';
 import WaterHistoryChart from '@/components/WaterHistoryChart';
-import AchievementsCard from '@/components/AchievementsCard';
+
 
 import ActivityTracker from '@/components/ActivityTracker';
 import PrizeBanner from '@/components/PrizeBanner';
@@ -107,21 +107,6 @@ const Progress = () => {
       </div>
 
       <div className="p-3 sm:p-4 -mt-4 space-y-3 sm:space-y-4 max-w-4xl mx-auto">
-        {/* Achievements Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <AchievementsCard 
-            capsuleDays={capsuleDays.length}
-            waterStreak={currentStreak}
-            totalWaterDays={totalDaysMetGoal}
-            completedRecipes={completedRecipes.filter(id => !id.startsWith('ds-')).length}
-            completedDetox={completedDetox.length}
-            completedDesserts={completedRecipes.filter(id => id.startsWith('ds-')).length}
-          />
-        </motion.div>
-
         {/* Prize Banner */}
         <PrizeBanner />
 
