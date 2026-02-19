@@ -1,42 +1,29 @@
 
-
-# Rastreamento de Ultimo Acesso dos Usuarios
+# Mover Indicacao/Afiliacao do Rodape para Configuracoes
 
 ## O que sera feito
 
-Adicionar uma funcionalidade no painel administrativo que mostra quando cada usuario utilizou o app pela ultima vez, com data e hora do ultimo acesso.
+1. **Remover o item "Indicar"** do menu de navegacao inferior (rodape), liberando espaco visual.
 
-## Como vai funcionar
+2. **Adicionar dois botoes na pagina de Configuracoes** logo apos o botao "Comprar meu Kit":
+   - **Indicacao** - leva para `/referral` no modo de indicacao
+   - **Afiliacao** - leva para `/referral` no modo de afiliacao
 
-1. **Nova coluna no banco de dados**: Adicionar um campo `last_active_at` na tabela `profiles` que sera atualizado automaticamente toda vez que o usuario abrir o app.
-
-2. **Atualizacao automatica**: Quando o usuario fizer login ou abrir o app (ao carregar o perfil), o sistema atualiza o campo `last_active_at` com a data/hora atual.
-
-3. **Nova aba no Admin**: Adicionar uma aba "Usuarios" no painel administrativo com uma tabela mostrando:
-   - Nome do usuario
-   - Kit escolhido
-   - Ultimo acesso (com indicador visual: verde = hoje, amarelo = ultimos 7 dias, vermelho = inativo ha mais de 7 dias)
-   - Data de cadastro
-   - Status (aprovado ou nao)
+Os botoes terao icones distintos (Gift para Indicacao, Users para Afiliacao) e ao clicar, salvarao o modo escolhido no `localStorage` (como ja funciona hoje) e redirecionarao direto para a pagina `/referral`.
 
 ---
 
 ## Detalhes Tecnicos
 
-### 1. Migracao do banco de dados
-- Adicionar coluna `last_active_at` (timestamp with time zone, nullable) na tabela `profiles`
+### 1. Navigation.tsx
+- Remover o item `{ path: '/referral', icon: Gift, label: 'Indicar', emoji: '' }` do array `navItems`
 
-### 2. Atualizar AuthContext (`src/contexts/AuthContext.tsx`)
-- Apos carregar o perfil com sucesso, enviar um UPDATE para `profiles` setando `last_active_at = now()`
-- Adicionar o campo ao tipo `Profile`
+### 2. Settings.tsx
+- Importar `Gift` e `Users` do lucide-react
+- Adicionar dois botoes (Cards clicaveis) entre o botao "Comprar meu Kit" e o card de dica:
+  - **Programa de Indicacao**: ao clicar, salva `localStorage.setItem('referral_mode', 'referral')` e navega para `/referral`
+  - **Programa de Afiliacao**: ao clicar, salva `localStorage.setItem('referral_mode', 'affiliate')` e navega para `/referral`
 
-### 3. Atualizar Admin (`src/pages/Admin.tsx`)
-- Adicionar nova aba "Usuarios" com icone `Users`
-- Buscar todos os perfis com `last_active_at`, `name`, `kit_type`, `created_at`, `is_approved`
-- Exibir tabela ordenada por ultimo acesso (mais recentes primeiro)
-- Badges coloridos indicando atividade recente
-
-### 4. Arquivos modificados
-- `src/contexts/AuthContext.tsx` - atualizar `last_active_at` e tipo Profile
-- `src/pages/Admin.tsx` - nova aba com listagem de usuarios
-
+### Arquivos modificados
+- `src/components/Navigation.tsx` - remover item do rodape
+- `src/pages/Settings.tsx` - adicionar dois botoes de navegacao
