@@ -345,16 +345,6 @@ const ActivityTracker = ({ completedExercises, completedRecipes, completedDetox 
         <h3 className="font-semibold text-foreground text-sm">Progresso das Fases</h3>
       </div>
       
-      {/* IMC-based recommendation tip */}
-      <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
-        <div className="flex items-start gap-2">
-          <Star className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs font-medium text-foreground">{imcRecommendation.title}</p>
-            <p className="text-xs text-muted-foreground">{imcRecommendation.tip}</p>
-          </div>
-        </div>
-      </div>
 
       <div className="space-y-3">
         {phases.map((phase) => {
