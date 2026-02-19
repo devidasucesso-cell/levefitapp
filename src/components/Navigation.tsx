@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, UtensilsCrossed, GlassWater, Dumbbell, TrendingUp, Settings, Calendar, Gift, ShoppingBag } from 'lucide-react';
+import { Home, UtensilsCrossed, GlassWater, Dumbbell, TrendingUp, Settings, Calendar, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,7 +10,6 @@ const navItems = [
   { path: '/exercises', icon: Dumbbell, label: 'Exercícios' },
   { path: '/progress', icon: TrendingUp, label: 'Evolução' },
   { path: '/store', icon: ShoppingBag, label: 'Loja' },
-  { path: '/referral', icon: Gift, label: 'Indicar', emoji: '🎁' },
   
   { path: '/settings', icon: Settings, label: 'Config' },
 ];
@@ -21,7 +20,7 @@ const Navigation = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-40 safe-area-bottom">
       <div className="flex justify-around items-center py-2 px-1 sm:px-4 max-w-2xl mx-auto">
-        {navItems.map(({ path, icon: Icon, label, emoji }) => {
+        {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
           return (
             <NavLink
@@ -34,11 +33,7 @@ const Navigation = () => {
                   : "text-muted-foreground hover:text-primary hover:bg-primary/5"
               )}
             >
-              {emoji ? (
-                <span className={cn("text-lg sm:text-xl", isActive && "animate-scale-in")}>{emoji}</span>
-              ) : (
-                <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", isActive && "animate-scale-in")} />
-              )}
+              <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", isActive && "animate-scale-in")} />
               <span className="text-[9px] sm:text-[10px] font-medium truncate max-w-[48px] sm:max-w-none">{label}</span>
             </NavLink>
           );

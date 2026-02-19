@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator, Gift, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -579,11 +579,50 @@ const Settings = () => {
           </a>
         </motion.div>
 
-        {/* Info Card */}
+        {/* Referral & Affiliate Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
+          className="grid grid-cols-2 gap-3"
+        >
+          <Card 
+            className="p-4 bg-card cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => {
+              localStorage.setItem('referral_mode', 'referral');
+              navigate('/referral');
+            }}
+          >
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm text-foreground">Indicação</h3>
+              <p className="text-xs text-muted-foreground">Indique amigos</p>
+            </div>
+          </Card>
+          <Card 
+            className="p-4 bg-card cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => {
+              localStorage.setItem('referral_mode', 'affiliate');
+              navigate('/referral');
+            }}
+          >
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+                <Users className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <h3 className="font-semibold text-sm text-foreground">Afiliação</h3>
+              <p className="text-xs text-muted-foreground">Seja afiliado</p>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
         >
           <Card className="p-4 bg-secondary/50">
             <p className="text-sm text-muted-foreground">
