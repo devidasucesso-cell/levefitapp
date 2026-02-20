@@ -1,29 +1,38 @@
 
-# Mover Indicacao/Afiliacao do Rodape para Configuracoes
+
+# Corrigir Notificacoes de Agua com Som e Vibracao
+
+## Problema Encontrado
+
+A funcao `schedule-notifications` usa uma chave VAPID **diferente** da usada no frontend e na funcao `send-push-notification`. Isso faz com que as notificacoes enviadas por essa funcao falhem, pois a assinatura VAPID nao corresponde a assinatura do navegador do usuario.
+
+- Frontend e `send-push-notification`: `BIJswByPtq...`
+- `schedule-notifications`: `BC9cm85BFH...` (ERRADA)
 
 ## O que sera feito
 
-1. **Remover o item "Indicar"** do menu de navegacao inferior (rodape), liberando espaco visual.
+### 1. Corrigir chave VAPID na funcao schedule-notifications
+- Atualizar `VAPID_PUBLIC_KEY` em `supabase/functions/schedule-notifications/index.ts` para usar a mesma chave do frontend (`BIJswByPtqkQMVr0BAso8dG3XA-4bn4hL5cn0sILvEXj9QEifo7_9cQj15dDu9v__hsWfnzRaA-JaswPxZ54xoI`)
 
-2. **Adicionar dois botoes na pagina de Configuracoes** logo apos o botao "Comprar meu Kit":
-   - **Indicacao** - leva para `/referral` no modo de indicacao
-   - **Afiliacao** - leva para `/referral` no modo de afiliacao
+### 2. Garantir vibracao e som nas notificacoes de agua
+- O service worker (`firebase-messaging-sw.js`) ja esta configurado com `vibrate: [200, 100, 200]` e `silent: false`
+- As notificacoes ja sao enviadas com `Urgency: 'high'`
+- Nenhuma alteracao necessaria no service worker
 
-Os botoes terao icones distintos (Gift para Indicacao, Users para Afiliacao) e ao clicar, salvarao o modo escolhido no `localStorage` (como ja funciona hoje) e redirecionarao direto para a pagina `/referral`.
+## Resultado esperado
+
+Apos corrigir a chave VAPID, as notificacoes de lembrete de agua serao enviadas automaticamente a cada 15 minutos (conforme o cron job ativo) para usuarios com notificacoes habilitadas, com som e vibracao do sistema.
 
 ---
 
 ## Detalhes Tecnicos
 
-### 1. Navigation.tsx
-- Remover o item `{ path: '/referral', icon: Gift, label: 'Indicar', emoji: '' }` do array `navItems`
+### Arquivo modificado
+- `supabase/functions/schedule-notifications/index.ts` - corrigir VAPID_PUBLIC_KEY na linha 10
 
-### 2. Settings.tsx
-- Importar `Gift` e `Users` do lucide-react
-- Adicionar dois botoes (Cards clicaveis) entre o botao "Comprar meu Kit" e o card de dica:
-  - **Programa de Indicacao**: ao clicar, salva `localStorage.setItem('referral_mode', 'referral')` e navega para `/referral`
-  - **Programa de Afiliacao**: ao clicar, salva `localStorage.setItem('referral_mode', 'affiliate')` e navega para `/referral`
+### Infraestrutura ja existente (sem alteracoes)
+- Cron job `water-reminder-job` roda a cada 15 minutos
+- Cron job `send-water-notifications` roda a cada 30 minutos  
+- Service worker configurado com vibracao `[200, 100, 200]` e `silent: false`
+- Urgencia `high` nos headers das notificacoes push
 
-### Arquivos modificados
-- `src/components/Navigation.tsx` - remover item do rodape
-- `src/pages/Settings.tsx` - adicionar dois botoes de navegacao
