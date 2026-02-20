@@ -94,6 +94,103 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   }
 }
 
+// HKDF helper using Web Crypto API
+async function hkdfDerive(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt, info },
+      key,
+      length * 8
+    )
+  );
+}
+
+// Web Push Encryption (RFC 8291 - aes128gcm)
+async function encryptPayload(
+  subscriberPublicKeyB64: string,
+  authSecretB64: string,
+  payload: Uint8Array
+): Promise<Uint8Array> {
+  const subscriberPublicKeyBytes = base64urlDecode(subscriberPublicKeyB64);
+  const authSecret = base64urlDecode(authSecretB64);
+
+  const localKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+  const localPublicKey = new Uint8Array(
+    await crypto.subtle.exportKey('raw', localKeyPair.publicKey)
+  );
+
+  const subscriberKey = await crypto.subtle.importKey(
+    'raw',
+    subscriberPublicKeyBytes,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+
+  const sharedSecret = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: subscriberKey },
+      localKeyPair.privateKey,
+      256
+    )
+  );
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  const keyInfoBuf = new Uint8Array([
+    ...new TextEncoder().encode('WebPush: info\0'),
+    ...subscriberPublicKeyBytes,
+    ...localPublicKey,
+  ]);
+  const ikm = await hkdfDerive(authSecret, sharedSecret, keyInfoBuf, 32);
+
+  const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0');
+  const cek = await hkdfDerive(salt, ikm, cekInfo, 16);
+
+  const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0');
+  const nonce = await hkdfDerive(salt, ikm, nonceInfo, 12);
+
+  const paddedPayload = new Uint8Array(payload.length + 1);
+  paddedPayload.set(payload);
+  paddedPayload[payload.length] = 2;
+
+  const aesKey = await crypto.subtle.importKey(
+    'raw', cek, { name: 'AES-GCM' }, false, ['encrypt']
+  );
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce },
+      aesKey,
+      paddedPayload
+    )
+  );
+
+  const rs = 4096;
+  const header = new Uint8Array(16 + 4 + 1 + localPublicKey.length);
+  header.set(salt, 0);
+  header[16] = (rs >> 24) & 0xff;
+  header[17] = (rs >> 16) & 0xff;
+  header[18] = (rs >> 8) & 0xff;
+  header[19] = rs & 0xff;
+  header[20] = localPublicKey.length;
+  header.set(localPublicKey, 21);
+
+  const result = new Uint8Array(header.length + encrypted.length);
+  result.set(header, 0);
+  result.set(encrypted, header.length);
+  return result;
+}
+
 async function sendWebPushNotification(
   subscription: { endpoint: string; p256dh: string; auth: string },
   payload: { title: string; body: string; icon?: string; tag?: string; url?: string }
@@ -118,20 +215,25 @@ async function sendWebPushNotification(
     const jwt = await createVapidJwt(audience, vapidSubject);
     console.log('VAPID JWT created successfully');
     
+    // Encrypt payload per RFC 8291
+    const payloadBytes = new TextEncoder().encode(notificationPayload);
+    const encryptedBody = await encryptPayload(subscription.p256dh, subscription.auth, payloadBytes);
+
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Content-Length': new TextEncoder().encode(notificationPayload).length.toString(),
+      'Content-Type': 'application/octet-stream',
+      'Content-Encoding': 'aes128gcm',
+      'Content-Length': encryptedBody.length.toString(),
       'TTL': '86400',
       'Urgency': 'high',
       'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
     };
 
-    console.log(`Sending push request to ${audience}...`);
+    console.log(`Sending encrypted push request to ${audience}...`);
     
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers,
-      body: notificationPayload,
+      body: encryptedBody,
     });
 
     const responseText = await response.text();

@@ -47,7 +47,112 @@ async function createVapidJwt(audience: string, subject: string): Promise<string
   return `${unsignedToken}.${base64urlEncode(new Uint8Array(signature))}`;
 }
 
-// Send push notification
+// HKDF helper using Web Crypto API
+async function hkdfDerive(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'HKDF', hash: 'SHA-256', salt, info },
+      key,
+      length * 8
+    )
+  );
+}
+
+// Web Push Encryption (RFC 8291 - aes128gcm)
+async function encryptPayload(
+  subscriberPublicKeyB64: string,
+  authSecretB64: string,
+  payload: Uint8Array
+): Promise<Uint8Array> {
+  const subscriberPublicKeyBytes = base64urlDecode(subscriberPublicKeyB64);
+  const authSecret = base64urlDecode(authSecretB64);
+
+  // Generate ephemeral ECDH key pair
+  const localKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+  const localPublicKey = new Uint8Array(
+    await crypto.subtle.exportKey('raw', localKeyPair.publicKey)
+  );
+
+  // Import subscriber's public key for ECDH
+  const subscriberKey = await crypto.subtle.importKey(
+    'raw',
+    subscriberPublicKeyBytes,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+
+  // ECDH shared secret
+  const sharedSecret = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: subscriberKey },
+      localKeyPair.privateKey,
+      256
+    )
+  );
+
+  // Generate 16-byte salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // RFC 8291 key derivation
+  const keyInfoBuf = new Uint8Array([
+    ...new TextEncoder().encode('WebPush: info\0'),
+    ...subscriberPublicKeyBytes,
+    ...localPublicKey,
+  ]);
+  const ikm = await hkdfDerive(authSecret, sharedSecret, keyInfoBuf, 32);
+
+  const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0');
+  const cek = await hkdfDerive(salt, ikm, cekInfo, 16);
+
+  const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0');
+  const nonce = await hkdfDerive(salt, ikm, nonceInfo, 12);
+
+  // Pad the payload (add delimiter \x02)
+  const paddedPayload = new Uint8Array(payload.length + 1);
+  paddedPayload.set(payload);
+  paddedPayload[payload.length] = 2;
+
+  // Encrypt with AES-128-GCM
+  const aesKey = await crypto.subtle.importKey(
+    'raw', cek, { name: 'AES-GCM' }, false, ['encrypt']
+  );
+  const encrypted = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce },
+      aesKey,
+      paddedPayload
+    )
+  );
+
+  // Build aes128gcm content: salt(16) + rs(4) + idlen(1) + keyid(65) + encrypted
+  const rs = 4096;
+  const header = new Uint8Array(16 + 4 + 1 + localPublicKey.length);
+  header.set(salt, 0);
+  header[16] = (rs >> 24) & 0xff;
+  header[17] = (rs >> 16) & 0xff;
+  header[18] = (rs >> 8) & 0xff;
+  header[19] = rs & 0xff;
+  header[20] = localPublicKey.length;
+  header.set(localPublicKey, 21);
+
+  const result = new Uint8Array(header.length + encrypted.length);
+  result.set(header, 0);
+  result.set(encrypted, header.length);
+  return result;
+}
+
+// Send push notification with RFC 8291 encryption
 async function sendPush(
   subscription: { endpoint: string; p256dh: string; auth: string },
   payload: { title: string; body: string; icon?: string; tag?: string; url?: string }
@@ -65,22 +170,28 @@ async function sendPush(
       data: { url: payload.url || '/dashboard' }
     });
 
+    // Encrypt payload per RFC 8291
+    const payloadBytes = new TextEncoder().encode(notificationPayload);
+    const encryptedBody = await encryptPayload(subscription.p256dh, subscription.auth, payloadBytes);
+
     const jwt = await createVapidJwt(audience, vapidSubject);
     
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': new TextEncoder().encode(notificationPayload).length.toString(),
+        'Content-Type': 'application/octet-stream',
+        'Content-Encoding': 'aes128gcm',
+        'Content-Length': encryptedBody.length.toString(),
         'TTL': '86400',
         'Urgency': 'high',
         'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
       },
-      body: notificationPayload,
+      body: encryptedBody,
     });
 
     if (!response.ok) {
-      console.error('Push failed:', response.status, await response.text());
+      const text = await response.text();
+      console.error('Push failed:', response.status, text);
       return false;
     }
 
@@ -185,8 +296,10 @@ const handler = async (req: Request): Promise<Response> => {
           return elapsed >= intervalMs;
         }
         
-        // First notification of the day - check if it's between 7am and 10pm
-        const hour = now.getHours();
+        // First notification of the day - check if it's between 7am and 10pm Brazil time
+        const brazilOffset = -3 * 60 * 60 * 1000;
+        const brazilNow = new Date(now.getTime() + brazilOffset);
+        const hour = brazilNow.getUTCHours();
         return hour >= 7 && hour <= 22;
       }) || [];
 
