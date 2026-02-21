@@ -396,12 +396,21 @@ const handler = async (req: Request): Promise<Response> => {
     } else if (type === 'water') {
       const now = new Date();
       
+      // Use Brazil time (UTC-3) for hour check
+      const brazilOffset = -3 * 60 * 60 * 1000;
+      const brazilNow = new Date(now.getTime() + brazilOffset);
+      const brazilHour = brazilNow.getUTCHours();
+      
+      console.log(`Water check - Brazil hour: ${brazilHour}, UTC: ${now.toISOString()}`);
+      
       const { data: usersToNotify, error: usersError } = await supabase
         .from('notification_settings')
         .select('user_id, water_interval, last_water_notification')
         .eq('water_reminder', true);
 
       if (usersError) throw usersError;
+
+      console.log(`Found ${usersToNotify?.length || 0} users with water reminder enabled`);
 
       const filtered = usersToNotify?.filter(s => {
         if (!s.water_interval) return false;
@@ -410,12 +419,15 @@ const handler = async (req: Request): Promise<Response> => {
         if (s.last_water_notification) {
           const lastNotif = new Date(s.last_water_notification).getTime();
           const elapsed = now.getTime() - lastNotif;
-          return elapsed >= intervalMs;
+          const shouldNotify = elapsed >= intervalMs;
+          if (!shouldNotify) return false;
         }
         
-        const hour = now.getHours();
-        return hour >= 7 && hour <= 22;
+        // Only send between 7am and 10pm Brazil time
+        return brazilHour >= 7 && brazilHour <= 22;
       }) || [];
+
+      console.log(`Filtered to ${filtered.length} users eligible for water notification`);
 
       targetUserIds = filtered.map(u => u.user_id);
       notificationPayload = {
@@ -623,6 +635,23 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
       }
+    }
+
+    // Update last_water_notification for water type
+    if (type === 'water' && successCount > 0) {
+      const notifiedUserIds = [...new Set(
+        (subscriptions || [])
+          .filter(s => targetUserIds.includes(s.user_id))
+          .map(s => s.user_id)
+      )];
+      
+      for (const uid of notifiedUserIds) {
+        await supabase
+          .from('notification_settings')
+          .update({ last_water_notification: new Date().toISOString() })
+          .eq('user_id', uid);
+      }
+      console.log(`Updated last_water_notification for ${notifiedUserIds.length} users`);
     }
 
     // Clean up expired subscriptions
