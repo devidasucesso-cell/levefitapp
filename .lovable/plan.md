@@ -1,38 +1,42 @@
 
+# Gravar Ativacao Permanente de Notificacoes
 
-# Corrigir Notificacoes de Agua com Som e Vibracao
+## Objetivo
 
-## Problema Encontrado
+Uma vez que o usuario ativar as notificacoes push, gravar essa ativacao no perfil e nao permitir mais a desativacao. O botao "Desativar" sera removido da interface.
 
-A funcao `schedule-notifications` usa uma chave VAPID **diferente** da usada no frontend e na funcao `send-push-notification`. Isso faz com que as notificacoes enviadas por essa funcao falhem, pois a assinatura VAPID nao corresponde a assinatura do navegador do usuario.
+## Alteracoes
 
-- Frontend e `send-push-notification`: `BIJswByPtq...`
-- `schedule-notifications`: `BC9cm85BFH...` (ERRADA)
+### 1. Adicionar campo `push_activated` na tabela `profiles`
+- Novo campo booleano `push_activated` (default `false`)
+- Quando o usuario ativar notificacoes pela primeira vez, esse campo sera marcado como `true` permanentemente
 
-## O que sera feito
+### 2. Marcar ativacao permanente ao ativar notificacoes
+- Em `usePushNotifications.ts`: apos `subscribeUser` ter sucesso, gravar `push_activated = true` no perfil do usuario
+- Em `AuthContext.tsx`: incluir `push_activated` no tipo `Profile` e na consulta de perfil
 
-### 1. Corrigir chave VAPID na funcao schedule-notifications
-- Atualizar `VAPID_PUBLIC_KEY` em `supabase/functions/schedule-notifications/index.ts` para usar a mesma chave do frontend (`BIJswByPtqkQMVr0BAso8dG3XA-4bn4hL5cn0sILvEXj9QEifo7_9cQj15dDu9v__hsWfnzRaA-JaswPxZ54xoI`)
+### 3. Remover opcao de desativar na pagina Settings
+- Em `Settings.tsx`: quando `push_activated` for `true`, mostrar apenas o status "Notificacoes ativas" sem botao de desativar
+- Manter o botao "Testar" para enviar notificacao de teste
+- Remover a logica de toggle que chamava `unsubscribeUser`
 
-### 2. Garantir vibracao e som nas notificacoes de agua
-- O service worker (`firebase-messaging-sw.js`) ja esta configurado com `vibrate: [200, 100, 200]` e `silent: false`
-- As notificacoes ja sao enviadas com `Urgency: 'high'`
-- Nenhuma alteracao necessaria no service worker
+### 4. Auto-reativar se necessario
+- Em `usePushNotifications.ts`: se o perfil tem `push_activated = true` mas o navegador nao tem subscription ativa, recriar automaticamente (ja existe logica de `autoRecreateSubscription` que sera reaproveitada)
 
-## Resultado esperado
-
-Apos corrigir a chave VAPID, as notificacoes de lembrete de agua serao enviadas automaticamente a cada 15 minutos (conforme o cron job ativo) para usuarios com notificacoes habilitadas, com som e vibracao do sistema.
+### 5. Remover banner de reativacao
+- No Dashboard: se `push_activated = true`, nao mostrar mais o banner ou prompt pedindo para ativar notificacoes, pois ja estao permanentemente ativas
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivo modificado
-- `supabase/functions/schedule-notifications/index.ts` - corrigir VAPID_PUBLIC_KEY na linha 10
+### Migracao SQL
+```sql
+ALTER TABLE profiles ADD COLUMN push_activated boolean DEFAULT false;
+```
 
-### Infraestrutura ja existente (sem alteracoes)
-- Cron job `water-reminder-job` roda a cada 15 minutos
-- Cron job `send-water-notifications` roda a cada 30 minutos  
-- Service worker configurado com vibracao `[200, 100, 200]` e `silent: false`
-- Urgencia `high` nos headers das notificacoes push
-
+### Arquivos modificados
+- `src/contexts/AuthContext.tsx` - adicionar `push_activated` ao tipo Profile e consulta
+- `src/hooks/usePushNotifications.ts` - gravar `push_activated = true` no perfil apos ativacao; auto-reativar se `push_activated = true` mas sem subscription
+- `src/pages/Settings.tsx` - remover botao "Desativar", mostrar status fixo quando ativado
+- `src/pages/Dashboard.tsx` - nao mostrar prompt/banner se `push_activated = true`
