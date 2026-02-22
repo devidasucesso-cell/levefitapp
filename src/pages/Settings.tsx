@@ -126,11 +126,10 @@ const Settings = () => {
   };
 
   const handlePushToggle = async () => {
-    if (isSubscribed) {
-      await unsubscribeUser();
-    } else {
+    if (!isSubscribed) {
       await subscribeUser();
     }
+    // If push_activated is true, don't allow unsubscribe
   };
 
   const handleTestNotification = async () => {
@@ -298,21 +297,26 @@ const Settings = () => {
                 </p>
               </div>
               {isSupported ? (
-                <Button
-                  variant={isSubscribed ? "outline" : "default"}
-                  size="sm"
-                  onClick={handlePushToggle}
-                  disabled={pushLoading || permissionStatus === 'denied'}
-                  className={isSubscribed ? "" : "bg-gradient-to-r from-orange-500 to-red-500"}
-                >
-                  {pushLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : isSubscribed ? (
-                    'Desativar'
-                  ) : (
-                    'Ativar'
-                  )}
-                </Button>
+                profile?.push_activated ? (
+                  <span className="text-xs font-medium text-green-600 bg-green-500/10 px-3 py-1.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Ativas
+                  </span>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handlePushToggle}
+                    disabled={pushLoading || permissionStatus === 'denied'}
+                    className="bg-gradient-to-r from-orange-500 to-red-500"
+                  >
+                    {pushLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Ativar'
+                    )}
+                  </Button>
+                )
               ) : (
                 <span className="text-xs text-muted-foreground">Não suportado</span>
               )}
@@ -338,7 +342,7 @@ const Settings = () => {
               </div>
             )}
             
-            {isSubscribed && isAdmin && (
+            {(isSubscribed || profile?.push_activated) && isAdmin && (
               <div className="pt-3 mt-3 border-t border-border space-y-2">
                 <Button
                   variant="outline"

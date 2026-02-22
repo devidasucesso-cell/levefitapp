@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD COLUMN push_activated boolean DEFAULT false;

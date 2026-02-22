@@ -326,6 +326,14 @@ export const usePushNotifications = () => {
 
       console.log('[Push] Subscription saved successfully!');
       setIsSubscribed(true);
+
+      // Mark push_activated permanently in profile
+      await supabase
+        .from('profiles')
+        .update({ push_activated: true } as any)
+        .eq('user_id', user.id);
+      console.log('[Push] push_activated marked as true in profile');
+
       toast({
         title: 'Notificações ativadas! 🔔',
         description: 'Você receberá lembretes mesmo com o app fechado.',
