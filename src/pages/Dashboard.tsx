@@ -81,6 +81,7 @@ const Dashboard = () => {
     if (
       profile?.onboarding_completed === true &&
       profile?.push_prompt_shown === false &&
+      !profile?.push_activated &&
       !isSubscribed &&
       isSupported
     ) {
@@ -90,13 +91,14 @@ const Dashboard = () => {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [profile?.onboarding_completed, profile?.push_prompt_shown, isSubscribed, isSupported]);
+  }, [profile?.onboarding_completed, profile?.push_prompt_shown, profile?.push_activated, isSubscribed, isSupported]);
 
   // Check if user should see the notification banner (after dismissing prompt)
   useEffect(() => {
     if (
       profile?.onboarding_completed === true &&
       profile?.push_prompt_shown === true && // Already saw the prompt
+      !profile?.push_activated && // Not permanently activated
       !isSubscribed &&
       isSupported &&
       !showPushPrompt
@@ -107,7 +109,7 @@ const Dashboard = () => {
         setShowNotificationBanner(true);
       }
     }
-  }, [profile?.onboarding_completed, profile?.push_prompt_shown, isSubscribed, isSupported, showPushPrompt]);
+  }, [profile?.onboarding_completed, profile?.push_prompt_shown, profile?.push_activated, isSubscribed, isSupported, showPushPrompt]);
 
   const handleOnboardingComplete = async () => {
     await markOnboardingComplete();

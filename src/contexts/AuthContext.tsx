@@ -26,6 +26,7 @@ interface Profile {
   code_validated: boolean;
   onboarding_completed: boolean;
   push_prompt_shown: boolean;
+  push_activated: boolean;
   last_active_at: string | null;
 }
 
@@ -116,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         code_validated: data.code_validated ?? false,
         onboarding_completed: data.onboarding_completed ?? false,
         push_prompt_shown: data.push_prompt_shown ?? false,
+        push_activated: (data as any).push_activated ?? false,
         last_active_at: data.last_active_at ?? null,
       });
 

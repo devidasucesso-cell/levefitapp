@@ -430,6 +430,7 @@ export type Database = {
           last_active_at: string | null
           name: string
           onboarding_completed: boolean | null
+          push_activated: boolean | null
           push_prompt_shown: boolean | null
           treatment_start_date: string | null
           updated_at: string
@@ -450,6 +451,7 @@ export type Database = {
           last_active_at?: string | null
           name: string
           onboarding_completed?: boolean | null
+          push_activated?: boolean | null
           push_prompt_shown?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
@@ -470,6 +472,7 @@ export type Database = {
           last_active_at?: string | null
           name?: string
           onboarding_completed?: boolean | null
+          push_activated?: boolean | null
           push_prompt_shown?: boolean | null
           treatment_start_date?: string | null
           updated_at?: string
