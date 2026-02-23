@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut, Shield, Check } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield, Check, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInHours, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -300,7 +300,17 @@ const Dashboard = () => {
 
         {/* Progress Summary - Moved to top */}
         {profile?.imc !== undefined && profile.imc > 0 && (
-          <ProgressSummary />
+          <>
+            <ProgressSummary />
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={() => navigate('/progress')}
+            >
+              <TrendingUp className="w-4 h-4" />
+              Ver Evolução Completa
+            </Button>
+          </>
         )}
 
         {/* IMC Calculator (now "Registro de IMC") */}
