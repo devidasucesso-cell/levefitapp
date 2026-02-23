@@ -33,18 +33,18 @@ export const usePushNotifications = () => {
     checkSupport();
   }, []);
 
-  // Check subscription status when user changes
+  // Check subscription status when user or profile changes
   useEffect(() => {
-    if (user) {
+    if (user && profile) {
       // Small delay to ensure service worker is ready
       const timer = setTimeout(() => {
         checkSubscription();
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
-    } else {
+    } else if (!user) {
       setIsSubscribed(false);
     }
-  }, [user]);
+  }, [user, profile?.push_activated]);
 
   const checkSubscription = async () => {
     if (!user) {
@@ -115,6 +115,17 @@ export const usePushNotifications = () => {
     if (!user || !('serviceWorker' in navigator)) return;
     
     try {
+      // Ensure permission is granted before trying to recreate
+      if (Notification.permission !== 'granted') {
+        console.log('Notification permission not granted, requesting...');
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Permission denied, cannot auto-recreate subscription');
+          setIsSubscribed(false);
+          return;
+        }
+      }
+      
       console.log('Auto-recreating subscription with current VAPID key...');
       
       // Get service worker registration
