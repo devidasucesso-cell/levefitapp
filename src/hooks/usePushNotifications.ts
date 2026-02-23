@@ -10,7 +10,7 @@ const VAPID_PUBLIC_KEY = 'BIJswByPtqkQMVr0BAso8dG3XA-4bn4hL5cn0sILvEXj9QEifo7_9c
 type PermissionStatus = 'granted' | 'denied' | 'default' | 'unsupported';
 
 export const usePushNotifications = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -68,6 +68,12 @@ export const usePushNotifications = () => {
       
       if (!dbSubscription) {
         console.log('No subscription found in database');
+        // Se push_activated, tenta recriar automaticamente
+        if (profile?.push_activated) {
+          console.log('push_activated is true, auto-recreating subscription...');
+          await autoRecreateSubscription();
+          return;
+        }
         setIsSubscribed(false);
         return;
       }

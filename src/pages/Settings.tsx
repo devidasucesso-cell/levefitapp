@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, Send, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator, Gift, Users } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Droplets, Pill, Save, BellRing, Loader2, AlertCircle, CheckCircle2, XCircle, Package, ChevronRight, ShoppingCart, ExternalLink, Target, Calculator, Gift, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
@@ -34,11 +34,8 @@ const Settings = () => {
     permissionStatus,
     subscribeUser, 
     unsubscribeUser, 
-    sendTestNotification,
     getPermissionMessage 
   } = usePushNotifications();
-  const [testLoading, setTestLoading] = useState(false);
-  const [summaryLoading, setSummaryLoading] = useState(false);
   const [showKitDialog, setShowKitDialog] = useState(false);
   const [selectedKit, setSelectedKit] = useState(profile?.kit_type || '');
   const [kitLoading, setKitLoading] = useState(false);
@@ -132,37 +129,6 @@ const Settings = () => {
     // If push_activated is true, don't allow unsubscribe
   };
 
-  const handleTestNotification = async () => {
-    setTestLoading(true);
-    await sendTestNotification();
-    setTestLoading(false);
-  };
-
-  const handleDailySummaryTest = async () => {
-    if (!user) return;
-    setSummaryLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-push-notification', {
-        body: { type: 'daily_summary', userId: user.id },
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Resumo diário enviado! 📊',
-        description: 'Você deve receber o resumo em instantes.',
-      });
-    } catch (error) {
-      console.error('Error sending daily summary:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível enviar o resumo diário.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSummaryLoading(false);
-    }
-  };
 
   // Get permission status icon and color
   const getPermissionStatusUI = () => {
@@ -342,38 +308,6 @@ const Settings = () => {
               </div>
             )}
             
-            {(isSubscribed || profile?.push_activated) && isAdmin && (
-              <div className="pt-3 mt-3 border-t border-border space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestNotification}
-                  disabled={testLoading}
-                  className="w-full"
-                >
-                  {testLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
-                  )}
-                  Enviar Notificação de Teste
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDailySummaryTest}
-                  disabled={summaryLoading}
-                  className="w-full text-muted-foreground"
-                >
-                  {summaryLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Bell className="w-4 h-4 mr-2" />
-                  )}
-                  Testar Resumo Diário
-                </Button>
-              </div>
-            )}
           </Card>
         </motion.div>
 
