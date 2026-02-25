@@ -202,6 +202,27 @@ async function sendPush(
   }
 }
 
+// Varied messages for rich notifications
+const waterMessages = [
+  { title: '💧 Hora da Água!', body: 'Beba um copo de água agora! Seu corpo agradece. 💪' },
+  { title: '💧 Hidrate-se!', body: 'Já bebeu água? Mantenha-se hidratado para mais energia! ⚡' },
+  { title: '💧 Pausa para Água!', body: 'Um gole de saúde! Beba água e continue seu dia. 🌟' },
+  { title: '💧 Lembrete!', body: 'Seu corpo precisa de água. Beba um copo agora! 🥤' },
+  { title: '💧 Água Agora!', body: 'Hidratação é saúde! Não esqueça de beber água. 💦' },
+  { title: '💧 Bora Hidratar!', body: 'Cada gole conta! Beba água para manter o foco. 🎯' },
+];
+
+const capsuleMessages = [
+  { title: '💊 Hora da Cápsula!', body: 'Tome sua LeveFit agora! Mantenha o tratamento em dia. 🔥' },
+  { title: '💊 Sua LeveFit!', body: 'Sua cápsula está esperando! Tome agora para melhores resultados. ✨' },
+  { title: '💊 Lembrete LeveFit!', body: 'Não esqueça da sua cápsula! Constância é o segredo. 💪' },
+  { title: '💊 Tome Agora!', body: 'Hora da sua dose diária de LeveFit! Resultado vem com disciplina. 🏆' },
+];
+
+function getRandomMessage(messages: { title: string; body: string }[]) {
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("schedule-notifications function called");
 
@@ -264,11 +285,12 @@ const handler = async (req: Request): Promise<Response> => {
           .eq('user_id', setting.user_id);
 
         for (const sub of subs || []) {
+          const capsMsg = getRandomMessage(capsuleMessages);
           const success = await sendPush(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
             {
-              title: '💊 Tome Caps!',
-              body: 'Hora de tomar sua cápsula LeveFit. Não esqueça!',
+              title: capsMsg.title,
+              body: capsMsg.body,
               tag: 'levefit-capsule-' + Date.now(),
               url: '/calendar'
             }
@@ -314,11 +336,12 @@ const handler = async (req: Request): Promise<Response> => {
 
         let userNotified = false;
         for (const sub of subs || []) {
+          const waterMsg = getRandomMessage(waterMessages);
           const success = await sendPush(
             { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
             {
-              title: '💧 Tome Água!',
-              body: 'Hora de se hidratar. Beba um copo de água agora!',
+              title: waterMsg.title,
+              body: waterMsg.body,
               tag: 'levefit-water-' + Date.now(),
               url: '/dashboard'
             }
