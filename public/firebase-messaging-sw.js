@@ -1,69 +1,68 @@
 // Firebase Messaging Service Worker for Push Notifications
-// This service worker handles background push notifications
+// Rich notifications style (Shopee-like) with images, actions, vibration
 
 // Handle push events - this works even when the app is closed
 self.addEventListener('push', function(event) {
   console.log('[SW] Push event received');
 
-  let notificationData = {
+  let data = {
     title: 'LeveFit',
     body: 'Você tem um lembrete!',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
+    image: null,
     tag: 'levefit-notification-' + Date.now(),
-    requireInteraction: true,
-    vibrate: [200, 100, 200],
-    silent: false, // Enable sound
-    actions: [
-      { action: 'open', title: 'Abrir App' },
-      { action: 'dismiss', title: 'Dispensar' }
-    ],
-    data: { url: '/dashboard' }
+    url: '/dashboard',
+    actions: null,
   };
 
   if (event.data) {
     try {
-      const data = event.data.json();
-      console.log('[SW] Push data:', data);
-      notificationData = {
-        ...notificationData,
-        title: data.title || notificationData.title,
-        body: data.body || notificationData.body,
-        tag: data.tag || notificationData.tag,
-        data: { 
-          url: data.url || data.data?.url || '/dashboard',
-          ...data.data 
-        },
+      const payload = event.data.json();
+      console.log('[SW] Push data:', JSON.stringify(payload));
+      data = {
+        title: payload.title || data.title,
+        body: payload.body || data.body,
+        icon: payload.icon || data.icon,
+        badge: payload.badge || data.badge,
+        image: payload.image || null,
+        tag: payload.tag || data.tag,
+        url: payload.url || payload.data?.url || data.url,
+        actions: payload.actions || null,
       };
     } catch (e) {
-      // Try parsing as text
       try {
         const text = event.data.text();
         console.log('[SW] Push text:', text);
-        notificationData.body = text;
+        data.body = text;
       } catch (e2) {
         console.error('[SW] Error parsing push data:', e2);
       }
     }
   }
 
-  const promiseChain = self.registration.showNotification(
-    notificationData.title, 
-    {
-      body: notificationData.body,
-      icon: notificationData.icon,
-      badge: notificationData.badge,
-      tag: notificationData.tag,
-      requireInteraction: notificationData.requireInteraction,
-      vibrate: notificationData.vibrate,
-      silent: false, // Use system sound
-      actions: notificationData.actions,
-      data: notificationData.data,
-      // Ensure notification shows even when app is in focus
-      renotify: true,
-    }
-  );
+  const notificationOptions = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag,
+    requireInteraction: true,
+    renotify: true,
+    vibrate: [200, 100, 200, 100, 200],
+    silent: false,
+    actions: data.actions || [
+      { action: 'open', title: '✅ Abrir App' },
+      { action: 'dismiss', title: '❌ Dispensar' }
+    ],
+    data: { url: data.url },
+  };
 
+  // Add large image if provided (Shopee-style banner)
+  if (data.image) {
+    notificationOptions.image = data.image;
+  }
+
+  const promiseChain = self.registration.showNotification(data.title, notificationOptions);
   event.waitUntil(promiseChain);
 });
 
@@ -80,7 +79,6 @@ self.addEventListener('notificationclick', function(event) {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // If a window is already open, focus it and navigate
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
         if ('focus' in client) {
@@ -91,7 +89,6 @@ self.addEventListener('notificationclick', function(event) {
           });
         }
       }
-      // Otherwise, open a new window
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
@@ -116,7 +113,6 @@ self.addEventListener('activate', function(event) {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
-      // Clear old caches if any
       caches.keys().then(function(cacheNames) {
         return Promise.all(
           cacheNames.filter(function(cacheName) {
@@ -133,7 +129,6 @@ self.addEventListener('activate', function(event) {
 // Handle push subscription change
 self.addEventListener('pushsubscriptionchange', function(event) {
   console.log('[SW] Push subscription changed');
-  // The subscription was changed, user needs to re-subscribe
   event.waitUntil(
     self.registration.pushManager.subscribe(event.oldSubscription.options)
       .then(function(subscription) {

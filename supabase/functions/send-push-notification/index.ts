@@ -191,9 +191,30 @@ async function encryptPayload(
   return result;
 }
 
+// Varied messages for rich notifications
+const waterMessages = [
+  { title: '💧 Hora da Água!', body: 'Beba um copo de água agora! Seu corpo agradece. 💪' },
+  { title: '💧 Hidrate-se!', body: 'Já bebeu água? Mantenha-se hidratado para mais energia! ⚡' },
+  { title: '💧 Pausa para Água!', body: 'Um gole de saúde! Beba água e continue seu dia. 🌟' },
+  { title: '💧 Lembrete!', body: 'Seu corpo precisa de água. Beba um copo agora! 🥤' },
+  { title: '💧 Água Agora!', body: 'Hidratação é saúde! Não esqueça de beber água. 💦' },
+  { title: '💧 Bora Hidratar!', body: 'Cada gole conta! Beba água para manter o foco. 🎯' },
+];
+
+const capsuleMessages = [
+  { title: '💊 Hora da Cápsula!', body: 'Tome sua LeveFit agora! Mantenha o tratamento em dia. 🔥' },
+  { title: '💊 Sua LeveFit!', body: 'Sua cápsula está esperando! Tome agora para melhores resultados. ✨' },
+  { title: '💊 Lembrete LeveFit!', body: 'Não esqueça da sua cápsula! Constância é o segredo. 💪' },
+  { title: '💊 Tome Agora!', body: 'Hora da sua dose diária de LeveFit! Resultado vem com disciplina. 🏆' },
+];
+
+function getRandomMessage(messages: { title: string; body: string }[]) {
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
 async function sendWebPushNotification(
   subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; icon?: string; tag?: string; url?: string }
+  payload: { title: string; body: string; icon?: string; image?: string; tag?: string; url?: string; actions?: { action: string; title: string }[] }
 ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
   const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admin@levefit.com';
 
@@ -207,7 +228,9 @@ async function sendWebPushNotification(
       title: payload.title,
       body: payload.body,
       icon: payload.icon || '/pwa-192x192.png',
+      image: payload.image || undefined,
       tag: payload.tag || 'levefit-notification',
+      actions: payload.actions || undefined,
       data: { url: payload.url || '/dashboard' }
     });
     
@@ -337,10 +360,14 @@ const handler = async (req: Request): Promise<Response> => {
       targetUserIds = [targetUserId!];
       notificationPayload = {
         title: '🔔 Teste de Notificação',
-        body: 'As notificações estão funcionando! Você receberá lembretes mesmo com o app fechado.',
+        body: 'As notificações estão funcionando! Você receberá lembretes mesmo com o app fechado. 🎉',
         icon: '/pwa-192x192.png',
         tag: 'levefit-test-' + Date.now(),
-        url: '/dashboard'
+        url: '/dashboard',
+        actions: [
+          { action: 'open', title: '✅ Abrir App' },
+          { action: 'dismiss', title: '❌ Fechar' }
+        ],
       };
     } else if (type === 'capsule') {
       const now = new Date();
@@ -386,12 +413,17 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Filtered to ${filtered.length} users to notify`);
 
       targetUserIds = filtered.map(u => u.user_id);
+      const capsMsg = getRandomMessage(capsuleMessages);
       notificationPayload = {
-        title: '💊 Tome Caps!',
-        body: 'Hora de tomar sua cápsula LeveFit. Não esqueça!',
+        title: capsMsg.title,
+        body: capsMsg.body,
         icon: '/pwa-192x192.png',
         tag: 'levefit-capsule-' + Date.now(),
-        url: '/calendar'
+        url: '/calendar',
+        actions: [
+          { action: 'open', title: '✅ Tomei!' },
+          { action: 'dismiss', title: '⏰ Depois' }
+        ],
       };
     } else if (type === 'water') {
       const now = new Date();
@@ -430,12 +462,17 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Filtered to ${filtered.length} users eligible for water notification`);
 
       targetUserIds = filtered.map(u => u.user_id);
+      const waterMsg = getRandomMessage(waterMessages);
       notificationPayload = {
-        title: '💧 Tome Água!',
-        body: 'Hora de se hidratar. Beba um copo de água agora!',
+        title: waterMsg.title,
+        body: waterMsg.body,
         icon: '/pwa-192x192.png',
         tag: 'levefit-water-' + Date.now(),
-        url: '/dashboard'
+        url: '/dashboard',
+        actions: [
+          { action: 'open', title: '💧 Bebi!' },
+          { action: 'dismiss', title: '⏰ Depois' }
+        ],
       };
     } else if (type === 'daily_summary') {
       // Daily summary notification - sent once per day
