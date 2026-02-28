@@ -1,102 +1,67 @@
 
 
-# Notificacoes Estilo Shopee - Ricas e Visiveis na Tela
+# Sistema de Pontos - LeveFit
 
-## Diagnostico Atual
+## Estrutura
 
-As notificacoes **estao funcionando** para os 7 usuarios que ativaram push. Os lembretes de agua sao enviados a cada 60 minutos (cron roda a cada 15 min e respeita o intervalo). O problema e que as notificacoes sao simples demais - titulo e texto basicos, sem destaque visual.
+### 1. Tabela `user_points`
+- `id`, `user_id`, `points` (total acumulado), `created_at`, `updated_at`
 
-## O que sera feito
+### 2. Tabela `points_history`
+- `id`, `user_id`, `action` (login, weight_update, purchase), `points`, `description`, `created_at`
+- RLS: usuarios veem apenas seus proprios registros
 
-Transformar as notificacoes em estilo Shopee: ricas, com imagem grande, mensagens variadas, som, vibracao e botoes de acao que chamam a atencao na tela do usuario.
+### 3. Tabela `rewards`
+- `id`, `name`, `description`, `points_cost`, `type` (discount, recipe, gift), `is_active`, `image_url`
+- Populada com recompensas iniciais
 
-## Alteracoes
+### 4. Tabela `redeemed_rewards`
+- `id`, `user_id`, `reward_id`, `redeemed_at`, `status` (pending, delivered)
 
-### 1. Service Worker - Notificacoes Ricas (public/firebase-messaging-sw.js)
+### Regras de pontos
+| Acao | Pontos |
+|------|--------|
+| Login diario | 10 |
+| Atualizou peso | 5 |
+| Comprou na loja | 50 |
 
-Atualizar o service worker para exibir notificacoes com:
-- **Imagem grande** (banner como Shopee usa) via propriedade `image`
-- **Badge** (icone pequeno na barra de status)
-- **Acoes** com botoes clicaveis ("Abrir", "Registrar")
-- **requireInteraction: true** (nao desaparece automaticamente)
-- **renotify: true** com tags unicas (sempre mostra mesmo se ja tem uma)
-- **Vibracao** padrao [200, 100, 200, 100, 200]
-- **Som** do sistema (silent: false)
+### Logica de login diario
+- No `AuthContext`, apos carregar perfil, verificar se ja ganhou pontos hoje (checar `points_history` com action='login' e data de hoje)
+- Se nao, inserir automaticamente 10 pontos
 
-### 2. Edge Function - Payloads Enriquecidos (supabase/functions/send-push-notification/index.ts)
+### Logica de peso
+- Na funcao `updateIMC` do `AuthContext`, apos salvar peso com sucesso, inserir 5 pontos
 
-Adicionar campo `image` no payload JSON enviado ao push service. Variar as mensagens para nao ficar repetitivo:
+### Logica de compra
+- No webhook de pagamento (kiwify-webhook ou stripe-webhook), ao confirmar pagamento, inserir 50 pontos
 
-**Agua** - rotacionar entre mensagens como:
-- "Hora de se hidratar! Beba um copo de agua agora"
-- "Ja bebeu agua? Seu corpo precisa de hidratacao"
-- "Pausa para agua! Mantenha seu corpo funcionando bem"
-- "Lembrete de hidratacao! Um gole de saude para voce"
+## Alteracoes no Frontend
 
-**Capsula** - rotacionar entre:
-- "Hora da sua capsula LeveFit! Nao esqueca"
-- "Sua capsula esta esperando! Tome agora"
-- "Lembrete: tome sua LeveFit para manter o tratamento em dia"
+### Nova pagina `src/pages/Points.tsx`
+- Exibe total de pontos no topo com animacao
+- Historico de pontos ganhos
+- Secao "Trocar Pontos" com cards de recompensas disponiveis (desconto, receita exclusiva, brinde)
+- Botao "Resgatar" que desconta os pontos e registra em `redeemed_rewards`
 
-### 3. Edge Function - schedule-notifications (supabase/functions/schedule-notifications/index.ts)
+### Dashboard - Card de pontos
+- Novo card no header ou abaixo dos stats mostrando total de pontos com icone de troféu
+- Link para pagina de pontos
 
-Aplicar as mesmas melhorias de payload rico com `image` e mensagens variadas.
+### Navigation
+- Adicionar item "Pontos" com icone Trophy na barra de navegacao (substituir ou reorganizar itens)
 
-## Detalhes Tecnicos
+## Recompensas iniciais (seed)
+- 🎫 Desconto de R$10 na loja - 100 pontos
+- 🍰 Receita Exclusiva Premium - 50 pontos
+- 🎁 Brinde Surpresa - 200 pontos
 
-### Service Worker (firebase-messaging-sw.js)
-
-No handler de `push`, extrair o campo `image` do payload e passar para `showNotification`:
-
-```javascript
-self.registration.showNotification(title, {
-  body: data.body,
-  icon: '/pwa-192x192.png',
-  badge: '/pwa-192x192.png',
-  image: data.image || undefined, // Imagem grande estilo Shopee
-  tag: data.tag,
-  requireInteraction: true,
-  renotify: true,
-  vibrate: [200, 100, 200, 100, 200],
-  silent: false,
-  actions: data.actions || [
-    { action: 'open', title: 'Abrir' },
-    { action: 'dismiss', title: 'Dispensar' }
-  ],
-  data: { url: data.url || '/dashboard' }
-});
-```
-
-### send-push-notification/index.ts
-
-Adicionar array de mensagens variadas e campo `image` no payload:
-
-```typescript
-const waterMessages = [
-  { title: '💧 Hora da Agua!', body: 'Beba um copo de agua agora! Seu corpo agradece.' },
-  { title: '💧 Hidrate-se!', body: 'Ja bebeu agua? Mantenha-se hidratado para mais energia!' },
-  { title: '💧 Pausa para Agua!', body: 'Um gole de saude! Beba agua e continue seu dia.' },
-  { title: '💧 Lembrete!', body: 'Seu corpo precisa de agua. Beba um copo agora!' },
-  { title: '💧 Agua Agora!', body: 'Hidratacao e saude! Nao esqueca de beber agua.' },
-];
-
-const capsuleMessages = [
-  { title: '💊 Hora da Capsula!', body: 'Tome sua LeveFit agora! Mantenha o tratamento em dia.' },
-  { title: '💊 Sua LeveFit!', body: 'Sua capsula esta esperando! Tome agora para melhores resultados.' },
-  { title: '💊 Lembrete LeveFit!', body: 'Nao esqueca da sua capsula! Constancia e o segredo.' },
-];
-```
-
-Selecionar mensagem aleatoria: `messages[Math.floor(Math.random() * messages.length)]`
-
-Incluir `image` no payload JSON enviado ao navegador para que o service worker exiba a imagem grande.
-
-### schedule-notifications/index.ts
-
-Aplicar as mesmas melhorias de mensagens variadas e payload rico.
-
-### Arquivos modificados
-- `public/firebase-messaging-sw.js` - notificacoes ricas com imagem
-- `supabase/functions/send-push-notification/index.ts` - mensagens variadas + image
-- `supabase/functions/schedule-notifications/index.ts` - mensagens variadas + image
+## Arquivos modificados/criados
+- Migration SQL: criar tabelas `user_points`, `points_history`, `rewards`, `redeemed_rewards` com RLS
+- `src/pages/Points.tsx` - nova pagina
+- `src/contexts/AuthContext.tsx` - adicionar pontos no login e updateIMC
+- `src/components/Navigation.tsx` - adicionar link para Pontos
+- `src/App.tsx` - adicionar rota /points
+- `src/pages/Dashboard.tsx` - card de pontos
+- `supabase/functions/kiwify-webhook/index.ts` - adicionar 50 pontos na compra
+- `supabase/functions/stripe-webhook/index.ts` - adicionar 50 pontos na compra
 
