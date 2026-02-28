@@ -417,6 +417,33 @@ export type Database = {
           },
         ]
       }
+      points_history: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points: number
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           code_validated: boolean | null
@@ -540,6 +567,38 @@ export type Database = {
         }
         Relationships: []
       }
+      redeemed_rewards: {
+        Row: {
+          id: string
+          redeemed_at: string
+          reward_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          redeemed_at?: string
+          reward_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          redeemed_at?: string
+          reward_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redeemed_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           approved_at: string | null
@@ -615,6 +674,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rewards: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          points_cost: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          points_cost: number
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          points_cost?: number
+          type?: string
+        }
+        Relationships: []
+      }
       shown_achievements: {
         Row: {
           achievement_id: string
@@ -635,6 +727,30 @@ export type Database = {
           created_at?: string
           id?: string
           shown_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

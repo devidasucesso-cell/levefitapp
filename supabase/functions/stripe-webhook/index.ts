@@ -246,6 +246,36 @@ async function processWalletDiscount(supabaseAdmin: any, session: Stripe.Checkou
   }
 }
 
+async function awardPurchasePoints(supabaseAdmin: any, session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.user_id;
+  if (!userId) return;
+
+  try {
+    await supabaseAdmin.from("points_history").insert({
+      user_id: userId,
+      action: "purchase",
+      points: 50,
+      description: `Compra na loja (Session: ${session.id})`,
+    });
+
+    const { data: current } = await supabaseAdmin
+      .from("user_points")
+      .select("points")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (current) {
+      await supabaseAdmin.from("user_points").update({ points: current.points + 50 }).eq("user_id", userId);
+    } else {
+      await supabaseAdmin.from("user_points").insert({ user_id: userId, points: 50 });
+    }
+
+    console.log(`[STRIPE-WEBHOOK] Awarded 50 purchase points to user ${userId}`);
+  } catch (err) {
+    console.error("[STRIPE-WEBHOOK] Error awarding purchase points:", err);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -304,6 +334,7 @@ serve(async (req) => {
         if (session.payment_status === "paid") {
           await processAffiliateCommission(supabaseAdmin, session);
           await processWalletDiscount(supabaseAdmin, session);
+          await awardPurchasePoints(supabaseAdmin, session);
         }
 
         // Send confirmation email for immediate payments (card)
@@ -326,6 +357,7 @@ serve(async (req) => {
 
         await processAffiliateCommission(supabaseAdmin, session);
         await processWalletDiscount(supabaseAdmin, session);
+        await awardPurchasePoints(supabaseAdmin, session);
 
         // Send confirmation email for async payments (boleto/pix)
         if (session.customer_details?.email) {

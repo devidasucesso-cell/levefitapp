@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Pill, Droplets, LogOut, Shield, Check, TrendingUp } from 'lucide-react';
+import { Leaf, Pill, Droplets, LogOut, Shield, Check, TrendingUp, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInHours, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,6 +47,7 @@ const Dashboard = () => {
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [showNotificationBanner, setShowNotificationBanner] = useState(false);
   const [pushPromptLoading, setPushPromptLoading] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
   // Check for iOS and standalone mode
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
@@ -75,6 +76,14 @@ const Dashboard = () => {
       setShowOnboarding(true);
     }
   }, [profile?.kit_type, profile?.onboarding_completed]);
+
+  // Fetch user points
+  useEffect(() => {
+    if (user) {
+      supabase.from('user_points').select('points').eq('user_id', user.id).maybeSingle()
+        .then(({ data }) => { if (data) setUserPoints((data as any).points ?? 0); });
+    }
+  }, [user]);
 
   // Check if user should see push notification prompt (full screen)
   useEffect(() => {
@@ -251,6 +260,30 @@ const Dashboard = () => {
 
       {/* Content */}
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
+        {/* Points Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="cursor-pointer"
+          onClick={() => navigate('/points')}
+        >
+          <Card className="p-4 shadow-md bg-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-yellow-500/10">
+                  <Trophy className="w-6 h-6 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Meus Pontos</p>
+                  <p className="text-xl font-bold text-foreground">{userPoints} pts</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="text-primary">
+                Ver mais →
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
         {/* Notification Reminder Banner - Shows for users who haven't enabled push */}
         <AnimatePresence>
           {showNotificationBanner && (
