@@ -27,6 +27,7 @@ import Referral from "./pages/Referral";
 import Store from "./pages/Store";
 import ProductDetail from "./pages/ProductDetail";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
+import Points from "./pages/Points";
 import { useCartSync } from "./hooks/useCartSync";
 import { FloatingCart } from "./components/FloatingCart";
 
@@ -141,6 +142,7 @@ const AppRoutes = () => {
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/product/:handle" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
       <Route path="/checkout-success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
+      <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -218,6 +218,43 @@ Deno.serve(async (req) => {
       console.error('Error creating transaction:', txError);
     }
 
+    // Award 50 purchase points - find user by email
+    try {
+      const { data: buyerProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('name', payload.customer_name || '')
+        .limit(1)
+        .maybeSingle();
+
+      // Also try to find by referrer (the person who referred gets credit)
+      const pointsUserId = wallet.user_id; // Award to referrer as fallback
+      
+      if (pointsUserId) {
+        await supabase.from('points_history').insert({
+          user_id: pointsUserId,
+          action: 'purchase',
+          points: 50,
+          description: `Indicação convertida - ${payload.customer_email}`,
+        });
+
+        const { data: currentPts } = await supabase
+          .from('user_points')
+          .select('points')
+          .eq('user_id', pointsUserId)
+          .maybeSingle();
+
+        if (currentPts) {
+          await supabase.from('user_points').update({ points: currentPts.points + 50 }).eq('user_id', pointsUserId);
+        } else {
+          await supabase.from('user_points').insert({ user_id: pointsUserId, points: 50 });
+        }
+        console.log('Awarded 50 purchase points to user:', pointsUserId);
+      }
+    } catch (ptsErr) {
+      console.error('Error awarding purchase points:', ptsErr);
+    }
+
     console.log('Referral processed successfully:', {
       referrer: wallet.user_id,
       customer: payload.customer_email,

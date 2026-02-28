@@ -127,6 +127,79 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .update({ last_active_at: new Date().toISOString() })
         .eq('user_id', userId)
         .then();
+
+      // Award daily login points
+      awardDailyLoginPoints(userId);
+    }
+  };
+
+  const awardDailyLoginPoints = async (userId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    // Check if already got login points today
+    const { data: existing } = await supabase
+      .from('points_history')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('action', 'login')
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59')
+      .maybeSingle();
+
+    if (existing) return;
+
+    // Award 10 points
+    await supabase.from('points_history').insert({
+      user_id: userId,
+      action: 'login',
+      points: 10,
+      description: 'Login diário',
+    });
+
+    // Upsert total
+    const { data: current } = await supabase
+      .from('user_points')
+      .select('points')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (current) {
+      await supabase.from('user_points').update({ points: (current as any).points + 10 }).eq('user_id', userId);
+    } else {
+      await supabase.from('user_points').insert({ user_id: userId, points: 10 });
+    }
+  };
+
+  const awardWeightUpdatePoints = async (userId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    // Check if already got weight points today
+    const { data: existing } = await supabase
+      .from('points_history')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('action', 'weight_update')
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59')
+      .maybeSingle();
+
+    if (existing) return;
+
+    await supabase.from('points_history').insert({
+      user_id: userId,
+      action: 'weight_update',
+      points: 5,
+      description: 'Atualização de peso',
+    });
+
+    const { data: current } = await supabase
+      .from('user_points')
+      .select('points')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (current) {
+      await supabase.from('user_points').update({ points: (current as any).points + 5 }).eq('user_id', userId);
+    } else {
+      await supabase.from('user_points').insert({ user_id: userId, points: 5 });
     }
   };
 
@@ -427,6 +500,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       console.error('Error updating progress history:', error);
     }
+
+    // Award 5 points for weight update
+    await awardWeightUpdatePoints(user.id);
   };
 
   const addWaterIntake = async () => {
