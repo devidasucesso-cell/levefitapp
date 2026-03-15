@@ -152,7 +152,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppRoutes />
-          <FloatingCart />
           <PWAInstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
