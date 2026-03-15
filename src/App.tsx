@@ -115,7 +115,6 @@ const CodeVerificationRoute = ({ children }: { children: React.ReactNode }) => {
 // ApprovalRoute removed - approval no longer required
 
 const AppRoutes = () => {
-  useCartSync();
   return (
     <Routes>
       <Route path="/" element={<Index />} />
