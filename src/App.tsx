@@ -25,11 +25,8 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import KitSelectionPage from "./pages/KitSelectionPage";
 import Referral from "./pages/Referral";
 import Store from "./pages/Store";
-import ProductDetail from "./pages/ProductDetail";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Points from "./pages/Points";
-import { useCartSync } from "./hooks/useCartSync";
-import { FloatingCart } from "./components/FloatingCart";
 
 const queryClient = new QueryClient();
 

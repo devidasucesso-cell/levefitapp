@@ -1,56 +1,66 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react';
+import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CartDrawer } from '@/components/CartDrawer';
-import { useCartStore, ShopifyProduct } from '@/stores/cartStore';
-import { storefrontApiRequest, STOREFRONT_PRODUCTS_QUERY } from '@/lib/shopify';
-import { toast } from 'sonner';
 import Navigation from '@/components/Navigation';
 import { ReservationDialog } from '@/components/ReservationDialog';
 import { PaymentChoiceDialog } from '@/components/PaymentChoiceDialog';
-import { ProductImageCarousel, getKitImages } from '@/components/ProductImageCarousel';
 
-const PIX_CODES: Record<string, { code: string; amount: string }> = {
-  '1 pote': {
-    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406197.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521ijG7D3PyjYf9Rcc7athiv6304720F',
-    amount: '197,00',
-  },
-  '3 pote': {
-    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406397.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521T7yyFq4m0DDTZGn7athiv6304AEDE',
-    amount: '397,00',
-  },
-  '5 pote': {
-    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406597.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521KCxNwZ1Nj4tt3UT7athiv630496F5',
-    amount: '554,00',
-  },
-  'avulso': {
-    code: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406135.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521X68eRj5W0U7fIEr7athiv6304B810',
-    amount: '135,00',
-  },
-};
-
-function getPixForProduct(title: string) {
-  const lower = title.toLowerCase();
-  if (lower.includes('avulso') || lower.includes('sem acompanhamento')) return PIX_CODES['avulso'];
-  if (lower.includes('5 pote')) return PIX_CODES['5 pote'];
-  if (lower.includes('3 pote')) return PIX_CODES['3 pote'];
-  if (lower.includes('1 pote')) return PIX_CODES['1 pote'];
-  return null;
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice: number;
+  image: string;
+  tag?: string;
+  kiwifyLink: string;
+  pixCode: string;
+  pixAmount: string;
 }
 
+const PRODUCTS: Product[] = [
+  {
+    id: '1-pote',
+    title: '1 Pote - Experimente',
+    price: 197,
+    originalPrice: 297,
+    image: '/images/levefit-1pote.png',
+    kiwifyLink: 'https://pay.kiwify.com.br/djZ0jPJ',
+    pixCode: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406197.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521ijG7D3PyjYf9Rcc7athiv6304720F',
+    pixAmount: '197,00',
+  },
+  {
+    id: '3-potes',
+    title: '3 Potes - Mais Vendido',
+    price: 397,
+    originalPrice: 591,
+    image: '/images/levefit-3potes.png',
+    tag: '🔥 MAIS VENDIDO',
+    kiwifyLink: 'https://pay.kiwify.com.br/tl70FtX',
+    pixCode: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406397.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521T7yyFq4m0DDTZGn7athiv6304AEDE',
+    pixAmount: '397,00',
+  },
+  {
+    id: '5-potes',
+    title: '5 Potes - Tratamento Completo',
+    price: 597,
+    originalPrice: 985,
+    image: '/images/levefit-5potes.png',
+    tag: '💎 MELHOR CUSTO',
+    kiwifyLink: 'https://pay.kiwify.com.br/2f37f71',
+    pixCode: '00020126580014BR.GOV.BCB.PIX0136f390df5b-7463-4a54-8e02-59f6f71825d45204000053039865406597.005802BR592564.399.771 ESTER SANTOS F6009SAO PAULO61080540900062250521KCxNwZ1Nj4tt3UT7athiv630496F5',
+    pixAmount: '554,00',
+  },
+];
+
 const Store = () => {
-  const [products, setProducts] = useState<ShopifyProduct[]>([]);
-  const [loading, setLoading] = useState(true);
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationProduct, setReservationProduct] = useState('');
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ShopifyProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const navigate = useNavigate();
-  const addItem = useCartStore(state => state.addItem);
-  const isCartLoading = useCartStore(state => state.isLoading);
 
   // Capture affiliate code from URL
   useEffect(() => {
@@ -60,37 +70,6 @@ const Store = () => {
       localStorage.setItem('aff_code', affCode);
     }
   }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const data = await storefrontApiRequest(STOREFRONT_PRODUCTS_QUERY, { first: 50 });
-      if (data?.data?.products?.edges) {
-        setProducts(data.data.products.edges);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddToCart = async (product: ShopifyProduct) => {
-    const variant = product.node.variants.edges[0]?.node;
-    if (!variant) return;
-    await addItem({
-      product,
-      variantId: variant.id,
-      variantTitle: variant.title,
-      price: variant.price,
-      quantity: 1,
-      selectedOptions: variant.selectedOptions || [],
-    });
-    toast.success('Adicionado ao carrinho!', { position: 'top-center' });
-  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -125,12 +104,8 @@ const Store = () => {
             <span className="inline-block bg-primary-foreground/20 text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-2">
               🍍 LANÇAMENTO
             </span>
-            <h2 className="text-lg font-bold text-primary-foreground leading-tight">
-              Leve Fit Detox
-            </h2>
-            <p className="text-primary-foreground/80 text-sm mt-1">
-              Sabor Abacaxi com Hortelã • Natural, Sem Açúcar, Sem Glúten
-            </p>
+            <h2 className="text-lg font-bold text-primary-foreground leading-tight">Leve Fit Detox</h2>
+            <p className="text-primary-foreground/80 text-sm mt-1">Sabor Abacaxi com Hortelã • Natural, Sem Açúcar, Sem Glúten</p>
             <div className="flex items-center gap-3 mt-3">
               <span className="text-primary-foreground/60 line-through text-sm">R$ 297,00</span>
               <span className="text-primary-foreground font-extrabold text-xl">R$ 119,99</span>
@@ -148,8 +123,11 @@ const Store = () => {
           transition={{ delay: 0.3 }}
           className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-5 shadow-glow cursor-pointer hover:scale-[1.02] transition-transform"
           onClick={() => {
-            const kit3 = products.find(p => p.node.title.toLowerCase().includes('3 pote'));
-            if (kit3) navigate(`/product/${kit3.node.handle}`);
+            const kit3 = PRODUCTS.find(p => p.id === '3-potes');
+            if (kit3) {
+              setSelectedProduct(kit3);
+              setPaymentDialogOpen(true);
+            }
           }}
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -158,12 +136,8 @@ const Store = () => {
             <span className="inline-block bg-primary-foreground/20 text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-2">
               🔥 MAIS VENDIDO
             </span>
-            <h2 className="text-lg font-bold text-primary-foreground leading-tight">
-              Kit 3 Potes LeveFit
-            </h2>
-            <p className="text-primary-foreground/80 text-sm mt-1">
-              90 dias de tratamento completo com frete grátis!
-            </p>
+            <h2 className="text-lg font-bold text-primary-foreground leading-tight">Kit 3 Potes LeveFit</h2>
+            <p className="text-primary-foreground/80 text-sm mt-1">90 dias de tratamento completo com frete grátis!</p>
             <div className="flex items-center gap-3 mt-3">
               <span className="text-primary-foreground/60 line-through text-sm">R$ 591,00</span>
               <span className="text-primary-foreground font-extrabold text-xl">R$ 397,00</span>
@@ -172,108 +146,67 @@ const Store = () => {
         </motion.div>
       </div>
 
-      {/* Content */}
+      {/* Products Grid */}
       <div className="p-4 max-w-4xl mx-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20">
-            <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum produto encontrado</h2>
-            <p className="text-muted-foreground">Em breve teremos produtos disponíveis para você!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {products.map((product, index) => {
-              const image = product.node.images.edges[0]?.node;
-              const price = product.node.priceRange.minVariantPrice;
-              const kitImages = getKitImages(product.node.title);
-              return (
-                <motion.div
-                  key={product.node.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Card
-                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => navigate(`/product/${product.node.handle}`)}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {PRODUCTS.map((product, index) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="aspect-square bg-secondary overflow-hidden relative">
+                  {product.tag && (
+                    <span className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full">
+                      {product.tag}
+                    </span>
+                  )}
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-foreground">{product.title}</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-muted-foreground line-through text-sm">R$ {product.originalPrice.toFixed(2)}</span>
+                    <span className="text-primary font-bold text-lg">R$ {product.price.toFixed(2)}</span>
+                  </div>
+                  <Button
+                    className="w-full mt-3 gradient-primary text-primary-foreground"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setPaymentDialogOpen(true);
+                    }}
                   >
-                    <div className="aspect-square bg-secondary overflow-hidden">
-                      {kitImages ? (
-                        <ProductImageCarousel images={kitImages} alt={product.node.title} />
-                      ) : image ? (
-                        <img src={image.url} alt={image.altText || product.node.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-10 h-10 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h3 className="font-semibold text-sm text-foreground truncate">{product.node.title}</h3>
-                      {product.node.title.toLowerCase().includes('em breve') ? (
-                        <>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="text-muted-foreground line-through text-xs">R$ 297,00</span>
-                            <span className="text-primary font-bold text-sm">R$ 119,99</span>
-                          </div>
-                          <Button
-                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReservationProduct(product.node.title);
-                              setReservationOpen(true);
-                            }}
-                          >
-                            Reservar o meu
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-primary font-bold mt-1">R$ {parseFloat(price.amount).toFixed(2)}</p>
-                          <Button
-                            className="w-full mt-2 gradient-primary text-primary-foreground text-xs h-8"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedProduct(product);
-                              setPaymentDialogOpen(true);
-                            }}
-                          >
-                            Comprar
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+                    Comprar
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </div>
+
       <ReservationDialog open={reservationOpen} onOpenChange={setReservationOpen} productTitle={reservationProduct} />
-      {selectedProduct && (() => {
-        const pix = getPixForProduct(selectedProduct.node.title);
-        const variant = selectedProduct.node.variants.edges[0]?.node;
-        return (
-          <PaymentChoiceDialog
-            open={paymentDialogOpen}
-            onOpenChange={setPaymentDialogOpen}
-            productTitle={selectedProduct.node.title}
-            price={variant?.price.amount || '0'}
-            pixCode={pix?.code || null}
-            pixAmount={pix?.amount || null}
-            onCartPayment={() => handleAddToCart(selectedProduct)}
-            isCartLoading={isCartLoading}
-            isAvulso={(() => { const t = selectedProduct.node.title.toLowerCase(); return t.includes('avulso') || t.includes('sem acompanhamento') || t.includes('detox'); })()}
-          />
-        );
-      })()}
+
+      {selectedProduct && (
+        <PaymentChoiceDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          productTitle={selectedProduct.title}
+          price={selectedProduct.price.toString()}
+          pixCode={selectedProduct.pixCode}
+          pixAmount={selectedProduct.pixAmount}
+          kiwifyLink={selectedProduct.kiwifyLink}
+          onCartPayment={() => {}}
+          isAvulso={false}
+        />
+      )}
+
       <Navigation />
     </div>
   );

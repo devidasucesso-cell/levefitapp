@@ -8,20 +8,6 @@ import { useWallet } from '@/hooks/useWallet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-const MERCADO_PAGO_LINKS: Record<string, string> = {
-  '5 pote': 'https://mpago.la/2LKDGgZ',
-  '3 pote': 'https://mpago.li/285vej2',
-  '1 pote': 'https://mpago.la/2JEW5PU',
-};
-
-function getMercadoPagoLink(title: string): string | null {
-  const lower = title.toLowerCase();
-  if (lower.includes('5 pote')) return MERCADO_PAGO_LINKS['5 pote'];
-  if (lower.includes('3 pote')) return MERCADO_PAGO_LINKS['3 pote'];
-  if (lower.includes('1 pote')) return MERCADO_PAGO_LINKS['1 pote'];
-  return null;
-}
-
 interface PaymentChoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -29,6 +15,7 @@ interface PaymentChoiceDialogProps {
   price: string;
   pixCode: string | null;
   pixAmount: string | null;
+  kiwifyLink?: string | null;
   onCartPayment: () => void;
   isCartLoading?: boolean;
   isAvulso?: boolean;
@@ -41,6 +28,7 @@ export const PaymentChoiceDialog = ({
   price,
   pixCode,
   pixAmount,
+  kiwifyLink,
   onCartPayment,
   isCartLoading,
   isAvulso = false,
@@ -85,12 +73,7 @@ export const PaymentChoiceDialog = ({
     }
   };
 
-  const handleCartPaymentWithDiscount = () => {
-    handleClose();
-    onCartPayment();
-  };
-
-  const finalPixAmount = useBalance && pixAmount ? (parseFloat(pixAmount) - walletDiscount).toFixed(2) : pixAmount;
+  const finalPixAmount = useBalance && pixAmount ? (parseFloat(pixAmount.replace(',', '.')) - walletDiscount).toFixed(2).replace('.', ',') : pixAmount;
 
   return (
     <>
@@ -158,26 +141,20 @@ export const PaymentChoiceDialog = ({
                       Pagar via PIX - R$ {useBalance ? finalPrice.toFixed(2) : pixAmount}
                     </Button>
                   )}
-                  {(() => {
-                    const mpLink = getMercadoPagoLink(productTitle);
-                    if (mpLink) {
-                      return (
-                        <Button
-                          onClick={() => {
-                            handleClose();
-                            window.open(mpLink, '_blank');
-                          }}
-                          className="w-full"
-                          variant="outline"
-                          size="lg"
-                        >
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Pagar com Cartão/Boleto{useBalance ? ` - R$ ${finalPrice.toFixed(2)}` : ''}
-                        </Button>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {kiwifyLink && (
+                    <Button
+                      onClick={() => {
+                        handleClose();
+                        window.open(kiwifyLink, '_blank');
+                      }}
+                      className="w-full"
+                      variant="outline"
+                      size="lg"
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Pagar com Cartão/Boleto{useBalance ? ` - R$ ${finalPrice.toFixed(2)}` : ''}
+                    </Button>
+                  )}
                 </>
               )}
             </div>
