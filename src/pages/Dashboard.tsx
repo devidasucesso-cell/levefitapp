@@ -260,30 +260,6 @@ const Dashboard = () => {
 
       {/* Content */}
       <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 -mt-4 max-w-4xl mx-auto">
-        {/* Points Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="cursor-pointer"
-          onClick={() => navigate('/points')}
-        >
-          <Card className="p-4 shadow-md bg-card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-yellow-500/10">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Meus Pontos</p>
-                  <p className="text-xl font-bold text-foreground">{userPoints} pts</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" className="text-primary">
-                Ver mais →
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
         {/* Notification Reminder Banner - Shows for users who haven't enabled push */}
         <AnimatePresence>
           {showNotificationBanner && (
