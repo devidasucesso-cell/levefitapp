@@ -1,16 +1,9 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/stores/cartStore';
 
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
-  const clearCart = useCartStore(state => state.clearCart);
-
-  useEffect(() => {
-    clearCart();
-  }, [clearCart]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

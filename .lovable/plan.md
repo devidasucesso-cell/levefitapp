@@ -1,70 +1,67 @@
 
 
-# Desvincular Shopify e Criar Loja com Produtos do leveday.com.br
+# Sistema de Pontos - LeveFit
 
-## O que sera feito
+## Estrutura
 
-Remover toda a integracao com Shopify e substituir por uma loja estatica com os 3 produtos do site leveday.com.br, cada um com foto, preco e link de pagamento Kiwify.
+### 1. Tabela `user_points`
+- `id`, `user_id`, `points` (total acumulado), `created_at`, `updated_at`
 
-## Produtos (extraidos do leveday.com.br)
+### 2. Tabela `points_history`
+- `id`, `user_id`, `action` (login, weight_update, purchase), `points`, `description`, `created_at`
+- RLS: usuarios veem apenas seus proprios registros
 
-| Produto | Preco | De | Link Kiwify |
-|---------|-------|----|-------------|
-| 1 Pote - Experimente | R$ 197,00 | R$ 297,00 | https://pay.kiwify.com.br/djZ0jPJ |
-| 3 Potes - Mais Vendido | R$ 397,00 | R$ 591,00 | https://pay.kiwify.com.br/tl70FtX |
-| 5 Potes - Tratamento Completo | R$ 597,00 | R$ 985,00 | https://pay.kiwify.com.br/2f37f71 |
+### 3. Tabela `rewards`
+- `id`, `name`, `description`, `points_cost`, `type` (discount, recipe, gift), `is_active`, `image_url`
+- Populada com recompensas iniciais
 
-Imagens: usar as que ja existem em `/public/images/` (levefit-1pote.png, levefit-3potes.png, levefit-5potes.png, levefit-box.png, etc.)
+### 4. Tabela `redeemed_rewards`
+- `id`, `user_id`, `reward_id`, `redeemed_at`, `status` (pending, delivered)
 
-## Alteracoes
+### Regras de pontos
+| Acao | Pontos |
+|------|--------|
+| Login diario | 10 |
+| Atualizou peso | 5 |
+| Comprou na loja | 50 |
 
-### 1. Reescrever `src/pages/Store.tsx`
-- Remover imports de Shopify, cart store, CartDrawer
-- Definir array estatico de produtos com: titulo, preco, preco original, imagem, link Kiwify, tag (ex: "Mais Vendido"), PIX code/amount
-- Ao clicar "Comprar", abrir `PaymentChoiceDialog` com opcoes PIX e Kiwify (cartao/boleto)
-- Manter o banner do Detox e o banner do Kit 3 Potes
-- Manter Navigation
+### Logica de login diario
+- No `AuthContext`, apos carregar perfil, verificar se ja ganhou pontos hoje (checar `points_history` com action='login' e data de hoje)
+- Se nao, inserir automaticamente 10 pontos
 
-### 2. Remover `src/pages/ProductDetail.tsx` e rota `/product/:handle`
-- Nao e mais necessario pois os produtos sao simples e o pagamento e direto
-- Remover import e rota do `App.tsx`
+### Logica de peso
+- Na funcao `updateIMC` do `AuthContext`, apos salvar peso com sucesso, inserir 5 pontos
 
-### 3. Simplificar `src/stores/cartStore.ts`
-- Remover toda logica Shopify (cart create, lines add, etc.)
-- Manter apenas um store simples local (ou remover se o carrinho nao for mais necessario, ja que cada produto vai direto para pagamento)
+### Logica de compra
+- No webhook de pagamento (kiwify-webhook ou stripe-webhook), ao confirmar pagamento, inserir 50 pontos
 
-### 4. Remover/simplificar `src/lib/shopify.ts`
-- Remover o arquivo inteiro (nao sera mais usado)
+## Alteracoes no Frontend
 
-### 5. Remover `src/components/FloatingCart.tsx` e `src/components/CartDrawer.tsx`
-- Sem carrinho Shopify, nao ha necessidade de cart drawer flutuante
-- Remover imports do `App.tsx`
+### Nova pagina `src/pages/Points.tsx`
+- Exibe total de pontos no topo com animacao
+- Historico de pontos ganhos
+- Secao "Trocar Pontos" com cards de recompensas disponiveis (desconto, receita exclusiva, brinde)
+- Botao "Resgatar" que desconta os pontos e registra em `redeemed_rewards`
 
-### 6. Atualizar `src/App.tsx`
-- Remover import de ProductDetail, CartDrawer, FloatingCart, useCartSync
-- Remover rota `/product/:handle`
+### Dashboard - Card de pontos
+- Novo card no header ou abaixo dos stats mostrando total de pontos com icone de troféu
+- Link para pagina de pontos
 
-### 7. Atualizar `src/components/PaymentChoiceDialog.tsx`
-- Atualizar links Mercado Pago para links Kiwify
-- Manter PIX + Kiwify como opcoes
+### Navigation
+- Adicionar item "Pontos" com icone Trophy na barra de navegacao (substituir ou reorganizar itens)
 
-### 8. Manter `src/hooks/useCartSync.ts` removido ou vazio
+## Recompensas iniciais (seed)
+- 🎫 Desconto de R$10 na loja - 100 pontos
+- 🍰 Receita Exclusiva Premium - 50 pontos
+- 🎁 Brinde Surpresa - 200 pontos
 
-## Fluxo do usuario
-
-1. Abre a loja → ve os 3 kits + banner Detox
-2. Clica "Comprar" → abre dialog com opcoes PIX ou Cartao/Boleto (Kiwify)
-3. PIX: mostra QR code/codigo
-4. Cartao/Boleto: redireciona para Kiwify
-
-## Arquivos modificados/removidos
-- `src/pages/Store.tsx` - reescrito sem Shopify
-- `src/lib/shopify.ts` - removido
-- `src/stores/cartStore.ts` - simplificado ou removido
-- `src/components/CartDrawer.tsx` - removido
-- `src/components/FloatingCart.tsx` - removido
-- `src/hooks/useCartSync.ts` - removido
-- `src/pages/ProductDetail.tsx` - removido
-- `src/App.tsx` - limpar imports e rotas
-- `src/components/PaymentChoiceDialog.tsx` - trocar Mercado Pago por Kiwify
+## Arquivos modificados/criados
+- Migration SQL: criar tabelas `user_points`, `points_history`, `rewards`, `redeemed_rewards` com RLS
+- `src/pages/Points.tsx` - nova pagina
+- `src/contexts/AuthContext.tsx` - adicionar pontos no login e updateIMC
+- `src/components/Navigation.tsx` - adicionar link para Pontos
+- `src/App.tsx` - adicionar rota /points
+- `src/pages/Dashboard.tsx` - card de pontos
+- `supabase/functions/kiwify-webhook/index.ts` - adicionar 50 pontos na compra
+- `supabase/functions/stripe-webhook/index.ts` - adicionar 50 pontos na compra
 

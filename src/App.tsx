@@ -25,11 +25,8 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import KitSelectionPage from "./pages/KitSelectionPage";
 import Referral from "./pages/Referral";
 import Store from "./pages/Store";
-import ProductDetail from "./pages/ProductDetail";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Points from "./pages/Points";
-import { useCartSync } from "./hooks/useCartSync";
-import { FloatingCart } from "./components/FloatingCart";
 
 const queryClient = new QueryClient();
 
@@ -118,7 +115,6 @@ const CodeVerificationRoute = ({ children }: { children: React.ReactNode }) => {
 // ApprovalRoute removed - approval no longer required
 
 const AppRoutes = () => {
-  useCartSync();
   return (
     <Routes>
       <Route path="/" element={<Index />} />
@@ -140,7 +136,7 @@ const AppRoutes = () => {
       <Route path="/push-diagnostics" element={<ProtectedRoute><PushDiagnostics /></ProtectedRoute>} />
       <Route path="/referral" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
-      <Route path="/product/:handle" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
+      
       <Route path="/checkout-success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
       <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
@@ -156,7 +152,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppRoutes />
-          <FloatingCart />
           <PWAInstallPrompt />
         </BrowserRouter>
       </TooltipProvider>
