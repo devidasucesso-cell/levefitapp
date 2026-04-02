@@ -156,49 +156,15 @@ const Settings = () => {
 
   const permissionUI = getPermissionStatusUI();
 
-  // Schedule local notifications (fallback when app is open)
+  // Schedule notifications via Service Worker whenever settings change
   useEffect(() => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-    if (capsuleReminder && capsuleTime) {
-      const [hours, minutes] = capsuleTime.split(':').map(Number);
-      const now = new Date();
-      const scheduledTime = new Date(now);
-      scheduledTime.setHours(hours, minutes, 0, 0);
-      
-      if (scheduledTime <= now) {
-        scheduledTime.setDate(scheduledTime.getDate() + 1);
-      }
-
-      const timeout = scheduledTime.getTime() - now.getTime();
-      
-      const timerId = setTimeout(() => {
-        new Notification('💊 Hora do LeveFit!', {
-          body: 'Não esqueça de tomar sua cápsula LeveFit hoje!',
-          icon: '/pwa-192x192.png',
-        });
-      }, timeout);
-
-      return () => clearTimeout(timerId);
-    }
-  }, [capsuleReminder, capsuleTime]);
-
-  useEffect(() => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-    if (waterReminder && waterInterval) {
-      const interval = parseInt(waterInterval) * 60 * 1000;
-      
-      const intervalId = setInterval(() => {
-        new Notification('💧 Beba Água!', {
-          body: 'É hora de se hidratar! Beba um copo de água.',
-          icon: '/pwa-192x192.png',
-        });
-      }, interval);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [waterReminder, waterInterval]);
+    rescheduleAllAlarms({
+      capsuleReminder,
+      capsuleTime,
+      waterReminder,
+      waterInterval: parseInt(waterInterval) || 60,
+    });
+  }, [capsuleReminder, capsuleTime, waterReminder, waterInterval]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
