@@ -115,15 +115,11 @@ export const usePushNotifications = () => {
     if (!user || !('serviceWorker' in navigator)) return;
     
     try {
-      // Ensure permission is granted before trying to recreate
+      // Only auto-recreate if permission is already granted (don't request without gesture)
       if (Notification.permission !== 'granted') {
-        console.log('Notification permission not granted, requesting...');
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          console.log('Permission denied, cannot auto-recreate subscription');
-          setIsSubscribed(false);
-          return;
-        }
+        console.log('Notification permission not granted, cannot auto-recreate without user gesture');
+        setIsSubscribed(false);
+        return;
       }
       
       console.log('Auto-recreating subscription with current VAPID key...');

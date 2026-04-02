@@ -107,16 +107,33 @@ const PushNotificationPrompt = ({
             </motion.div>
           ))}
 
-          {/* iOS PWA Warning */}
+          {/* iOS PWA Step-by-step */}
           {needsPWA && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="p-3 rounded-xl bg-accent border border-border"
+              className="p-4 rounded-xl bg-accent border border-border space-y-3"
             >
-              <p className="text-xs text-muted-foreground">
-                📱 No iPhone/iPad, primeiro adicione o app à tela inicial (botão Compartilhar → "Adicionar à Tela de Início")
+              <p className="text-sm font-semibold text-foreground">
+                📱 Instale o app primeiro:
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
+                  <p className="text-xs text-muted-foreground">Abra esta página no <strong>Safari</strong></p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
+                  <p className="text-xs text-muted-foreground">Toque no botão <strong>Compartilhar</strong> (ícone ⬆️ na barra inferior)</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
+                  <p className="text-xs text-muted-foreground">Selecione <strong>"Adicionar à Tela de Início"</strong></p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Depois de instalado, abra o app pela tela inicial e ative as notificações.
               </p>
             </motion.div>
           )}
