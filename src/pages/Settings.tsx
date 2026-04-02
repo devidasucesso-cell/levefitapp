@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { rescheduleAllAlarms } from '@/lib/notificationScheduler';
 
 
 const kits = [

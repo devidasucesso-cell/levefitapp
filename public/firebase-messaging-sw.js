@@ -1,7 +1,201 @@
 // Firebase Messaging Service Worker for Push Notifications
 // Rich notifications style (Shopee-like) with images, actions, vibration
+// + Local scheduling via postMessage with IndexedDB persistence
 
-// Handle push events - this works even when the app is closed
+// ===== IndexedDB helpers for alarm persistence =====
+const DB_NAME = 'levefit-alarms';
+const STORE_NAME = 'alarms';
+
+function openDB() {
+  return new Promise(function(resolve, reject) {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = function(event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = function(event) { resolve(event.target.result); };
+    request.onerror = function(event) { reject(event.target.error); };
+  });
+}
+
+function saveAlarm(alarm) {
+  return openDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(alarm);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function deleteAlarm(id) {
+  return openDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function clearAllAlarms() {
+  return openDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function getAllAlarms() {
+  return openDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const request = tx.objectStore(STORE_NAME).getAll();
+      request.onsuccess = function() { resolve(request.result); };
+      request.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+// ===== In-memory timer map =====
+const activeTimers = {};
+
+function scheduleAlarmTimer(alarm) {
+  // Cancel existing timer for this id
+  if (activeTimers[alarm.id]) {
+    clearTimeout(activeTimers[alarm.id]);
+    delete activeTimers[alarm.id];
+  }
+
+  const now = Date.now();
+  let fireAt = alarm.fireAt; // absolute timestamp
+
+  // If fireAt is in the past, skip (or calculate next repeat)
+  if (fireAt <= now) {
+    if (alarm.repeatMs && alarm.repeatMs > 0) {
+      // Fast-forward to next future fire time
+      const elapsed = now - fireAt;
+      const periods = Math.ceil(elapsed / alarm.repeatMs);
+      fireAt = fireAt + periods * alarm.repeatMs;
+    } else {
+      // One-shot that already passed, remove it
+      deleteAlarm(alarm.id).catch(function() {});
+      return;
+    }
+  }
+
+  const delay = fireAt - now;
+  // Cap at ~24h to avoid JS timer overflow issues, re-schedule later
+  const maxDelay = 24 * 60 * 60 * 1000;
+  const actualDelay = Math.min(delay, maxDelay);
+
+  activeTimers[alarm.id] = setTimeout(function() {
+    delete activeTimers[alarm.id];
+
+    if (delay > maxDelay) {
+      // Re-schedule with remaining time
+      alarm.fireAt = fireAt;
+      scheduleAlarmTimer(alarm);
+      return;
+    }
+
+    // Fire the notification
+    self.registration.showNotification(alarm.title, {
+      body: alarm.body,
+      icon: '/pwa-192x192.png',
+      badge: '/pwa-192x192.png',
+      tag: 'alarm-' + alarm.id,
+      requireInteraction: true,
+      renotify: true,
+      vibrate: [200, 100, 200, 100, 200],
+      silent: false,
+      actions: [
+        { action: 'open', title: '✅ Abrir App' },
+        { action: 'dismiss', title: '❌ Dispensar' }
+      ],
+      data: { url: alarm.url || '/dashboard' },
+    });
+
+    // Handle repeat
+    if (alarm.repeatMs && alarm.repeatMs > 0) {
+      alarm.fireAt = Date.now() + alarm.repeatMs;
+      saveAlarm(alarm).catch(function() {});
+      scheduleAlarmTimer(alarm);
+    } else {
+      // One-shot, remove from DB
+      deleteAlarm(alarm.id).catch(function() {});
+    }
+  }, actualDelay);
+}
+
+// Re-hydrate alarms from IndexedDB
+function rehydrateAlarms() {
+  getAllAlarms().then(function(alarms) {
+    console.log('[SW] Rehydrating', alarms.length, 'alarms from IndexedDB');
+    alarms.forEach(function(alarm) {
+      scheduleAlarmTimer(alarm);
+    });
+  }).catch(function(err) {
+    console.error('[SW] Error rehydrating alarms:', err);
+  });
+}
+
+// ===== Message listener for local scheduling =====
+self.addEventListener('message', function(event) {
+  const data = event.data;
+  if (!data || !data.type) return;
+
+  console.log('[SW] Message received:', data.type);
+
+  switch (data.type) {
+    case 'SCHEDULE': {
+      var alarm = {
+        id: data.id,
+        title: data.title,
+        body: data.body,
+        fireAt: data.fireAt, // absolute timestamp
+        repeatMs: data.repeatMs || 0,
+        url: data.url || '/dashboard',
+      };
+      saveAlarm(alarm).then(function() {
+        scheduleAlarmTimer(alarm);
+        console.log('[SW] Alarm scheduled:', alarm.id, 'fires at', new Date(alarm.fireAt).toLocaleString());
+      }).catch(function(err) {
+        console.error('[SW] Error saving alarm:', err);
+      });
+      break;
+    }
+    case 'CANCEL': {
+      if (activeTimers[data.id]) {
+        clearTimeout(activeTimers[data.id]);
+        delete activeTimers[data.id];
+      }
+      deleteAlarm(data.id).then(function() {
+        console.log('[SW] Alarm cancelled:', data.id);
+      }).catch(function() {});
+      break;
+    }
+    case 'CANCEL_ALL': {
+      Object.keys(activeTimers).forEach(function(id) {
+        clearTimeout(activeTimers[id]);
+      });
+      Object.keys(activeTimers).forEach(function(id) { delete activeTimers[id]; });
+      clearAllAlarms().then(function() {
+        console.log('[SW] All alarms cancelled');
+      }).catch(function() {});
+      break;
+    }
+  }
+});
+
+// ===== Push event handler (server push) =====
 self.addEventListener('push', function(event) {
   console.log('[SW] Push event received');
 
@@ -57,7 +251,6 @@ self.addEventListener('push', function(event) {
     data: { url: data.url },
   };
 
-  // Add large image if provided (Shopee-style banner)
   if (data.image) {
     notificationOptions.image = data.image;
   }
@@ -107,12 +300,13 @@ self.addEventListener('install', function(event) {
   event.waitUntil(self.skipWaiting());
 });
 
-// Activate event - claim all clients immediately
+// Activate event - claim all clients + rehydrate alarms
 self.addEventListener('activate', function(event) {
   console.log('[SW] Activating push notification service worker...');
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
+      rehydrateAlarms(),
       caches.keys().then(function(cacheNames) {
         return Promise.all(
           cacheNames.filter(function(cacheName) {
