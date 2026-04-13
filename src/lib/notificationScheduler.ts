@@ -94,12 +94,22 @@ export function rescheduleAllAlarms(settings: {
     const fireAt = getNextFireTime(hours, minutes);
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
+    const capsuleMessages = [
+      { title: 'LeveFit', body: 'Oi! Já tomou sua cápsula hoje? 💊' },
+      { title: 'LeveFit', body: 'Ei, não esquece da sua cápsula! Bora manter o foco 💪' },
+      { title: 'LeveFit', body: 'Lembrete rápido: hora da sua LeveFit! 😉' },
+      { title: 'LeveFit', body: 'Oii! Sua cápsula tá te esperando 💊✨' },
+      { title: 'LeveFit', body: 'Bora? Toma sua cápsula e segue firme no tratamento! 🚀' },
+      { title: 'LeveFit', body: 'Psiu! Não pula a cápsula de hoje não, hein 😄💊' },
+    ];
+    const capsuleMsg = capsuleMessages[Math.floor(Math.random() * capsuleMessages.length)];
+
     scheduleAlarm(
       'capsule-reminder',
-      '💊 Hora do LeveFit!',
-      'Não esqueça de tomar sua cápsula LeveFit hoje!',
+      capsuleMsg.title,
+      capsuleMsg.body,
       fireAt,
-      ONE_DAY, // repeat daily
+      ONE_DAY,
       '/dashboard'
     );
   }
@@ -119,12 +129,22 @@ export function rescheduleAllAlarms(settings: {
       firstFireAt = getNextFireTime(7, 0);
     }
 
+    const waterMessages = [
+      { title: 'LeveFit', body: 'Ei! Bebe um copo d\'água aí 💧' },
+      { title: 'LeveFit', body: 'Tá hidratada(o)? Bora beber água! 💧😊' },
+      { title: 'LeveFit', body: 'Lembrete: um golinho de água faz toda diferença! 💦' },
+      { title: 'LeveFit', body: 'Oii! Hora de se hidratar, bora? 🥤' },
+      { title: 'LeveFit', body: 'Psiu, bebe água! Seu corpo agradece 💧✨' },
+      { title: 'LeveFit', body: 'Pausa rápida pra um copo d\'água? 😉💧' },
+    ];
+    const waterMsg = waterMessages[Math.floor(Math.random() * waterMessages.length)];
+
     scheduleAlarm(
       'water-reminder',
-      '💧 Beba Água!',
-      'É hora de se hidratar! Beba um copo de água.',
+      waterMsg.title,
+      waterMsg.body,
       firstFireAt,
-      intervalMs, // repeat at interval
+      intervalMs,
       '/dashboard'
     );
   }
