@@ -15,6 +15,15 @@ if (isPreviewHost || isInIframe) {
   navigator.serviceWorker?.getRegistrations().then((registrations) => {
     registrations.forEach((r) => r.unregister());
   });
+} else if ('serviceWorker' in navigator) {
+  // Register push SW early in production so it's ready for push events
+  navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
+    .then((reg) => {
+      console.log('[Main] Push SW registered, scope:', reg.scope);
+    })
+    .catch((err) => {
+      console.warn('[Main] SW registration failed:', err);
+    });
 }
 
 createRoot(document.getElementById("root")!).render(
