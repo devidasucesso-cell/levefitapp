@@ -184,22 +184,9 @@ export const usePushNotifications = () => {
       throw new Error('Service workers not supported');
     }
 
-    try {
-      // Unregister old service workers first
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        if (registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
-          await registration.unregister();
-        }
-      }
-    } catch (e) {
-      console.warn('Error unregistering old service workers:', e);
-    }
-
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-      scope: '/'
-    });
-    await navigator.serviceWorker.ready;
+    // Reuse the SW already registered in main.tsx instead of re-registering
+    const registration = await navigator.serviceWorker.ready;
+    console.log('[Push] Using existing SW registration, scope:', registration.scope);
     return registration;
   };
 
