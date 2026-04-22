@@ -269,7 +269,14 @@ self.addEventListener('notificationclick', function(event) {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/dashboard';
+  let urlToOpen = event.notification.data?.url || '/dashboard';
+
+  // Route action buttons to specific dashboard intents
+  if (event.action === 'drink') {
+    urlToOpen = '/dashboard?action=water';
+  } else if (event.action === 'taken') {
+    urlToOpen = '/dashboard?action=capsule';
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
