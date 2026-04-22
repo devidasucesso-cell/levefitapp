@@ -1,27 +1,120 @@
 /**
  * Notification Scheduler - communicates with the Service Worker
  * to schedule local notifications via postMessage.
- * 
+ *
  * Alarms are persisted in IndexedDB by the SW so they survive restarts.
+ *
+ * Offline / SW-unavailable fallback:
+ *  - If the SW is not yet ready (or the browser is offline at boot), the latest
+ *    settings are saved to localStorage as a "pending reschedule".
+ *  - We listen for `controllerchange`, `online`, and `visibilitychange` to
+ *    automatically replay the pending reschedule once conditions improve.
  */
+
+const PENDING_KEY = 'levefit:pending-reschedule';
+
+export interface ReminderSettings {
+  capsuleReminder: boolean;
+  capsuleTime: string;
+  waterReminder: boolean;
+  waterInterval: number;
+}
+
+function savePending(settings: ReminderSettings) {
+  try {
+    localStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({ settings, savedAt: Date.now() })
+    );
+    console.warn('[Scheduler] SW indisponível — settings salvas como pendente.');
+  } catch (e) {
+    console.error('[Scheduler] Falha ao salvar pendência:', e);
+  }
+}
+
+function readPending(): ReminderSettings | null {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.settings ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPending() {
+  try { localStorage.removeItem(PENDING_KEY); } catch { /* noop */ }
+}
 
 async function getSWRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    const reg = await navigator.serviceWorker.ready;
+    // Race against a short timeout so offline boots don't hang
+    const reg = await Promise.race<ServiceWorkerRegistration | null>([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+    ]);
     return reg;
   } catch {
     return null;
   }
 }
 
-function postToSW(message: Record<string, unknown>) {
-  getSWRegistration().then(reg => {
-    if (reg?.active) {
+/** Returns true if the message was successfully posted to an active SW. */
+async function postToSW(message: Record<string, unknown>): Promise<boolean> {
+  const reg = await getSWRegistration();
+  if (reg?.active) {
+    try {
       reg.active.postMessage(message);
+      return true;
+    } catch (e) {
+      console.warn('[Scheduler] postMessage falhou:', e);
+      return false;
     }
-  });
+  }
+  return false;
 }
+
+/**
+ * Replay a pending reschedule when the SW/connection becomes available.
+ * Safe to call multiple times — only acts when there's a pending entry.
+ */
+export async function flushPendingReschedule(): Promise<boolean> {
+  const pending = readPending();
+  if (!pending) return false;
+
+  const reg = await getSWRegistration();
+  if (!reg?.active) return false;
+  if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return false;
+
+  console.log('[Scheduler] 🔁 Reprocessando reschedule pendente...');
+  // Clear FIRST so the recursive call into rescheduleAllAlarms doesn't see
+  // pending state and short-circuit again.
+  clearPending();
+  rescheduleAllAlarms(pending);
+  return true;
+}
+
+// Wire up automatic recovery listeners (once per page load).
+let recoveryWired = false;
+function wireRecoveryListeners() {
+  if (recoveryWired || typeof window === 'undefined') return;
+  recoveryWired = true;
+
+  const tryFlush = () => { flushPendingReschedule().catch(() => { /* noop */ }); };
+
+  window.addEventListener('online', tryFlush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tryFlush();
+  });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', tryFlush);
+    // Also try once SW becomes ready
+    navigator.serviceWorker.ready.then(tryFlush).catch(() => { /* noop */ });
+  }
+}
+wireRecoveryListeners();
 
 export interface AlarmAction {
   action: string;
@@ -175,12 +268,19 @@ function getNextFireTime(hours: number, minutes: number): number {
  * Schedule all notification alarms based on user settings.
  * Called on app load and when settings change.
  */
-export function rescheduleAllAlarms(settings: {
-  capsuleReminder: boolean;
-  capsuleTime: string; // "HH:MM"
-  waterReminder: boolean;
-  waterInterval: number; // minutes
-}) {
+export function rescheduleAllAlarms(settings: ReminderSettings) {
+  // If we're offline OR the SW isn't ready yet, save settings as pending
+  // and bail out. Recovery listeners will replay this when conditions improve.
+  const swReady = !!navigator.serviceWorker?.controller;
+  const online = typeof navigator.onLine === 'boolean' ? navigator.onLine : true;
+
+  if (!swReady || !online) {
+    savePending(settings);
+    // Still try to flush asynchronously — the SW might become ready in a moment.
+    setTimeout(() => { flushPendingReschedule().catch(() => {}); }, 1500);
+    return;
+  }
+
   // Cancel everything first
   cancelAllAlarms();
 
