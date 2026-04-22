@@ -270,6 +270,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [profile?.created_at, user?.id]);
 
+  // Verify alarm health: on user load, on settings change, and when tab regains focus.
+  // This guarantees the water alarm is always re-scheduled if the SW lost it.
+  useEffect(() => {
+    if (!user) return;
+
+    const runCheck = () => {
+      verifyAlarmsHealth({
+        capsuleReminder: notificationSettings.capsuleReminder,
+        capsuleTime: notificationSettings.capsuleTime,
+        waterReminder: notificationSettings.waterReminder,
+        waterInterval: notificationSettings.waterInterval,
+      }).catch((err) => console.warn('[AuthContext] verifyAlarmsHealth failed:', err));
+    };
+
+    // Initial check shortly after settings load (give SW time to be ready)
+    const initial = setTimeout(runCheck, 1500);
+
+    // Re-check whenever the tab becomes visible again
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') runCheck();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // Periodic safety net every 10 minutes while open
+    const interval = setInterval(runCheck, 10 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [
+    user?.id,
+    notificationSettings.capsuleReminder,
+    notificationSettings.capsuleTime,
+    notificationSettings.waterReminder,
+    notificationSettings.waterInterval,
+  ]);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
