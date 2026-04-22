@@ -17,7 +17,7 @@ import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import NotificationReminderBanner from '@/components/NotificationReminderBanner';
 import ProgressSummary from '@/components/ProgressSummary';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { IMCCategory } from '@/types';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { supabase } from '@/integrations/supabase/client';
