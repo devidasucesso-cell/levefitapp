@@ -116,11 +116,11 @@ function scheduleAlarmTimer(alarm) {
       renotify: true,
       vibrate: [200, 100, 200, 100, 200],
       silent: false,
-      actions: [
-        { action: 'open', title: '✅ Abrir App' },
-        { action: 'dismiss', title: '❌ Dispensar' }
+      actions: alarm.actions && alarm.actions.length > 0 ? alarm.actions : [
+        { action: 'open', title: 'ABRIR' },
+        { action: 'dismiss', title: 'DISPENSAR' }
       ],
-      data: { url: alarm.url || '/dashboard' },
+      data: { url: alarm.url || '/dashboard', alarmId: alarm.id },
     });
 
     // Handle repeat
