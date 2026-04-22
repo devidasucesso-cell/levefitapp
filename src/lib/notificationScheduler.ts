@@ -122,20 +122,11 @@ export function rescheduleAllAlarms(settings: {
     );
   }
 
-  // Schedule water reminders (between 7h and 22h)
+  // Schedule water reminders 24/7 (every X minutes, no time window)
   if (settings.waterReminder && settings.waterInterval >= 15) {
     const intervalMs = settings.waterInterval * 60 * 1000;
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    // If within active hours (7-22), schedule first one after interval
-    // Otherwise schedule first one at 7:00 next day
-    let firstFireAt: number;
-    if (currentHour >= 7 && currentHour < 22) {
-      firstFireAt = Date.now() + intervalMs;
-    } else {
-      firstFireAt = getNextFireTime(7, 0);
-    }
+    // First fire after one interval from now, then repeat 24/7
+    const firstFireAt = Date.now() + intervalMs;
 
     const waterMessages = [
       'Beba água para ter movimentos intestinais mais saudáveis!',
