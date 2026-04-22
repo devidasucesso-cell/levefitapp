@@ -163,6 +163,7 @@ self.addEventListener('message', function(event) {
         fireAt: data.fireAt, // absolute timestamp
         repeatMs: data.repeatMs || 0,
         url: data.url || '/dashboard',
+        actions: data.actions || null,
       };
       saveAlarm(alarm).then(function() {
         scheduleAlarmTimer(alarm);
