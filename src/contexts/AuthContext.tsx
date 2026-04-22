@@ -60,7 +60,7 @@ const defaultNotificationSettings: NotificationSettings = {
   capsuleReminder: true,
   capsuleTime: '08:00',
   waterReminder: true,
-  waterInterval: 60,
+  waterInterval: 15,
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

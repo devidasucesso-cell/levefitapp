@@ -111,7 +111,7 @@ const Settings = () => {
       capsuleReminder,
       capsuleTime,
       waterReminder,
-      waterInterval: parseInt(waterInterval) || 60,
+      waterInterval: parseInt(waterInterval) || 15,
     });
     
     // Update water goal in profile
@@ -163,7 +163,7 @@ const Settings = () => {
       capsuleReminder,
       capsuleTime,
       waterReminder,
-      waterInterval: parseInt(waterInterval) || 60,
+      waterInterval: parseInt(waterInterval) || 15,
     });
   }, [capsuleReminder, capsuleTime, waterReminder, waterInterval]);
 
@@ -350,7 +350,7 @@ const Settings = () => {
                     type="number"
                     value={waterInterval}
                     onChange={(e) => setWaterInterval(e.target.value)}
-                    placeholder="60"
+                    placeholder="15"
                     min="15"
                     max="180"
                     className="bg-secondary border-0"
