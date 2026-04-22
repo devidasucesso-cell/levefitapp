@@ -163,7 +163,7 @@ const Settings = () => {
       capsuleReminder,
       capsuleTime,
       waterReminder,
-      waterInterval: parseInt(waterInterval) || 60,
+      waterInterval: parseInt(waterInterval) || 15,
     });
   }, [capsuleReminder, capsuleTime, waterReminder, waterInterval]);
 
