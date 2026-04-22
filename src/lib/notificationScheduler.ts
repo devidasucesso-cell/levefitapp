@@ -86,12 +86,13 @@ export async function flushPendingReschedule(): Promise<boolean> {
 
   const reg = await getSWRegistration();
   if (!reg?.active) return false;
+  if (typeof navigator.onLine === 'boolean' && !navigator.onLine) return false;
 
   console.log('[Scheduler] 🔁 Reprocessando reschedule pendente...');
-  // Call the public function (defined later) — this will not re-enter the
-  // pending branch because the SW is now active.
-  rescheduleAllAlarms(pending);
+  // Clear FIRST so the recursive call into rescheduleAllAlarms doesn't see
+  // pending state and short-circuit again.
   clearPending();
+  rescheduleAllAlarms(pending);
   return true;
 }
 
