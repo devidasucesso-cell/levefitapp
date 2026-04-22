@@ -193,6 +193,32 @@ self.addEventListener('message', function(event) {
       }).catch(function() {});
       break;
     }
+    case 'GET_STATUS': {
+      // Reply via MessageChannel port with current alarm state
+      getAllAlarms().then(function(alarms) {
+        const status = {
+          alarms: alarms.map(function(a) {
+            return {
+              id: a.id,
+              fireAt: a.fireAt,
+              repeatMs: a.repeatMs,
+              hasActiveTimer: !!activeTimers[a.id],
+              title: a.title,
+            };
+          }),
+          activeTimerIds: Object.keys(activeTimers),
+          now: Date.now(),
+        };
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage(status);
+        }
+      }).catch(function(err) {
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ error: String(err) });
+        }
+      });
+      break;
+    }
   }
 });
 
