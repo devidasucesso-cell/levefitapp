@@ -116,11 +116,11 @@ function scheduleAlarmTimer(alarm) {
       renotify: true,
       vibrate: [200, 100, 200, 100, 200],
       silent: false,
-      actions: [
-        { action: 'open', title: '✅ Abrir App' },
-        { action: 'dismiss', title: '❌ Dispensar' }
+      actions: alarm.actions && alarm.actions.length > 0 ? alarm.actions : [
+        { action: 'open', title: 'ABRIR' },
+        { action: 'dismiss', title: 'DISPENSAR' }
       ],
-      data: { url: alarm.url || '/dashboard' },
+      data: { url: alarm.url || '/dashboard', alarmId: alarm.id },
     });
 
     // Handle repeat
@@ -163,6 +163,7 @@ self.addEventListener('message', function(event) {
         fireAt: data.fireAt, // absolute timestamp
         repeatMs: data.repeatMs || 0,
         url: data.url || '/dashboard',
+        actions: data.actions || null,
       };
       saveAlarm(alarm).then(function() {
         scheduleAlarmTimer(alarm);
@@ -268,7 +269,14 @@ self.addEventListener('notificationclick', function(event) {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/dashboard';
+  let urlToOpen = event.notification.data?.url || '/dashboard';
+
+  // Route action buttons to specific dashboard intents
+  if (event.action === 'drink') {
+    urlToOpen = '/dashboard?action=water';
+  } else if (event.action === 'taken') {
+    urlToOpen = '/dashboard?action=capsule';
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {

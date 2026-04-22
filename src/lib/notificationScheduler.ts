@@ -23,6 +23,11 @@ function postToSW(message: Record<string, unknown>) {
   });
 }
 
+export interface AlarmAction {
+  action: string;
+  title: string;
+}
+
 /** Schedule a one-shot or repeating alarm */
 export function scheduleAlarm(
   id: string,
@@ -30,7 +35,8 @@ export function scheduleAlarm(
   body: string,
   fireAt: number, // absolute timestamp (Date.now()-based)
   repeatMs?: number,
-  url?: string
+  url?: string,
+  actions?: AlarmAction[]
 ) {
   postToSW({
     type: 'SCHEDULE',
@@ -40,6 +46,7 @@ export function scheduleAlarm(
     fireAt,
     repeatMs: repeatMs || 0,
     url: url || '/dashboard',
+    actions: actions || null,
   });
 }
 
@@ -95,22 +102,23 @@ export function rescheduleAllAlarms(settings: {
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
     const capsuleMessages = [
-      { title: 'LeveFit', body: 'Oi! Já tomou sua cápsula hoje? 💊' },
-      { title: 'LeveFit', body: 'Ei, não esquece da sua cápsula! Bora manter o foco 💪' },
-      { title: 'LeveFit', body: 'Lembrete rápido: hora da sua LeveFit! 😉' },
-      { title: 'LeveFit', body: 'Oii! Sua cápsula tá te esperando 💊✨' },
-      { title: 'LeveFit', body: 'Bora? Toma sua cápsula e segue firme no tratamento! 🚀' },
-      { title: 'LeveFit', body: 'Psiu! Não pula a cápsula de hoje não, hein 😄💊' },
+      'Já tomou sua cápsula hoje? Bora manter o foco no tratamento!',
+      'Hora da sua cápsula LeveFit! Não pula hoje, hein 💪',
+      'Lembrete rápido: tá na hora da sua cápsula ✨',
+      'Sua cápsula tá te esperando! Toma agora pra seguir firme 🚀',
+      'Psiu! Não esquece da cápsula de hoje, viu? 😄',
+      'Bora? Toma sua cápsula e segue arrasando no tratamento!',
     ];
-    const capsuleMsg = capsuleMessages[Math.floor(Math.random() * capsuleMessages.length)];
+    const capsuleBody = capsuleMessages[Math.floor(Math.random() * capsuleMessages.length)];
 
     scheduleAlarm(
       'capsule-reminder',
-      capsuleMsg.title,
-      capsuleMsg.body,
+      'Lembrete de Cápsula LeveFit',
+      capsuleBody,
       fireAt,
       ONE_DAY,
-      '/dashboard'
+      '/dashboard',
+      [{ action: 'taken', title: 'TOMEI' }]
     );
   }
 
@@ -130,22 +138,23 @@ export function rescheduleAllAlarms(settings: {
     }
 
     const waterMessages = [
-      { title: 'LeveFit', body: 'Ei! Bebe um copo d\'água aí 💧' },
-      { title: 'LeveFit', body: 'Tá hidratada(o)? Bora beber água! 💧😊' },
-      { title: 'LeveFit', body: 'Lembrete: um golinho de água faz toda diferença! 💦' },
-      { title: 'LeveFit', body: 'Oii! Hora de se hidratar, bora? 🥤' },
-      { title: 'LeveFit', body: 'Psiu, bebe água! Seu corpo agradece 💧✨' },
-      { title: 'LeveFit', body: 'Pausa rápida pra um copo d\'água? 😉💧' },
+      'Beba água para ter movimentos intestinais mais saudáveis!',
+      'Hora de se hidratar! Um copo d\'água agora faz toda diferença.',
+      'Tá hidratada(o)? Bora beber água e cuidar do seu corpo!',
+      'Lembrete rápido: pausa pra um copo d\'água, vai?',
+      'Seu corpo tá pedindo água! Bebe um pouquinho agora 💧',
+      'Bora se hidratar? Um golinho de água ajuda demais!',
     ];
-    const waterMsg = waterMessages[Math.floor(Math.random() * waterMessages.length)];
+    const waterBody = waterMessages[Math.floor(Math.random() * waterMessages.length)];
 
     scheduleAlarm(
       'water-reminder',
-      waterMsg.title,
-      waterMsg.body,
+      'Monitor de Ingestão de Água',
+      waterBody,
       firstFireAt,
       intervalMs,
-      '/dashboard'
+      '/dashboard',
+      [{ action: 'drink', title: 'BEBER' }]
     );
   }
 }
