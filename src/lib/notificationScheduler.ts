@@ -23,6 +23,11 @@ function postToSW(message: Record<string, unknown>) {
   });
 }
 
+export interface AlarmAction {
+  action: string;
+  title: string;
+}
+
 /** Schedule a one-shot or repeating alarm */
 export function scheduleAlarm(
   id: string,
@@ -30,7 +35,8 @@ export function scheduleAlarm(
   body: string,
   fireAt: number, // absolute timestamp (Date.now()-based)
   repeatMs?: number,
-  url?: string
+  url?: string,
+  actions?: AlarmAction[]
 ) {
   postToSW({
     type: 'SCHEDULE',
@@ -40,6 +46,7 @@ export function scheduleAlarm(
     fireAt,
     repeatMs: repeatMs || 0,
     url: url || '/dashboard',
+    actions: actions || null,
   });
 }
 
