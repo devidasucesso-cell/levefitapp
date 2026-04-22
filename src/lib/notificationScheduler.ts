@@ -267,12 +267,19 @@ function getNextFireTime(hours: number, minutes: number): number {
  * Schedule all notification alarms based on user settings.
  * Called on app load and when settings change.
  */
-export function rescheduleAllAlarms(settings: {
-  capsuleReminder: boolean;
-  capsuleTime: string; // "HH:MM"
-  waterReminder: boolean;
-  waterInterval: number; // minutes
-}) {
+export function rescheduleAllAlarms(settings: ReminderSettings) {
+  // If we're offline OR the SW isn't ready yet, save settings as pending
+  // and bail out. Recovery listeners will replay this when conditions improve.
+  const swReady = !!navigator.serviceWorker?.controller;
+  const online = typeof navigator.onLine === 'boolean' ? navigator.onLine : true;
+
+  if (!swReady || !online) {
+    savePending(settings);
+    // Still try to flush asynchronously — the SW might become ready in a moment.
+    setTimeout(() => { flushPendingReschedule().catch(() => {}); }, 1500);
+    return;
+  }
+
   // Cancel everything first
   cancelAllAlarms();
 
