@@ -285,7 +285,10 @@ const Dashboard = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
+            <Card
+              id="capsule-section"
+              className={`p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20 transition-all ${highlightSection === 'capsule' ? 'ring-4 ring-primary-foreground/60 scale-105' : ''}`}
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <Pill className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 <div>
