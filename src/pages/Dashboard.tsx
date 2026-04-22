@@ -188,6 +188,41 @@ const Dashboard = () => {
     setShowCapsuleReminder(false);
   };
 
+  // Handle deep-link actions from notification action buttons (BEBER / TOMEI)
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (!action) return;
+
+    const runAction = async () => {
+      if (action === 'water') {
+        // Register a water intake then scroll + highlight
+        try { await addWaterIntake(); } catch { /* noop */ }
+        setHighlightSection('water');
+        requestAnimationFrame(() => {
+          document.getElementById('water-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } else if (action === 'capsule') {
+        // Mark capsule taken if not already, then scroll + highlight
+        if (!isCapsuleTaken(today)) {
+          try { await markCapsuleTaken(today); } catch { /* noop */ }
+        }
+        setHighlightSection('capsule');
+        requestAnimationFrame(() => {
+          document.getElementById('capsule-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      // Clean the query param so refresh doesn't retrigger
+      const next = new URLSearchParams(searchParams);
+      next.delete('action');
+      setSearchParams(next, { replace: true });
+      // Remove highlight after a short delay
+      setTimeout(() => setHighlightSection(null), 2500);
+    };
+
+    runAction();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
