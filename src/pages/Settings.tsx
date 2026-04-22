@@ -350,7 +350,7 @@ const Settings = () => {
                     type="number"
                     value={waterInterval}
                     onChange={(e) => setWaterInterval(e.target.value)}
-                    placeholder="60"
+                    placeholder="15"
                     min="15"
                     max="180"
                     className="bg-secondary border-0"
