@@ -111,7 +111,7 @@ const Settings = () => {
       capsuleReminder,
       capsuleTime,
       waterReminder,
-      waterInterval: parseInt(waterInterval) || 60,
+      waterInterval: parseInt(waterInterval) || 15,
     });
     
     // Update water goal in profile
