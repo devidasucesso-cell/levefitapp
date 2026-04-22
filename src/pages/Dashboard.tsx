@@ -32,9 +32,11 @@ const getKitDuration = (kitType: string | null): number => {
 };
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown, user } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown, user, addWaterIntake } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isSupported, isSubscribed, subscribeUser } = usePushNotifications();
+  const [highlightSection, setHighlightSection] = useState<'water' | 'capsule' | null>(null);
   
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
