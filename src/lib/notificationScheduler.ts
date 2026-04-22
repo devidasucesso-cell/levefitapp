@@ -55,6 +55,99 @@ export function cancelAlarm(id: string) {
   postToSW({ type: 'CANCEL', id });
 }
 
+export interface AlarmStatus {
+  id: string;
+  fireAt: number;
+  repeatMs: number;
+  hasActiveTimer: boolean;
+  title: string;
+}
+
+export interface SWAlarmsStatus {
+  alarms: AlarmStatus[];
+  activeTimerIds: string[];
+  now: number;
+}
+
+/** Ask the SW for the current alarm state (via MessageChannel). */
+export async function getAlarmsStatus(timeoutMs = 2000): Promise<SWAlarmsStatus | null> {
+  const reg = await getSWRegistration();
+  if (!reg?.active) return null;
+
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    channel.port1.onmessage = (event) => {
+      clearTimeout(timer);
+      resolve(event.data as SWAlarmsStatus);
+    };
+    reg.active!.postMessage({ type: 'GET_STATUS' }, [channel.port2]);
+  });
+}
+
+/**
+ * Verify that critical alarms (water, capsule) are persisted, have an active
+ * timer, and a future fireAt. Returns a health report and re-schedules if broken.
+ */
+export async function verifyAlarmsHealth(settings: {
+  capsuleReminder: boolean;
+  capsuleTime: string;
+  waterReminder: boolean;
+  waterInterval: number;
+}): Promise<{
+  healthy: boolean;
+  issues: string[];
+  status: SWAlarmsStatus | null;
+}> {
+  const issues: string[] = [];
+  const status = await getAlarmsStatus();
+
+  if (!status) {
+    issues.push('SW não respondeu ao GET_STATUS');
+    // Try to reschedule anyway
+    rescheduleAllAlarms(settings);
+    return { healthy: false, issues, status: null };
+  }
+
+  const checkAlarm = (id: string, expectedRepeatMs: number) => {
+    const alarm = status.alarms.find((a) => a.id === id);
+    if (!alarm) {
+      issues.push(`Alarme '${id}' ausente do IndexedDB`);
+      return;
+    }
+    if (!alarm.hasActiveTimer) {
+      issues.push(`Alarme '${id}' sem setTimeout ativo no SW`);
+    }
+    if (alarm.fireAt <= status.now) {
+      issues.push(`Alarme '${id}' com fireAt no passado (${alarm.fireAt} <= ${status.now})`);
+    }
+    if (expectedRepeatMs > 0 && alarm.repeatMs !== expectedRepeatMs) {
+      issues.push(`Alarme '${id}' com repeatMs incorreto: ${alarm.repeatMs} (esperado ${expectedRepeatMs})`);
+    }
+  };
+
+  if (settings.waterReminder && settings.waterInterval >= 15) {
+    checkAlarm('water-reminder', settings.waterInterval * 60 * 1000);
+  }
+  if (settings.capsuleReminder && settings.capsuleTime) {
+    checkAlarm('capsule-reminder', 24 * 60 * 60 * 1000);
+  }
+
+  const healthy = issues.length === 0;
+  if (!healthy) {
+    console.warn('[Scheduler] Alarmes em estado inválido, reagendando:', issues);
+    rescheduleAllAlarms(settings);
+  } else {
+    console.log('[Scheduler] ✅ Alarmes saudáveis:', status.alarms.map((a) => ({
+      id: a.id,
+      próximoDisparoEm: Math.round((a.fireAt - status.now) / 1000) + 's',
+      repete: Math.round(a.repeatMs / 60000) + 'min',
+    })));
+  }
+
+  return { healthy, issues, status };
+}
+
 /** Cancel all alarms */
 export function cancelAllAlarms() {
   postToSW({ type: 'CANCEL_ALL' });
