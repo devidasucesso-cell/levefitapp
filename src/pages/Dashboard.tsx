@@ -17,7 +17,7 @@ import OnboardingTutorial from '@/components/OnboardingTutorial';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 import NotificationReminderBanner from '@/components/NotificationReminderBanner';
 import ProgressSummary from '@/components/ProgressSummary';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { IMCCategory } from '@/types';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,9 +32,11 @@ const getKitDuration = (kitType: string | null): number => {
 };
 
 const Dashboard = () => {
-  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown, user } = useAuth();
+  const { profile, capsuleDays, markCapsuleTaken, isCapsuleTaken, logout, isAdmin, markOnboardingComplete, markPushPromptShown, user, addWaterIntake } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isSupported, isSubscribed, subscribeUser } = usePushNotifications();
+  const [highlightSection, setHighlightSection] = useState<'water' | 'capsule' | null>(null);
   
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayDisplay = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
@@ -186,6 +188,41 @@ const Dashboard = () => {
     setShowCapsuleReminder(false);
   };
 
+  // Handle deep-link actions from notification action buttons (BEBER / TOMEI)
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (!action) return;
+
+    const runAction = async () => {
+      if (action === 'water') {
+        // Register a water intake then scroll + highlight
+        try { await addWaterIntake(); } catch { /* noop */ }
+        setHighlightSection('water');
+        requestAnimationFrame(() => {
+          document.getElementById('water-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } else if (action === 'capsule') {
+        // Mark capsule taken if not already, then scroll + highlight
+        if (!isCapsuleTaken(today)) {
+          try { await markCapsuleTaken(today); } catch { /* noop */ }
+        }
+        setHighlightSection('capsule');
+        requestAnimationFrame(() => {
+          document.getElementById('capsule-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      // Clean the query param so refresh doesn't retrigger
+      const next = new URLSearchParams(searchParams);
+      next.delete('action');
+      setSearchParams(next, { replace: true });
+      // Remove highlight after a short delay
+      setTimeout(() => setHighlightSection(null), 2500);
+    };
+
+    runAction();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -230,7 +267,10 @@ const Dashboard = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
+            <Card
+              id="water-section"
+              className={`p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20 transition-all ${highlightSection === 'water' ? 'ring-4 ring-primary-foreground/60 scale-105' : ''}`}
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <Droplets className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 <div>
@@ -245,7 +285,10 @@ const Dashboard = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <Card className="p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20">
+            <Card
+              id="capsule-section"
+              className={`p-3 sm:p-4 bg-primary-foreground/10 backdrop-blur border-primary-foreground/20 transition-all ${highlightSection === 'capsule' ? 'ring-4 ring-primary-foreground/60 scale-105' : ''}`}
+            >
               <div className="flex items-center gap-2 sm:gap-3">
                 <Pill className="w-6 h-6 sm:w-8 sm:h-8 text-primary-foreground" />
                 <div>
